@@ -1,0 +1,21 @@
+{
+	"manifest_version": 2,
+
+	"name": "Ethical Ad Block",
+	"description": "Block only fraudulent, malicious, and resource taxing ads.",
+	"version": "0.1",
+
+	"browser_action": {
+		"default_icon": "icon.png",
+		"default_popup": "popup.html"
+	},
+
+	"content_scripts": [{
+		"matches": ["*://www.google.com/*"],
+		"js":      ["content.js"]
+	}],
+
+	"permissions": [
+		"activeTab"
+	]
+}
