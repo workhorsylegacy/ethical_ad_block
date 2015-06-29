@@ -31,7 +31,6 @@ function create_buttons() {
 		canvas.style.left = rect.left + window.pageXOffset + (rect.width - BUTTON_SIZE) + 'px';
 		canvas.style.top = rect.top + window.pageYOffset + (rect.height - BUTTON_SIZE) + 'px';
 		canvas.style.zIndex = 100000;
-		canvas.style.pointerEvents = 'none';
 		document.body.appendChild(canvas);
 
 		// Draw rectangle
@@ -40,6 +39,10 @@ function create_buttons() {
 		context.fillStyle = 'red';
 		context.fill();
 		canvases.push(canvas);
+
+		canvas.addEventListener('click', function() {
+			alert('clicked!');
+		}, false);
 	}	
 }
 
