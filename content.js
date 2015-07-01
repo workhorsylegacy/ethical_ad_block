@@ -36,7 +36,7 @@ function create_button(element) {
 		if (i != -1) {
 			canvases.splice(i, 1);
 		}
-		element.style.display = 'none';
+		element.parentElement.removeChild(element);
 	}, false);
 
 	// Give the element a green border when the mouse hovers over the button
