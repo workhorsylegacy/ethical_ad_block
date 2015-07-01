@@ -3,12 +3,11 @@
 
 
 var canvases = [];
+var TAGS = ['img', 'object', 'embed', 'iframe'];
 var BUTTON_SIZE = 15;
 var has_loaded = false;
 
 function create_button(element) {
-	//element.style['border'] = '10px solid green';
-	//element.style.display = 'none';
 	var rect = element.getBoundingClientRect();
 
 	// Create a canvas
@@ -30,9 +29,26 @@ function create_button(element) {
 	context.fill();
 	canvases.push(canvas);
 
+	// Remove the element when clicked
 	canvas.addEventListener('click', function() {
-		alert('clicked!');
-	}, false);	
+		document.body.removeChild(canvas);
+		var i = canvases.indexOf(canvas);
+		if (i != -1) {
+			canvases.splice(i, 1);
+		}
+		element.style.display = 'none';
+	}, false);
+
+	// Give the element a green border when the mouse hovers over the button
+	canvas.addEventListener('mouseenter', function() {
+		element.style['border'] = '10px solid green';
+		console.log(element);
+	}, false);
+
+	// Remove the green border when the mouse stops hovering
+	canvas.addEventListener('mouseleave', function() {
+		element.style['border'] = '';
+	}, false);
 }
 
 // FIXME: Instead of using this load event, just use the observer for all image loads
@@ -47,10 +63,14 @@ window.addEventListener('load', function() {
 	canvases = [];
 
 	// Add a new button to the right bottom corner of each element
-	var elements = document.getElementsByTagName("img");
-	for (var i=0; i<elements.length; ++i) {
-		var element = elements[i];
-		create_button(element);
+	for (var i=0; i<TAGS.length; ++i) {
+		var tag = TAGS[i];
+		var elements = document.getElementsByTagName(tag);
+		for (var j=0; j<elements.length; ++j) {
+			var element = elements[j];
+			//console.log(element);
+			create_button(element);
+		}
 	}
 
 	// When new images load, add a button to them too
@@ -65,11 +85,14 @@ window.addEventListener('load', function() {
 				}
 	 
 				// Look at each new image
-				var imgs = node.getElementsByTagName('img');
-				for (var j=0; j<imgs.length; ++j) {
-					var img = imgs[i];
-					//console.log(img);
-					create_button(img);
+				for (var j=0; j<TAGS.length; ++j) {
+					var tag = TAGS[j];
+					var elements = node.getElementsByTagName(tag);
+					for (var k=0; k<elements.length; ++k) {
+						var element = elements[k];
+						//console.log(element);
+						create_button(element);
+					}
 				}
 			}
 		});
@@ -91,10 +114,14 @@ window.addEventListener('resize', function(event) {
 	canvases = [];
 
 	// Add a new button to the right bottom corner of each element
-	var elements = document.getElementsByTagName("img");
-	for (var i=0; i<elements.length; ++i) {
-		var element = elements[i];
-		create_button(element);
+	for (var i=0; i<TAGS.length; ++i) {
+		var tag = TAGS[i];
+		var elements = document.getElementsByTagName(tag);
+		for (var j=0; j<elements.length; ++j) {
+			var element = elements[j];
+			//console.log(element);
+			create_button(element);
+		}
 	}
 });
 
