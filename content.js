@@ -7,6 +7,7 @@ var TAGS = ['img', 'object', 'embed', 'iframe'];
 var BUTTON_SIZE = 15;
 var has_loaded = false;
 
+
 function create_button(element) {
 	var rect = element.getBoundingClientRect();
 
@@ -101,7 +102,6 @@ window.addEventListener('load', function() {
 	observer.observe(document, {childList: true, subtree: true});
 });
 
-
 window.addEventListener('resize', function(event) {
 	if (! has_loaded)
 		return;
@@ -125,6 +125,11 @@ window.addEventListener('resize', function(event) {
 	}
 });
 
+
+chrome.extension.onMessage.addListener(function(msg, sender, sendResponse) {
+	console.log(msg.action);
+});
+	
 
 
 
