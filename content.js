@@ -8,10 +8,11 @@ var BUTTON_SIZE = 15;
 var has_loaded = false;
 
 
+// Adds a close button to the bottom right of the element
 function create_button(element) {
 	var rect = element.getBoundingClientRect();
 
-	// Create a canvas
+	// Create a button over the bottom right of the element
 	var canvas = document.createElement('canvas');
 	canvas.width = BUTTON_SIZE;
 	canvas.height = BUTTON_SIZE;
@@ -23,14 +24,14 @@ function create_button(element) {
 	canvas.style.zIndex = 100000;
 	document.body.appendChild(canvas);
 
-	// Draw rectangle
+	// Make the button red
 	var context = canvas.getContext('2d');
 	context.rect(0, 0, BUTTON_SIZE, BUTTON_SIZE);
 	context.fillStyle = 'red';
 	context.fill();
 	canvases.push(canvas);
 
-	// Remove the element when clicked
+	// Remove the element when the button is clicked
 	canvas.addEventListener('click', function() {
 		document.body.removeChild(canvas);
 		var i = canvases.indexOf(canvas);
@@ -46,24 +47,24 @@ function create_button(element) {
 		console.log(element);
 	}, false);
 
-	// Remove the green border when the mouse stops hovering
+	// Remove the green border when the mouse stops hovering over the button
 	canvas.addEventListener('mouseleave', function() {
 		element.style['border'] = '';
 	}, false);
 }
 
-// FIXME: Instead of using this load event, just use the observer for all image loads
+// When the page is done loading, add a button to all the tags we care about
 window.addEventListener('load', function() {
 	has_loaded = true;
 
-	// Remove old canvases
+	// Remove old buttons
 	for (var i=0; i<canvases.length; ++i) {
 		var canvas = canvases[i];
 		document.body.removeChild(canvas);
 	}
 	canvases = [];
 
-	// Add a new button to the right bottom corner of each element
+	// Add a new button to each element we care about
 	for (var i=0; i<TAGS.length; ++i) {
 		var tag = TAGS[i];
 		var elements = document.getElementsByTagName(tag);
@@ -74,7 +75,7 @@ window.addEventListener('load', function() {
 		}
 	}
 
-	// When new images load, add a button to them too
+	// When new tags we care about are created, add a button to them too
 	var observer = new MutationObserver(function (mutations) {
 		mutations.forEach(function (mutation) {
 			for (var i=0; i<mutation.addedNodes.length; ++i) {
@@ -85,7 +86,7 @@ window.addEventListener('load', function() {
 					return;
 				}
 	 
-				// Look at each new image
+				// Look at each new tag
 				for (var j=0; j<TAGS.length; ++j) {
 					var tag = TAGS[j];
 					var elements = node.getElementsByTagName(tag);
@@ -102,11 +103,12 @@ window.addEventListener('load', function() {
 	observer.observe(document, {childList: true, subtree: true});
 });
 
+// When the page resizes, add a button to all the tags we care about
 window.addEventListener('resize', function(event) {
 	if (! has_loaded)
 		return;
 
-	// Remove old canvases
+	// Remove old buttons
 	for (var i=0; i<canvases.length; ++i) {
 		var canvas = canvases[i];
 		document.body.removeChild(canvas);
