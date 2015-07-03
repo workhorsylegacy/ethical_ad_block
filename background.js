@@ -18,22 +18,23 @@ var BLACKLIST = [
 var messages = [];
 var is_ready = false;
 
-function log_to_content_script(message) {
+function log_to_active_tab(message) {
 	chrome.tabs.query({active: true, currentWindow: true}, function(tabs) {
 		console.log(message);
 		chrome.tabs.sendMessage(tabs[0].id, {action: message}, function(response) {});
 	});
 }
 
+// Watch each request and block the ones that are in the black list
 chrome.webRequest.onBeforeRequest.addListener(function(info) {
 	for (var i=0; i<BLACKLIST.length; ++i) {
 		var entry = BLACKLIST[i];
 		if (info.url.indexOf(entry) !== -1) {
 			var message = 'Blocked: ' + info.url;
 			if (is_ready) {
-				log_to_content_script(message);
+				log_to_active_tab(message);
 			} else {
-				messages.push('Late ' + message);
+				messages.push(message);
 			}
 
 			return {cancel: true};
@@ -41,16 +42,16 @@ chrome.webRequest.onBeforeRequest.addListener(function(info) {
 	}
 
 	return {cancel: false};
-	//return { redirectUrl: 'http://www.cnn.com' };
 },{ urls: ["*://*/*"] }, ['blocking']);
 
 
+// When the tab is ready, print all the log messages to its console
 chrome.tabs.onUpdated.addListener(function (tabId, changeInfo, tab) {
 	if (changeInfo.status == 'complete') {
 		is_ready = true;
 		for (var i=0; i<messages.length; ++i) {
 			var message = messages[i];
-			log_to_content_script(message);
+			log_to_active_tab(message);
 		}
 
 		messages = [];
@@ -58,4 +59,6 @@ chrome.tabs.onUpdated.addListener(function (tabId, changeInfo, tab) {
 		is_ready = false;
 	}
 });
+
+
 
