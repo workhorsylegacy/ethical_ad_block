@@ -3,13 +3,19 @@
 
 
 var canvases = [];
-var TAGS = ['img', 'object', 'embed', 'iframe'];
 var BUTTON_SIZE = 15;
 var has_loaded = false;
+var TAGS = {
+	'img' : 'blue',
+	'video' : 'blue',
+	'object' : 'yellow',
+	'embed' : 'yellow',
+	'iframe' : 'red'
+};
 
 
 // Adds a close button to the bottom right of the element
-function create_button(element) {
+function create_button(element, color) {
 	var rect = element.getBoundingClientRect();
 
 	// Create a button over the bottom right of the element
@@ -24,10 +30,10 @@ function create_button(element) {
 	canvas.style.zIndex = 100000;
 	document.body.appendChild(canvas);
 
-	// Make the button red
+	// Make the button a color
 	var context = canvas.getContext('2d');
 	context.rect(0, 0, BUTTON_SIZE, BUTTON_SIZE);
-	context.fillStyle = 'red';
+	context.fillStyle = color;
 	context.fill();
 	canvases.push(canvas);
 
@@ -41,13 +47,13 @@ function create_button(element) {
 		element.parentElement.removeChild(element);
 	}, false);
 
-	// Give the element a green border when the mouse hovers over the button
+	// Give the element a border when the mouse hovers over the button
 	canvas.addEventListener('mouseenter', function() {
-		element.style['border'] = '10px solid green';
+		element.style['border'] = '10px solid ' + color;
 		console.log(element);
 	}, false);
 
-	// Remove the green border when the mouse stops hovering over the button
+	// Remove the border when the mouse stops hovering over the button
 	canvas.addEventListener('mouseleave', function() {
 		element.style['border'] = '';
 	}, false);
@@ -63,13 +69,13 @@ function remove_all_buttons() {
 
 function add_buttons_to_all_tags(parent_element) {
 	// Add a new button to the right bottom corner of each element
-	for (var i=0; i<TAGS.length; ++i) {
-		var tag = TAGS[i];
+	for (var tag in TAGS) {
+		var color = TAGS[tag];
 		var elements = parent_element.getElementsByTagName(tag);
 		for (var j=0; j<elements.length; ++j) {
 			var element = elements[j];
 			//console.log(element);
-			create_button(element);
+			create_button(element, color);
 		}
 	}
 }
