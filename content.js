@@ -53,27 +53,36 @@ function create_button(element) {
 	}, false);
 }
 
-// When the page is done loading, add a button to all the tags we care about
-window.addEventListener('load', function() {
-	has_loaded = true;
-
-	// Remove old buttons
+function remove_all_buttons() {
 	for (var i=0; i<canvases.length; ++i) {
 		var canvas = canvases[i];
 		document.body.removeChild(canvas);
 	}
 	canvases = [];
+}
 
-	// Add a new button to each element we care about
+function add_buttons_to_all_tags(parent_element) {
+	// Add a new button to the right bottom corner of each element
 	for (var i=0; i<TAGS.length; ++i) {
 		var tag = TAGS[i];
-		var elements = document.getElementsByTagName(tag);
+		var elements = parent_element.getElementsByTagName(tag);
 		for (var j=0; j<elements.length; ++j) {
 			var element = elements[j];
 			//console.log(element);
 			create_button(element);
 		}
 	}
+}
+
+// When the page is done loading, add a button to all the tags we care about
+window.addEventListener('load', function() {
+	has_loaded = true;
+
+	// Remove old buttons
+	remove_all_buttons();
+
+	// Add a new button to each element we care about
+	add_buttons_to_all_tags(document);
 
 	// When new tags we care about are created, add a button to them too
 	var observer = new MutationObserver(function (mutations) {
@@ -86,16 +95,8 @@ window.addEventListener('load', function() {
 					return;
 				}
 	 
-				// Look at each new tag
-				for (var j=0; j<TAGS.length; ++j) {
-					var tag = TAGS[j];
-					var elements = node.getElementsByTagName(tag);
-					for (var k=0; k<elements.length; ++k) {
-						var element = elements[k];
-						//console.log(element);
-						create_button(element);
-					}
-				}
+				// Add a new button to each element we care about
+				add_buttons_to_all_tags(node);
 			}
 		});
 	});
@@ -109,22 +110,10 @@ window.addEventListener('resize', function(event) {
 		return;
 
 	// Remove old buttons
-	for (var i=0; i<canvases.length; ++i) {
-		var canvas = canvases[i];
-		document.body.removeChild(canvas);
-	}
-	canvases = [];
+	remove_all_buttons();
 
-	// Add a new button to the right bottom corner of each element
-	for (var i=0; i<TAGS.length; ++i) {
-		var tag = TAGS[i];
-		var elements = document.getElementsByTagName(tag);
-		for (var j=0; j<elements.length; ++j) {
-			var element = elements[j];
-			//console.log(element);
-			create_button(element);
-		}
-	}
+	// Add a new button to each element we care about
+	add_buttons_to_all_tags(document);
 });
 
 
