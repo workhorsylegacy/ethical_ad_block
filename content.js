@@ -1,7 +1,7 @@
 // Copyright (c) 2015 Matthew Brennan Jones <matthew.brennan.jones@gmail.com>
 // This software is licensed under GPL v3 or later
 
-
+// FIXME: Add support for blocking links with css background-image styles
 var canvases = [];
 var BUTTON_SIZE = 15;
 var has_loaded = false;
@@ -40,20 +40,31 @@ function create_button(element, color) {
 	// Remove the element when the button is clicked
 	canvas.addEventListener('click', function() {
 		// Create a hash of the image and its src
-		if (element.tagName.toLowerCase() === 'img') {
-			var temp_canvas = document.createElement('canvas');
-			temp_canvas.width = element.width;
-			temp_canvas.height = element.height;
-			var ctx = temp_canvas.getContext('2d');
-			ctx.drawImage(element, 0, 0);
-			console.log('element.src: ' + element.src);
-			var data_url = temp_canvas.toDataURL();
-			var hash = hex_md5(element.outerHTML + data_url);
-			console.log(hash);
-		} else {
-			throw "FIXME: Add hashing of the '" + element.tagName.toLowerCase() + "' element.";
+		var hash = null;
+		switch (element.tagName.toLowerCase()) {
+			case 'img':
+				var temp_canvas = document.createElement('canvas');
+				temp_canvas.width = element.width;
+				temp_canvas.height = element.height;
+				var ctx = temp_canvas.getContext('2d');
+				ctx.drawImage(element, 0, 0);
+				console.log('element.src: ' + element.src);
+				var data_url = temp_canvas.toDataURL();
+				hash = hex_md5(element.outerHTML + data_url);
+				break;
+			case 'iframe':
+				var iframe_document = element.contentDocument;
+				var serializer = new XMLSerializer();
+				var content = serializer.serializeToString(iframe_document);
+				console.log(content);
+				//hash = hex_md5(element.outerHTML());
+				break;
+			default:
+				throw "FIXME: Add hashing of the '" + element.tagName.toLowerCase() + "' element.";
 		}
+		console.log(hash);
 
+		// Remove the element
 		document.body.removeChild(canvas);
 		var i = canvases.indexOf(canvas);
 		if (i != -1) {

@@ -27,6 +27,16 @@ function log_to_active_tab(message) {
 	});
 }
 
+chrome.webRequest.onHeadersReceived.addListener(function(details){
+	var responseHeaders = [];
+
+	responseHeaders.push({name: "Access-Control-Allow-Origin", value: "*"});
+
+	details.responseHeaders = details.responseHeaders.concat(responseHeaders);
+	console.log(details.responseHeaders);
+	return {responseHeaders: details.responseHeaders};
+},{ urls: ["<all_urls>"] }, ["responseHeaders"]);
+
 // Watch each request and block the ones that are in the black list
 chrome.webRequest.onBeforeRequest.addListener(function(info) {
 	if (active_url !== null) {
@@ -49,7 +59,7 @@ chrome.webRequest.onBeforeRequest.addListener(function(info) {
 	}
 
 	return {cancel: false};
-},{ urls: ["*://*/*"] }, ['blocking']);
+},{ urls: ["<all_urls>"] }, ['blocking']);
 
 
 // When the tab is ready, print all the log messages to its console
