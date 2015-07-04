@@ -46,7 +46,8 @@ function create_button(element, color) {
 			temp_canvas.height = element.height;
 			var ctx = temp_canvas.getContext('2d');
 			ctx.drawImage(element, 0, 0);
-			var data_url = temp_canvas.toDataURL('image/png');
+			console.log('element.src: ' + element.src);
+			var data_url = temp_canvas.toDataURL();
 			var hash = hex_md5(element.outerHTML + data_url);
 			console.log(hash);
 		} else {
