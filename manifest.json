@@ -17,7 +17,7 @@
 
 	"content_scripts": [{
 		"matches": ["*://*/*"],
-		"js":      ["content.js"]
+		"js":      ["content.js", "md5.js"]
 	}],
 
 	"background": {

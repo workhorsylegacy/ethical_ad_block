@@ -39,6 +39,20 @@ function create_button(element, color) {
 
 	// Remove the element when the button is clicked
 	canvas.addEventListener('click', function() {
+		// Create a hash of the image and its src
+		if (element.tagName.toLowerCase() === 'img') {
+			var temp_canvas = document.createElement('canvas');
+			temp_canvas.width = element.width;
+			temp_canvas.height = element.height;
+			var ctx = temp_canvas.getContext('2d');
+			ctx.drawImage(element, 0, 0);
+			var data_url = temp_canvas.toDataURL('image/png');
+			var hash = hex_md5(element.outerHTML + data_url);
+			console.log(hash);
+		} else {
+			throw "FIXME: Add hashing of the '" + element.tagName.toLowerCase() + "' element.";
+		}
+
 		document.body.removeChild(canvas);
 		var i = canvases.indexOf(canvas);
 		if (i != -1) {
@@ -74,7 +88,6 @@ function add_buttons_to_all_tags(parent_element) {
 		var elements = parent_element.getElementsByTagName(tag);
 		for (var j=0; j<elements.length; ++j) {
 			var element = elements[j];
-			//console.log(element);
 			create_button(element, color);
 		}
 	}
