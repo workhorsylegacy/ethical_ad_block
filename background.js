@@ -27,15 +27,29 @@ function log_to_active_tab(message) {
 	});
 }
 
-chrome.webRequest.onHeadersReceived.addListener(function(details){
-	var responseHeaders = [];
+chrome.webRequest.onHeadersReceived.addListener(function(details) {
+	// Add the new headers
+	var new_headers = [
+		{name: 'Access-Control-Allow-Origin', value: '*'},
+		{name: 'Access-Control-Allow-Headers', value: '*'},
+		{name: 'Access-Control-Allow-Methods', value: 'POST, GET, OPTIONS, DELETE, PUT'}
+	];
+	details.responseHeaders = new_headers.concat(details.responseHeaders);
 
-	responseHeaders.push({name: "Access-Control-Allow-Origin", value: "*"});
+	// Print all the headers
+	console.log(details.method + ', ' + details.url);
+	for (var i=0; i<details.responseHeaders.length; ++i) {
+		var responseHeader = details.responseHeaders[i];
+		//if (responseHeader['name'] === 'Access-Control-Allow-Origin') {
+			console.log('    ' + responseHeader['name'] + ' : ' + responseHeader['value']);
+		//}
+	}
 
-	details.responseHeaders = details.responseHeaders.concat(responseHeaders);
-	console.log(details.responseHeaders);
 	return {responseHeaders: details.responseHeaders};
-},{ urls: ["<all_urls>"] }, ["responseHeaders"]);
+},{
+	urls: ['<all_urls>'],
+	types : ["main_frame", "sub_frame", "stylesheet", "script", "image", "object", "xmlhttprequest", "other"]
+}, ['blocking', 'responseHeaders']);
 
 // Watch each request and block the ones that are in the black list
 chrome.webRequest.onBeforeRequest.addListener(function(info) {
@@ -59,7 +73,7 @@ chrome.webRequest.onBeforeRequest.addListener(function(info) {
 	}
 
 	return {cancel: false};
-},{ urls: ["<all_urls>"] }, ['blocking']);
+},{ urls: ['<all_urls>'] }, ['blocking']);
 
 
 // When the tab is ready, print all the log messages to its console
