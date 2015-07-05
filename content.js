@@ -39,18 +39,39 @@ function create_button(element, color) {
 
 	// Remove the element when the button is clicked
 	canvas.addEventListener('click', function() {
+		// Remove the button
+		document.body.removeChild(canvas);
+		var i = canvases.indexOf(canvas);
+		if (i != -1) {
+			canvases.splice(i, 1);
+		}
+
 		// Create a hash of the image and its src
 		var hash = null;
 		switch (element.tagName.toLowerCase()) {
 			case 'img':
-				var temp_canvas = document.createElement('canvas');
-				temp_canvas.width = element.width;
-				temp_canvas.height = element.height;
-				var ctx = temp_canvas.getContext('2d');
-				ctx.drawImage(element, 0, 0);
-				console.log('element.src: ' + element.src);
-				var data_url = temp_canvas.toDataURL();
-				hash = hex_md5(element.outerHTML + data_url);
+				// Hide the image
+				element.style.display = 'none';
+
+				// Copy the image to a cross origin safe one
+				// then hash and hide it
+				var img = new Image;
+				img.crossOrigin = 'Anonymous';
+				img.onload = function() {
+					// Create a hash of the image
+					var temp_canvas = document.createElement('canvas');
+					temp_canvas.width = img.width;
+					temp_canvas.height = img.height;
+					var ctx = temp_canvas.getContext('2d');
+					ctx.drawImage(img, 0, 0);
+					var data_url = temp_canvas.toDataURL();
+					hash = hex_md5(element.outerHTML + data_url);
+					console.log(hash);
+
+					// Remove the image
+					element.parentElement.removeChild(element);
+				};
+				img.src = element.src;
 				break;
 			case 'iframe':
 				var iframe_document = element.contentDocument;
@@ -62,15 +83,6 @@ function create_button(element, color) {
 			default:
 				throw "FIXME: Add hashing of the '" + element.tagName.toLowerCase() + "' element.";
 		}
-		console.log(hash);
-
-		// Remove the element
-		document.body.removeChild(canvas);
-		var i = canvases.indexOf(canvas);
-		if (i != -1) {
-			canvases.splice(i, 1);
-		}
-		element.parentElement.removeChild(element);
 	}, false);
 
 	// Give the element a border when the mouse hovers over the button

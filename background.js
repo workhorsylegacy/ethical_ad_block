@@ -27,7 +27,7 @@ function log_to_active_tab(message) {
 	});
 }
 
-chrome.webRequest.onHeadersReceived.addListener(function(details) {
+var header_listener = function(details) {
 	// Add the new headers
 	var new_headers = [
 		{name: 'Access-Control-Allow-Origin', value: '*'},
@@ -46,10 +46,15 @@ chrome.webRequest.onHeadersReceived.addListener(function(details) {
 	}
 
 	return {responseHeaders: details.responseHeaders};
-},{
-	urls: ['<all_urls>'],
-	types : ["main_frame", "sub_frame", "stylesheet", "script", "image", "object", "xmlhttprequest", "other"]
-}, ['blocking', 'responseHeaders']);
+}
+
+chrome.webRequest.onHeadersReceived.removeListener(header_listener);
+chrome.webRequest.onHeadersReceived.addListener(
+	header_listener,
+	{urls: ['<all_urls>']},
+	['blocking', 'responseHeaders']
+);
+
 
 // Watch each request and block the ones that are in the black list
 chrome.webRequest.onBeforeRequest.addListener(function(info) {
