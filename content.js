@@ -73,10 +73,17 @@ function create_button(element, color) {
 				img.src = element.src;
 				break;
 			case 'iframe':
+				// Hide the iframe
+				element.style.display = 'none';
+
 				// Wait for the hash to be sent back from the iframe
 				var get_iframe_hash = function(event) {
 					var hash = event.data;
 					console.log(hash);
+
+					// Remove the iframe
+					element.parentElement.removeChild(element);
+
 					window.removeEventListener('message', get_iframe_hash);
 				};
 				window.addEventListener('message', get_iframe_hash);
