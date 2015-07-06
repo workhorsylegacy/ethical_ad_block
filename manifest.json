@@ -15,11 +15,19 @@
 		"default_popup": "popup.html"
 	},
 
-	"content_scripts": [{
-		"matches": ["<all_urls>"],
-		"all_frames": true,
-		"js": ["content.js", "md5.js"]
-	}],
+	"content_scripts": [
+		{
+			"matches": ["<all_urls>"],
+			"run_at": "document_end",
+			"js": ["content.js", "md5.js"]
+		},
+		{
+			"matches": ["<all_urls>"],
+			"run_at": "document_end",
+			"all_frames": true,
+			"js": ["content_iframe.js", "md5.js"]
+		}
+	],
 
 	"background": {
 		"scripts": ["background.js"],

@@ -22,7 +22,7 @@ var active_url = null;
 
 function log_to_active_tab(message) {
 	chrome.tabs.query({active: true, currentWindow: true}, function(tabs) {
-		console.log(message);
+//		console.log(message);
 		chrome.tabs.sendMessage(tabs[0].id, {action: message}, function(response) {});
 	});
 }
@@ -37,11 +37,11 @@ var header_listener = function(details) {
 	details.responseHeaders = new_headers.concat(details.responseHeaders);
 
 	// Print all the headers
-	console.log(details.method + ', ' + details.url);
+//	console.log(details.method + ', ' + details.url);
 	for (var i=0; i<details.responseHeaders.length; ++i) {
 		var responseHeader = details.responseHeaders[i];
 		//if (responseHeader['name'] === 'Access-Control-Allow-Origin') {
-			console.log('    ' + responseHeader['name'] + ' : ' + responseHeader['value']);
+//			console.log('    ' + responseHeader['name'] + ' : ' + responseHeader['value']);
 		//}
 	}
 

@@ -13,7 +13,6 @@ var TAGS = {
 	'iframe' : 'red'
 };
 
-
 // Adds a close button to the bottom right of the element
 function create_button(element, color) {
 	var rect = element.getBoundingClientRect();
@@ -74,11 +73,14 @@ function create_button(element, color) {
 				img.src = element.src;
 				break;
 			case 'iframe':
-				var iframe_document = element.contentDocument;
-				var serializer = new XMLSerializer();
-				var content = serializer.serializeToString(iframe_document);
-				console.log(content);
-				//hash = hex_md5(element.outerHTML());
+				// Wait for the hash to be sent back from the iframe
+				var get_iframe_hash = function(event) {
+					var hash = event.data;
+					console.log(hash);
+					window.removeEventListener('message', get_iframe_hash);
+				};
+				window.addEventListener('message', get_iframe_hash);
+				element.contentWindow.postMessage('close_iframe', '*');
 				break;
 			default:
 				throw "FIXME: Add hashing of the '" + element.tagName.toLowerCase() + "' element.";
