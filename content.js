@@ -130,6 +130,7 @@ function create_button(element, color) {
 		get_screen_shot(function(image, dataURI) {
 			document.body.appendChild(image);
 
+			// Get a hash of the image
 			get_element_hash(element, function(hash) {
 				console.log(dataURI);
 				console.log(hash);
