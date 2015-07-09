@@ -23,7 +23,7 @@ var active_url = null;
 function log_to_active_tab(message) {
 	chrome.tabs.query({active: true, currentWindow: true}, function(tabs) {
 //		console.log(message);
-		chrome.tabs.sendMessage(tabs[0].id, {action: message}, function(response) {});
+		chrome.tabs.sendMessage(tabs[0].id, {action: 'log', data: message}, function(response) {});
 	});
 }
 
@@ -81,18 +81,34 @@ chrome.webRequest.onBeforeRequest.addListener(function(info) {
 },{ urls: ['<all_urls>'] }, ['blocking']);
 
 
-// When the tab is ready, print all the log messages to its console
+// When the tab is ready
 chrome.tabs.onUpdated.addListener(function (tabId, changeInfo, tab) {
 	active_url = tab.url;
 
 	if (changeInfo.status == 'complete') {
+		// Log messages to the tab's console
 		is_ready = true;
 		for (var i=0; i<messages.length; ++i) {
 			var message = messages[i];
 			log_to_active_tab(message);
 		}
-
 		messages = [];
+
+		// Screen capture the tab and send it to the tab's console
+		chrome.tabs.captureVisibleTab(
+			null,
+			{},
+			function(dataUrl) {
+				var message = {
+					action: 'screenshot',
+					data: dataUrl,
+					width: tab.width,
+					height: tab.height
+				};
+//				console.log(message);
+				chrome.tabs.sendMessage(tab.id, message, function(response) {});
+			}
+		);
 	} else {
 		is_ready = false;
 	}

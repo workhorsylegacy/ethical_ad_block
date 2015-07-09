@@ -13,6 +13,7 @@ var TAGS = {
 	'iframe' : 'red'
 };
 
+
 // Adds a close button to the bottom right of the element
 function create_button(element, color) {
 	var rect = element.getBoundingClientRect();
@@ -170,7 +171,29 @@ window.addEventListener('resize', function(event) {
 
 
 chrome.extension.onMessage.addListener(function(msg, sender, sendResponse) {
-	console.log(msg.action);
+	if (msg.action === 'log') {
+		console.log(msg.data);
+	} else if (msg.action === 'screenshot') {
+		var dataURI = msg.data;
+		var width = msg.width;
+		var height = msg.height;
+		console.log(dataURI);
+
+		var canvas = document.createElement('canvas');
+		canvas.width = width;
+		canvas.height = height;
+		var ctx = canvas.getContext('2d');
+
+		var image = new Image();
+		image.width = width;
+		image.height = height;
+		image.style.border = '5px solid green';
+		image.onload = function() {
+			ctx.drawImage(image, 0, 0);
+			document.body.appendChild(image);
+		};
+		image.src = dataURI;
+	}
 });
 	
 
