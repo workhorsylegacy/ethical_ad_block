@@ -13,7 +13,25 @@ var TAGS = {
 	'iframe' : 'red'
 };
 
-function get_screen_shot(cb) {
+function get_element_rect(element) {
+	var rect = element.getBoundingClientRect();
+	rect = {
+		bottom: rect.bottom,
+		height: rect.height,
+		left: rect.left,
+		right: rect.right,
+		top: rect.top,
+		width: rect.width
+	};
+	return rect;
+}
+
+function get_screen_shot(rect, cb) {
+	var message = {
+		action: 'screen_shot',
+		rect: rect
+	};
+
 	// Get a screen shot from the background script
 	var screen_shot = function(msg, sender, sendResponse) {
 		if (msg.action === 'screen_shot') {
@@ -21,27 +39,31 @@ function get_screen_shot(cb) {
 			chrome.runtime.onMessage.removeListener(screen_shot);
 
 			var dataURI = msg.data;
-			var width = msg.width;
-			var height = msg.height;
-
 			var canvas = document.createElement('canvas');
-			canvas.width = width;
-			canvas.height = height;
+			canvas.width = rect.width;
+			canvas.height = rect.height;
 			var ctx = canvas.getContext('2d');
 
 			var image = new Image();
-			image.width = width;
-			image.height = height;
-			image.style.border = '5px solid green';
+			image.width = rect.width;
+			image.height = rect.height;
 			image.onload = function() {
-				ctx.drawImage(image, 0, 0);
+				ctx.drawImage(
+					image,
+                    rect.left, rect.top,
+                    rect.width, rect.height,
+                    0, 0,
+                    rect.width, rect.height
+				);
+				image.onload = null;
+				image.src = canvas.toDataURL();
 				cb(image, dataURI);
 			};
 			image.src = dataURI;
 		}
 	};
 	chrome.runtime.onMessage.addListener(screen_shot);
-	chrome.runtime.sendMessage('screen_shot', function(response) {});
+	chrome.runtime.sendMessage(message, function(response) {});
 }
 
 function get_element_hash(element, cb) {
@@ -96,7 +118,7 @@ function get_element_hash(element, cb) {
 
 // Adds a close button to the bottom right of the element
 function create_button(element, color) {
-	var rect = element.getBoundingClientRect();
+	var rect = get_element_rect(element);
 
 	// Create a button over the bottom right of the element
 	var canvas = document.createElement('canvas');
@@ -126,16 +148,23 @@ function create_button(element, color) {
 			canvases.splice(i, 1);
 		}
 
-		// Get a screen shot from the background script
-		get_screen_shot(function(image, dataURI) {
-			document.body.appendChild(image);
+		// Remove the border around the element
+		element.style['border'] = '';
 
-			// Get a hash of the image
-			get_element_hash(element, function(hash) {
-				console.log(dataURI);
-				console.log(hash);
+		// Wait for the next set of DOM events, so the element's border will be removed
+		setTimeout(function() {
+			// Get a screen shot from the background script
+			rect = get_element_rect(element);
+			get_screen_shot(rect, function(image, dataURI) {
+				document.body.appendChild(image);
+
+				// Get a hash of the image
+				get_element_hash(element, function(hash) {
+					console.log(dataURI);
+					console.log(hash);
+				});
 			});
-		});
+		}, 100);
 
 	}, false);
 

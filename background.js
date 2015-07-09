@@ -77,7 +77,8 @@ chrome.webRequest.onBeforeRequest.addListener(function(info) {
 
 
 chrome.runtime.onMessage.addListener(function(msg, sender, sendResponse) {
-	if (msg === 'screen_shot') {
+	if (msg.action === 'screen_shot') {
+		var rect = msg.rect;
 		chrome.tabs.query({active: true, currentWindow: true}, function(tabs) {
 			var tab = tabs[0];
 
@@ -88,9 +89,7 @@ chrome.runtime.onMessage.addListener(function(msg, sender, sendResponse) {
 				function(dataUrl) {
 					var message = {
 						action: 'screen_shot',
-						data: dataUrl,
-						width: tab.width,
-						height: tab.height
+						data: dataUrl
 					};
 					chrome.tabs.sendMessage(tab.id, message, function(response) {});
 				}
