@@ -13,6 +13,86 @@ var TAGS = {
 	'iframe' : 'red'
 };
 
+function get_screen_shot(cb) {
+	// Get a screen shot from the background script
+	var screen_shot = function(msg, sender, sendResponse) {
+		if (msg.action === 'screen_shot') {
+			// Remove the handler for this callback
+			chrome.runtime.onMessage.removeListener(screen_shot);
+
+			var dataURI = msg.data;
+			var width = msg.width;
+			var height = msg.height;
+
+			var canvas = document.createElement('canvas');
+			canvas.width = width;
+			canvas.height = height;
+			var ctx = canvas.getContext('2d');
+
+			var image = new Image();
+			image.width = width;
+			image.height = height;
+			image.style.border = '5px solid green';
+			image.onload = function() {
+				ctx.drawImage(image, 0, 0);
+				cb(image, dataURI);
+			};
+			image.src = dataURI;
+		}
+	};
+	chrome.runtime.onMessage.addListener(screen_shot);
+	chrome.runtime.sendMessage('screen_shot', function(response) {});
+}
+
+function get_element_hash(element, cb) {
+	// Create a hash of the image and its src
+	var hash = null;
+	switch (element.tagName.toLowerCase()) {
+		case 'img':
+			// Hide the image
+			element.style.display = 'none';
+
+			// Copy the image to a cross origin safe one
+			// then hash and hide it
+			var img = new Image;
+			img.crossOrigin = 'Anonymous';
+			img.onload = function() {
+				// Create a hash of the image
+				var temp_canvas = document.createElement('canvas');
+				temp_canvas.width = img.width;
+				temp_canvas.height = img.height;
+				var ctx = temp_canvas.getContext('2d');
+				ctx.drawImage(img, 0, 0);
+				var data_url = temp_canvas.toDataURL();
+				hash = hex_md5(element.outerHTML + data_url);
+				cb(hash);
+
+				// Remove the image
+				element.parentElement.removeChild(element);
+			};
+			img.src = element.src;
+			break;
+		case 'iframe':
+			// Hide the iframe
+			element.style.display = 'none';
+
+			// Wait for the hash to be sent back from the iframe
+			var get_iframe_hash = function(event) {
+				var hash = event.data;
+				cb(hash);
+
+				// Remove the iframe
+				element.parentElement.removeChild(element);
+
+				window.removeEventListener('message', get_iframe_hash);
+			};
+			window.addEventListener('message', get_iframe_hash);
+			element.contentWindow.postMessage('close_iframe', '*');
+			break;
+		default:
+			throw "FIXME: Add hashing of the '" + element.tagName.toLowerCase() + "' element.";
+	}
+}
 
 // Adds a close button to the bottom right of the element
 function create_button(element, color) {
@@ -46,53 +126,16 @@ function create_button(element, color) {
 			canvases.splice(i, 1);
 		}
 
-		// Create a hash of the image and its src
-		var hash = null;
-		switch (element.tagName.toLowerCase()) {
-			case 'img':
-				// Hide the image
-				element.style.display = 'none';
+		// Get a screen shot from the background script
+		get_screen_shot(function(image, dataURI) {
+			document.body.appendChild(image);
 
-				// Copy the image to a cross origin safe one
-				// then hash and hide it
-				var img = new Image;
-				img.crossOrigin = 'Anonymous';
-				img.onload = function() {
-					// Create a hash of the image
-					var temp_canvas = document.createElement('canvas');
-					temp_canvas.width = img.width;
-					temp_canvas.height = img.height;
-					var ctx = temp_canvas.getContext('2d');
-					ctx.drawImage(img, 0, 0);
-					var data_url = temp_canvas.toDataURL();
-					hash = hex_md5(element.outerHTML + data_url);
-					console.log(hash);
+			get_element_hash(element, function(hash) {
+				console.log(dataURI);
+				console.log(hash);
+			});
+		});
 
-					// Remove the image
-					element.parentElement.removeChild(element);
-				};
-				img.src = element.src;
-				break;
-			case 'iframe':
-				// Hide the iframe
-				element.style.display = 'none';
-
-				// Wait for the hash to be sent back from the iframe
-				var get_iframe_hash = function(event) {
-					var hash = event.data;
-					console.log(hash);
-
-					// Remove the iframe
-					element.parentElement.removeChild(element);
-
-					window.removeEventListener('message', get_iframe_hash);
-				};
-				window.addEventListener('message', get_iframe_hash);
-				element.contentWindow.postMessage('close_iframe', '*');
-				break;
-			default:
-				throw "FIXME: Add hashing of the '" + element.tagName.toLowerCase() + "' element.";
-		}
 	}, false);
 
 	// Give the element a border when the mouse hovers over the button
@@ -170,29 +213,9 @@ window.addEventListener('resize', function(event) {
 });
 
 
-chrome.extension.onMessage.addListener(function(msg, sender, sendResponse) {
+chrome.runtime.onMessage.addListener(function(msg, sender, sendResponse) {
 	if (msg.action === 'log') {
 		console.log(msg.data);
-	} else if (msg.action === 'screenshot') {
-		var dataURI = msg.data;
-		var width = msg.width;
-		var height = msg.height;
-		console.log(dataURI);
-
-		var canvas = document.createElement('canvas');
-		canvas.width = width;
-		canvas.height = height;
-		var ctx = canvas.getContext('2d');
-
-		var image = new Image();
-		image.width = width;
-		image.height = height;
-		image.style.border = '5px solid green';
-		image.onload = function() {
-			ctx.drawImage(image, 0, 0);
-			document.body.appendChild(image);
-		};
-		image.src = dataURI;
 	}
 });
 	

@@ -16,6 +16,7 @@ var BLACKLIST = [
 	'cpmstar.com'
 ];
 
+
 var messages = [];
 var is_ready = false;
 var active_url = null;
@@ -81,6 +82,30 @@ chrome.webRequest.onBeforeRequest.addListener(function(info) {
 },{ urls: ['<all_urls>'] }, ['blocking']);
 
 
+chrome.runtime.onMessage.addListener(function(msg, sender, sendResponse) {
+	if (msg === 'screen_shot') {
+		chrome.tabs.query({active: true, currentWindow: true}, function(tabs) {
+			var tab = tabs[0];
+
+			// Screen capture the tab and send it to the tab's console
+			chrome.tabs.captureVisibleTab(
+				null,
+				{},
+				function(dataUrl) {
+					var message = {
+						action: 'screen_shot',
+						data: dataUrl,
+						width: tab.width,
+						height: tab.height
+					};
+					chrome.tabs.sendMessage(tab.id, message, function(response) {});
+				}
+			);
+		});
+	}
+});
+
+
 // When the tab is ready
 chrome.tabs.onUpdated.addListener(function (tabId, changeInfo, tab) {
 	active_url = tab.url;
@@ -93,22 +118,6 @@ chrome.tabs.onUpdated.addListener(function (tabId, changeInfo, tab) {
 			log_to_active_tab(message);
 		}
 		messages = [];
-
-		// Screen capture the tab and send it to the tab's console
-		chrome.tabs.captureVisibleTab(
-			null,
-			{},
-			function(dataUrl) {
-				var message = {
-					action: 'screenshot',
-					data: dataUrl,
-					width: tab.width,
-					height: tab.height
-				};
-//				console.log(message);
-				chrome.tabs.sendMessage(tab.id, message, function(response) {});
-			}
-		);
 	} else {
 		is_ready = false;
 	}
