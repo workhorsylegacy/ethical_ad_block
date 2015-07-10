@@ -150,9 +150,22 @@ function create_button(element, color) {
 	context.fill();
 	canvases.push(canvas);
 
+	// Give the element a border when the mouse hovers over the button
+	var mouse_enter = function() {
+		element.style['border'] = '10px solid ' + color;
+		console.log(element);
+	};
+
+	// Remove the border when the mouse stops hovering over the button
+	var mouse_leave = function() {
+		element.style['border'] = '';
+	};
+
 	// Remove the element when the button is clicked
 	canvas.addEventListener('click', function() {
 		// Remove the button
+		canvas.removeEventListener('mouseenter', mouse_enter);
+		canvas.removeEventListener('mouseleave', mouse_leave);
 		document.body.removeChild(canvas);
 		var i = canvases.indexOf(canvas);
 		if (i != -1) {
@@ -179,16 +192,9 @@ function create_button(element, color) {
 
 	}, false);
 
-	// Give the element a border when the mouse hovers over the button
-	canvas.addEventListener('mouseenter', function() {
-		element.style['border'] = '10px solid ' + color;
-		console.log(element);
-	}, false);
-
-	// Remove the border when the mouse stops hovering over the button
-	canvas.addEventListener('mouseleave', function() {
-		element.style['border'] = '';
-	}, false);
+	// Setup mouse events
+	canvas.addEventListener('mouseenter', mouse_enter, false);
+	canvas.addEventListener('mouseleave', mouse_leave, false);
 }
 
 function remove_all_buttons() {
