@@ -221,25 +221,44 @@ function add_buttons_to_all_tags(parent_element) {
 window.addEventListener('load', function() {
 	has_loaded = true;
 
+	// All the tags we care about will have a low opacity from the CSS
+	// So set the opacity to 1.0
+	for (var tag in TAGS) {
+		var elements = document.getElementsByTagName(tag);
+		for (var i=0; i<elements.length; ++i) {
+			var element = elements[i];
+			element.style.opacity = 1.0;
+		}
+	}
+
 	// Remove old buttons
 	remove_all_buttons();
 
 	// Add a new button to each element we care about
 	add_buttons_to_all_tags(document);
 
-	// When new tags we care about are created, add a button to them too
+	// When new tags we care about are created ...
 	var observer = new MutationObserver(function (mutations) {
 		mutations.forEach(function (mutation) {
+			// For each node ...
 			for (var i=0; i<mutation.addedNodes.length; ++i) {
 				var node = mutation.addedNodes[i];
+				var element_type = node.tagName.toLowerCase();
 
 				// Skip if not a function
 				if (typeof node.getElementsByTagName !== 'function') {
 					return;
 				}
-	 
-				// Add a new button to each element we care about
-				add_buttons_to_all_tags(node);
+
+				if (TAGS.hasOwnProperty(element_type)) {
+					// Set the opacity to 1.0
+					if (node && node.tagName) {
+						node.style.opacity = 1.0;
+					}
+
+					// Add a new button
+					add_buttons_to_all_tags(node);
+				}
 			}
 		});
 	});
