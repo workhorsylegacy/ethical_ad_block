@@ -111,6 +111,17 @@ function get_element_hash(element, cb) {
 			window.addEventListener('message', get_iframe_hash);
 			element.contentWindow.postMessage('close_iframe', '*');
 			break;
+		case 'embed':
+		case 'object':
+			// Hide the object
+			element.style.display = 'none';
+
+			hash = hex_md5(element.outerHTML);
+			cb(hash);
+
+			// Remove the object
+			element.parentElement.removeChild(element);
+			break;
 		default:
 			throw "FIXME: Add hashing of the '" + element.tagName.toLowerCase() + "' element.";
 	}
