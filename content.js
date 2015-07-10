@@ -243,21 +243,16 @@ window.addEventListener('load', function() {
 			// For each node ...
 			for (var i=0; i<mutation.addedNodes.length; ++i) {
 				var node = mutation.addedNodes[i];
-				var element_type = node.tagName.toLowerCase();
 
-				// Skip if not a function
-				if (typeof node.getElementsByTagName !== 'function') {
-					return;
-				}
-
-				if (TAGS.hasOwnProperty(element_type)) {
-					// Set the opacity to 1.0
-					if (node && node.tagName) {
+				if (node && node.tagName) {
+					var element_type = node.tagName.toLowerCase();
+					if (TAGS.hasOwnProperty(element_type)) {
+						// Set the opacity to 1.0
 						node.style.opacity = 1.0;
-					}
 
-					// Add a new button
-					add_buttons_to_all_tags(node);
+						// Add a new button
+						add_buttons_to_all_tags(node);
+					}
 				}
 			}
 		});
