@@ -15,6 +15,7 @@ var BLACKLIST = [
 	'exponential.com',
 	'cpmstar.com'
 ];
+BLACKLIST = [];
 
 
 var messages = [];

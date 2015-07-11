@@ -1,6 +1,7 @@
 // Copyright (c) 2015 Matthew Brennan Jones <matthew.brennan.jones@gmail.com>
 // This software is licensed under GPL v3 or later
 
+
 // FIXME: Add support for blocking links with css background-image styles
 var canvases = [];
 var BUTTON_SIZE = 15;
@@ -71,11 +72,8 @@ function get_element_hash(element, cb) {
 	var hash = null;
 	switch (element.tagName.toLowerCase()) {
 		case 'img':
-			// Hide the image
-			element.style.display = 'none';
-
 			// Copy the image to a cross origin safe one
-			// then hash and hide it
+			// then hash it
 			var img = new Image;
 			img.crossOrigin = 'Anonymous';
 			img.onload = function() {
@@ -88,39 +86,28 @@ function get_element_hash(element, cb) {
 				var data_url = temp_canvas.toDataURL();
 				hash = hex_md5(element.outerHTML + data_url);
 				cb(hash);
-
-				// Remove the image
-				element.parentElement.removeChild(element);
 			};
 			img.src = element.src;
 			break;
 		case 'iframe':
-			// Hide the iframe
-			element.style.display = 'none';
-
 			// Wait for the hash to be sent back from the iframe
 			var get_iframe_hash = function(event) {
-				var hash = event.data;
-				cb(hash);
+//				console.log(event);
+				if (event.data.message === 'hash_iframe_response') {
+//					console.log(event);
+					var hash = event.data;
+					cb(hash);
 
-				// Remove the iframe
-				element.parentElement.removeChild(element);
-
-				window.removeEventListener('message', get_iframe_hash);
+					window.removeEventListener('message', get_iframe_hash);
+				}
 			};
-			window.addEventListener('message', get_iframe_hash);
-			element.contentWindow.postMessage('close_iframe', '*');
+			window.addEventListener('message', get_iframe_hash, false);
+			element.contentWindow.postMessage('hash_iframe', '*');
 			break;
 		case 'embed':
 		case 'object':
-			// Hide the object
-			element.style.display = 'none';
-
 			hash = hex_md5(element.outerHTML);
 			cb(hash);
-
-			// Remove the object
-			element.parentElement.removeChild(element);
 			break;
 		default:
 			throw "FIXME: Add hashing of the '" + element.tagName.toLowerCase() + "' element.";
@@ -182,10 +169,16 @@ function create_button(element, color) {
 			get_screen_shot(rect, function(image, dataURI) {
 				document.body.appendChild(image);
 
-				// Get a hash of the image
+				// Hide the element
+				element.style.display = 'none';
+
+				// Get a hash of the element
 				get_element_hash(element, function(hash) {
 					console.log(dataURI);
 					console.log(hash);
+
+					// Remove the element
+					element.parentElement.removeChild(element);
 				});
 			});
 		}, 100);
@@ -222,12 +215,19 @@ window.addEventListener('load', function() {
 	has_loaded = true;
 
 	// All the tags we care about will have a low opacity from the CSS
-	// So set the opacity to 1.0
+	// So set the opacity to 1.0 if the tag is not black listed
 	for (var tag in TAGS) {
 		var elements = document.getElementsByTagName(tag);
 		for (var i=0; i<elements.length; ++i) {
-			var element = elements[i];
-			element.style.opacity = 1.0;
+			var node = elements[i];
+
+			// Get a hash of the element
+//			get_element_hash(node, function(hash) {
+//				console.log(hash);
+//				console.log(node);
+				// Set the opacity to 1.0
+				node.style.opacity = 1.0;
+//			});
 		}
 	}
 
@@ -237,21 +237,28 @@ window.addEventListener('load', function() {
 	// Add a new button to each element we care about
 	add_buttons_to_all_tags(document);
 
-	// When new tags we care about are created ...
+	// When new nodes are created ...
 	var observer = new MutationObserver(function (mutations) {
 		mutations.forEach(function (mutation) {
 			// For each node ...
 			for (var i=0; i<mutation.addedNodes.length; ++i) {
 				var node = mutation.addedNodes[i];
 
+				// If the node type is one we care about ...
 				if (node && node.tagName) {
 					var element_type = node.tagName.toLowerCase();
 					if (TAGS.hasOwnProperty(element_type)) {
-						// Set the opacity to 1.0
-						node.style.opacity = 1.0;
 
-						// Add a new button
-						add_buttons_to_all_tags(node);
+						// Get a hash of the element
+						get_element_hash(node, function(hash) {
+							console.log(hash);
+							console.log(node);
+							// Set the opacity to 1.0
+							node.style.opacity = 1.0;
+
+							// Add a new button
+							add_buttons_to_all_tags(node);
+						});
 					}
 				}
 			}
@@ -259,7 +266,7 @@ window.addEventListener('load', function() {
 	});
 	 
 	observer.observe(document, {childList: true, subtree: true});
-});
+}, false);
 
 // When the page resizes, add a button to all the tags we care about
 window.addEventListener('resize', function(event) {
@@ -271,7 +278,7 @@ window.addEventListener('resize', function(event) {
 
 	// Add a new button to each element we care about
 	add_buttons_to_all_tags(document);
-});
+}, false);
 
 
 chrome.runtime.onMessage.addListener(function(msg, sender, sendResponse) {
