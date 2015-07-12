@@ -6,6 +6,10 @@
 var canvases = [];
 var BUTTON_SIZE = 15;
 var has_loaded = false;
+var next_id = 0;
+var cb_table = {};
+var element_table = {};
+
 var TAGS = {
 	'img' : 'blue',
 	'video' : 'blue',
@@ -85,34 +89,61 @@ function get_element_hash(element, cb) {
 				ctx.drawImage(img, 0, 0);
 				var data_url = temp_canvas.toDataURL();
 				hash = hex_md5(element.outerHTML + data_url);
-				cb(hash);
+				cb(hash, element);
+			};
+			img.onerror = function() {
+				// Create a hash of the image
+				hash = hex_md5(element.outerHTML);
+				cb(hash, element);
 			};
 			img.src = element.src;
 			break;
 		case 'iframe':
-			// Wait for the hash to be sent back from the iframe
-			var get_iframe_hash = function(event) {
-//				console.log(event);
-				if (event.data.message === 'hash_iframe_response') {
-//					console.log(event);
-					var hash = event.data;
-					cb(hash);
-
-					window.removeEventListener('message', get_iframe_hash);
-				}
-			};
-			window.addEventListener('message', get_iframe_hash, false);
-			element.contentWindow.postMessage('hash_iframe', '*');
+///*
+			var serializer = new XMLSerializer();
+			var hash = serializer.serializeToString(element);
+//			console.log(hash);
+			cb(hash, element);
+//*/
+/*
+			var id = next_id;
+			next_id++;
+			cb_table[id] = cb;
+			element_table[id] = element;
+			var request = {message: 'hash_iframe', id: id};
+			console.log(request);
+			console.log(element.contentWindow.location);
+			element.contentWindow.postMessage(request, '*');
+*/
 			break;
 		case 'embed':
+			hash = hex_md5(element.outerHTML);
+			cb(hash, element);
+			break;
 		case 'object':
 			hash = hex_md5(element.outerHTML);
-			cb(hash);
+			cb(hash, element);
 			break;
 		default:
 			throw "FIXME: Add hashing of the '" + element.tagName.toLowerCase() + "' element.";
 	}
 }
+
+// Wait for the hash to be sent back from the iframes
+window.addEventListener('message', function(event) {
+//	console.log(event);
+	if (event.data.message === 'hash_iframe_response') {
+//		console.log(event);
+		var hash = event.data.hash;
+		var id = event.data.id;
+		var cb = cb_table[id];
+		var element = element_table[id];
+		cb(hash, element);
+		delete cb_table[id];
+		delete element_table[id];
+	}
+	return false;
+}, false);
 
 // Adds a close button to the bottom right of the element
 function create_button(element, color) {
@@ -173,12 +204,12 @@ function create_button(element, color) {
 				element.style.display = 'none';
 
 				// Get a hash of the element
-				get_element_hash(element, function(hash) {
-					console.log(dataURI);
-					console.log(hash);
+				get_element_hash(element, function(hash, node) {
+//					console.log(dataURI);
+//					console.log(hash);
 
 					// Remove the element
-					element.parentElement.removeChild(element);
+					node.parentElement.removeChild(node);
 				});
 			});
 		}, 100);
@@ -212,6 +243,7 @@ function add_buttons_to_all_tags(parent_element) {
 
 // When the page is done loading, add a button to all the tags we care about
 window.addEventListener('load', function() {
+//	console.log('???????????????????????????????? Event load ...');
 	has_loaded = true;
 
 	// All the tags we care about will have a low opacity from the CSS
@@ -220,14 +252,15 @@ window.addEventListener('load', function() {
 		var elements = document.getElementsByTagName(tag);
 		for (var i=0; i<elements.length; ++i) {
 			var node = elements[i];
+//			console.log(node);
 
 			// Get a hash of the element
-//			get_element_hash(node, function(hash) {
+			get_element_hash(node, function(hash, node) {
 //				console.log(hash);
 //				console.log(node);
 				// Set the opacity to 1.0
 				node.style.opacity = 1.0;
-//			});
+			});
 		}
 	}
 
@@ -250,9 +283,7 @@ window.addEventListener('load', function() {
 					if (TAGS.hasOwnProperty(element_type)) {
 
 						// Get a hash of the element
-						get_element_hash(node, function(hash) {
-							console.log(hash);
-							console.log(node);
+						get_element_hash(node, function(hash, node) {
 							// Set the opacity to 1.0
 							node.style.opacity = 1.0;
 
@@ -264,7 +295,7 @@ window.addEventListener('load', function() {
 			}
 		});
 	});
-	 
+
 	observer.observe(document, {childList: true, subtree: true});
 }, false);
 

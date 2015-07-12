@@ -5,10 +5,15 @@
 // If running in an iframe
 if (window.location !== window.parent.location) {
 	// Add a message event handler
+//	window.addEventListener('load', function() {
+//		console.log('!!!!!!!!!!!!!!!!!!!!!! Event iframe load ...');
 	window.addEventListener('message', function(event) {
-		console.log(event);
+//		console.log(event);
 		// Hashing the iframe
-		if (event.data === 'hash_iframe') {
+		if (event.data.message === 'hash_iframe') {
+//			console.log(event);
+			var id = event.data.id;
+
 			// Create a hash of the iframe
 			var serializer = new XMLSerializer();
 			var hash = serializer.serializeToString(document);
@@ -36,10 +41,11 @@ if (window.location !== window.parent.location) {
 					// post the hash back to the parent page
 					if (count_down < 1) {
 						hash = hex_md5(hash);
-						console.log(hash);
+//						console.log(hash);
 						var response = {
 							message: 'hash_iframe_response',
-							hash: hash
+							hash: hash,
+							id: id
 						};
 						window.parent.postMessage(response, '*');
 					}
@@ -52,10 +58,11 @@ if (window.location !== window.parent.location) {
 					// post the hash back to the parent page
 					if (count_down < 1) {
 						hash = hex_md5(hash);
-						console.log(hash);
+//						console.log(hash);
 						var response = {
 							message: 'hash_iframe_response',
-							hash: hash
+							hash: hash,
+							id: id
 						};
 						window.parent.postMessage(response, '*');
 					}
@@ -63,6 +70,8 @@ if (window.location !== window.parent.location) {
 				img.src = iframe_img.src;
 			}
 		}
+		return false;
 	}, false);
+//	}, false);
 }
 
