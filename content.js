@@ -10,12 +10,19 @@ var next_id = 0;
 var cb_table = {};
 var element_table = {};
 
-var TAGS = {
+var TAGS1 = {
 	'img' : 'blue',
 	'video' : 'blue',
 	'object' : 'yellow',
 	'embed' : 'yellow',
 	'iframe' : 'red'
+};
+
+var TAGS2 = {
+	'img' : 'blue',
+	'video' : 'blue',
+	'object' : 'yellow',
+	'embed' : 'yellow'
 };
 
 function get_element_rect(element) {
@@ -99,20 +106,11 @@ function get_element_hash(element, cb) {
 			img.src = element.src;
 			break;
 		case 'iframe':
-/*
-			var serializer = new XMLSerializer();
-			var hash = serializer.serializeToString(element);
-//			console.log(hash);
-			cb(hash, element);
-*/
-///*
 			var id = next_id++;
 			cb_table[id] = cb;
 			element_table[id] = element;
 			var request = {message: 'hash_iframe', id: id};
-			console.log(request);
 			element.contentWindow.postMessage(request, '*');
-//*/
 			break;
 		case 'embed':
 			hash = hex_md5(element.outerHTML);
@@ -127,33 +125,37 @@ function get_element_hash(element, cb) {
 	}
 }
 
-// Wait for the hash to be sent back from the iframes
+
 window.addEventListener('message', function(event) {
-//	console.log(event);
 	if (!event.data || !event.data.hasOwnProperty('message')) {
 		return;
 	}
 
+	// Wait for the iframe to tell us that it has loaded
 	if (event.data.message === 'iframe_loaded') {
-		// FIXME: We need a way to determine which iframe the messages come from
-		console.log(event);
-		if (node && node.tagName) {
-			var element_type = node.tagName.toLowerCase();
-			if (TAGS.hasOwnProperty(element_type)) {
-
-				// Get a hash of the element
-				get_element_hash(node, function(hash, node) {
-					// Set the opacity to 1.0
-					node.style.opacity = 1.0;
-					node.style.border = '1px solid blue';
-
-					// Add a new button
-					add_buttons_to_all_tags(node);
-				});
+		// Get the iframe
+		var iframes = document.getElementsByTagName('iframe');
+		var i = event.data.iframe_index;
+		var iframe_window = window.frames[i];
+		var node = null;
+		for (var j=0; j<iframes.length; ++j) {
+			if (iframes[j].contentWindow == iframe_window) {
+				node = iframes[j];
+				break;
 			}
 		}
+
+		// Get a hash of the element
+		get_element_hash(node, function(hash, node) {
+			// Set the opacity to 1.0
+			node.style.opacity = 1.0;
+			node.style.border = '1px solid blue';
+
+			// Add a new button
+			add_buttons_to_all_tags(node);
+		});
+	// Wait for the hash to be sent back from the iframes
 	} else if (event.data.message === 'hash_iframe_response') {
-		console.log(event);
 		var hash = event.data.hash;
 		var id = event.data.id;
 		var cb = cb_table[id];
@@ -225,7 +227,7 @@ function create_button(element, color) {
 				// Get a hash of the element
 				get_element_hash(element, function(hash, node) {
 //					console.log(dataURI);
-//					console.log(hash);
+					console.log(hash);
 
 					// Remove the element
 					node.parentElement.removeChild(node);
@@ -250,8 +252,8 @@ function remove_all_buttons() {
 
 function add_buttons_to_all_tags(parent_element) {
 	// Add a new button to the right bottom corner of each element
-	for (var tag in TAGS) {
-		var color = TAGS[tag];
+	for (var tag in TAGS1) {
+		var color = TAGS1[tag];
 		var elements = parent_element.getElementsByTagName(tag);
 		for (var j=0; j<elements.length; ++j) {
 			var element = elements[j];
@@ -262,12 +264,11 @@ function add_buttons_to_all_tags(parent_element) {
 
 // When the page is done loading, add a button to all the tags we care about
 window.addEventListener('load', function() {
-//	console.log('???????????????????????????????? Event load ...');
 	has_loaded = true;
-/*
+
 	// All the tags we care about will have a low opacity from the CSS
 	// So set the opacity to 1.0 if the tag is not black listed
-	for (var tag in TAGS) {
+	for (var tag in TAGS2) {
 		var elements = document.getElementsByTagName(tag);
 		for (var i=0; i<elements.length; ++i) {
 			var node = elements[i];
@@ -275,7 +276,7 @@ window.addEventListener('load', function() {
 
 			// Get a hash of the element
 			get_element_hash(node, function(hash, node) {
-//				console.log(hash);
+				console.log(hash);
 //				console.log(node);
 				// Set the opacity to 1.0
 				node.style.opacity = 1.0;
@@ -293,8 +294,6 @@ window.addEventListener('load', function() {
 	// When new nodes are created ...
 	var observer = new MutationObserver(function (mutations) {
 		mutations.forEach(function (mutation) {
-			console.log('!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!');
-			console.log(mutation);
 			// For each node ...
 			for (var i=0; i<mutation.addedNodes.length; ++i) {
 				var node = mutation.addedNodes[i];
@@ -302,13 +301,13 @@ window.addEventListener('load', function() {
 				// If the node type is one we care about ...
 				if (node && node.tagName) {
 					var element_type = node.tagName.toLowerCase();
-					if (TAGS.hasOwnProperty(element_type)) {
+					if (TAGS2.hasOwnProperty(element_type)) {
 
 						// Get a hash of the element
 						get_element_hash(node, function(hash, node) {
+							console.log(hash);
 							// Set the opacity to 1.0
 							node.style.opacity = 1.0;
-							node.style.border = '1px solid blue';
 
 							// Add a new button
 							add_buttons_to_all_tags(node);
@@ -320,7 +319,6 @@ window.addEventListener('load', function() {
 	});
 
 	observer.observe(document, {childList: true, subtree: true});
-*/
 }, false);
 
 // When the page resizes, add a button to all the tags we care about

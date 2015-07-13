@@ -2,24 +2,33 @@
 // This software is licensed under GPL v3 or later
 
 
-// If running in an iframe
-if (window.location !== window.parent.location) {
+// If running in an iframe, and not an iframe inside another iframe
+if (window.location !== window.parent.location && window.parent === window.top) {
+
+	// Tell the parent window that this iframe has loaded
 	window.addEventListener('load', function() {
-//		console.log('!!!!!!!!!!!!!!!!!!!!!! Event iframe load ...');
-		// Tell the parent window that this iframe has loaded
+
+		// Get the index of this iframe in the parent window
+		var iframe_index = -1;
+		for (var i=0; i<window.parent.frames.length; ++i) {
+			if (window.parent.frames[i] === window) {
+				iframe_index = i;
+				break;
+			}
+		}
+
 		var request = {
-			message: 'iframe_loaded'
+			message: 'iframe_loaded',
+			iframe_index: iframe_index
 		};
-		console.log(request);
 		window.parent.postMessage(request, '*');
 	}, false);
 
 	// Add a message event handler
 	window.addEventListener('message', function(event) {
-//		console.log(event);
 		// Hashing the iframe
 		if (event.data && event.data.hasOwnProperty('message') && event.data.message == 'hash_iframe') {
-			console.log(event);
+//			console.log(event);
 			var id = event.data.id;
 
 			// Create a hash of the iframe
@@ -38,7 +47,7 @@ if (window.location !== window.parent.location) {
 					hash: hash,
 					id: id
 				};
-				console.log(response);
+//				console.log(response);
 				window.parent.postMessage(response, '*');
 			}
 
@@ -70,7 +79,7 @@ if (window.location !== window.parent.location) {
 							hash: hash,
 							id: id
 						};
-						console.log(response);
+//						console.log(response);
 						window.parent.postMessage(response, '*');
 					}
 				};
@@ -88,7 +97,7 @@ if (window.location !== window.parent.location) {
 							hash: hash,
 							id: id
 						};
-						console.log(response);
+//						console.log(response);
 						window.parent.postMessage(response, '*');
 					}
 				};
