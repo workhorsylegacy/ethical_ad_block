@@ -31,23 +31,49 @@ function log_to_active_tab(message) {
 
 
 chrome.webRequest.onHeadersReceived.addListener(function(details) {
-	// Add the new headers
+	// New headers
 	var new_headers = [
 		{name: 'Access-Control-Allow-Origin', value: '*'},
 		{name: 'Access-Control-Allow-Headers', value: '*'},
 		{name: 'Access-Control-Allow-Methods', value: 'POST, GET, OPTIONS, DELETE, PUT'}
 	];
-	details.responseHeaders = new_headers.concat(details.responseHeaders);
 
-	// Print all the headers
-//	console.log(details.method + ', ' + details.url);
-	for (var i=0; i<details.responseHeaders.length; ++i) {
-		var responseHeader = details.responseHeaders[i];
-		//if (responseHeader['name'] === 'Access-Control-Allow-Origin') {
-//			console.log('    ' + responseHeader['name'] + ' : ' + responseHeader['value']);
-		//}
+	// Add the new headers
+	for (var i=0; i<new_headers.length; ++i) {
+		var new_header = new_headers[i];
+		var has_header = false;
+		// Update an existing header
+		for (var j=0; j<details.responseHeaders.length; ++j) {
+			var header = details.responseHeaders[j];
+			if (header.name.toLowerCase() === new_header.name.toLowerCase()) {
+				header.value = new_header.value;
+				has_header = true;
+			}
+		}
+		// Or add new header
+		if (! has_header) {
+			details.responseHeaders.push(new_header);
+		}
 	}
 
+	// Remove any X-Frame-Options headers
+	for (var i=0; i<details.responseHeaders.length; ++i) {
+		var header = details.responseHeaders[i];
+		if (header.name.toLowerCase() === 'x-frame-options') {
+			details.responseHeaders.splice(i, 1);
+		}
+	}
+
+/*
+	// Print all the headers
+	console.log(details.method + ', ' + details.url);
+	for (var i=0; i<details.responseHeaders.length; ++i) {
+		var responseHeader = details.responseHeaders[i];
+		if (responseHeader.name.toLowerCase() === 'x-frame-options') {
+			console.log('    ' + responseHeader.name + ' : ' + responseHeader.value);
+		}
+	}
+*/
 	return {responseHeaders: details.responseHeaders};
 }, { urls: ['<all_urls>'] }, ['blocking', 'responseHeaders']);
 

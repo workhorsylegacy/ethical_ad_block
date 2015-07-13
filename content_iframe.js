@@ -4,14 +4,22 @@
 
 // If running in an iframe
 if (window.location !== window.parent.location) {
-	// Add a message event handler
-//	window.addEventListener('load', function() {
+	window.addEventListener('load', function() {
 //		console.log('!!!!!!!!!!!!!!!!!!!!!! Event iframe load ...');
+		// Tell the parent window that this iframe has loaded
+		var request = {
+			message: 'iframe_loaded'
+		};
+		console.log(request);
+		window.parent.postMessage(request, '*');
+	}, false);
+
+	// Add a message event handler
 	window.addEventListener('message', function(event) {
 //		console.log(event);
 		// Hashing the iframe
-		if (event.data.message === 'hash_iframe') {
-//			console.log(event);
+		if (event.data && event.data.hasOwnProperty('message') && event.data.message == 'hash_iframe') {
+			console.log(event);
 			var id = event.data.id;
 
 			// Create a hash of the iframe
@@ -20,6 +28,21 @@ if (window.location !== window.parent.location) {
 			var imgs = document.getElementsByTagName('img');
 			var count_down = imgs.length;
 //			console.log(count_down);
+
+			// iframe has no images
+			if (imgs.length === 0) {
+				hash = hex_md5(hash);
+//				console.log(hash);
+				var response = {
+					message: 'hash_iframe_response',
+					hash: hash,
+					id: id
+				};
+				console.log(response);
+				window.parent.postMessage(response, '*');
+			}
+
+			// iframe has images
 			for (var i=0; i<imgs.length; ++i) {
 				var iframe_img = imgs[i];
 //				console.log(iframe_img.src);
@@ -47,6 +70,7 @@ if (window.location !== window.parent.location) {
 							hash: hash,
 							id: id
 						};
+						console.log(response);
 						window.parent.postMessage(response, '*');
 					}
 				};
@@ -64,14 +88,13 @@ if (window.location !== window.parent.location) {
 							hash: hash,
 							id: id
 						};
+						console.log(response);
 						window.parent.postMessage(response, '*');
 					}
 				};
 				img.src = iframe_img.src;
 			}
 		}
-		return false;
 	}, false);
-//	}, false);
 }
 
