@@ -113,9 +113,6 @@ function get_element_hash(element, cb) {
 			element.contentWindow.postMessage(request, '*');
 			break;
 		case 'embed':
-			hash = hex_md5(element.outerHTML);
-			cb(hash, element);
-			break;
 		case 'object':
 			hash = hex_md5(element.outerHTML);
 			cb(hash, element);
@@ -126,48 +123,10 @@ function get_element_hash(element, cb) {
 }
 
 
-window.addEventListener('message', function(event) {
-	if (!event.data || !event.data.hasOwnProperty('message')) {
-		return;
-	}
-
-	// Wait for the iframe to tell us that it has loaded
-	if (event.data.message === 'iframe_loaded') {
-		// Get the iframe
-		var iframes = document.getElementsByTagName('iframe');
-		var i = event.data.iframe_index;
-		var iframe_window = window.frames[i];
-		var node = null;
-		for (var j=0; j<iframes.length; ++j) {
-			if (iframes[j].contentWindow == iframe_window) {
-				node = iframes[j];
-				break;
-			}
-		}
-
-		// Get a hash of the element
-		get_element_hash(node, function(hash, node) {
-			// Set the opacity to 1.0
-			node.style.opacity = 1.0;
-			node.style.border = '1px solid blue';
-
-			// Add a new button
-			add_buttons_to_all_tags(node);
-		});
-	// Wait for the hash to be sent back from the iframes
-	} else if (event.data.message === 'hash_iframe_response') {
-		var hash = event.data.hash;
-		var id = event.data.id;
-		var cb = cb_table[id];
-		var element = element_table[id];
-		cb(hash, element);
-		delete cb_table[id];
-		delete element_table[id];
-	}
-}, false);
-
 // Adds a close button to the bottom right of the element
-function create_button(element, color) {
+function create_button(element) {
+	var tag = element.tagName.toLowerCase();
+	var color = TAGS1[tag];
 	var rect = get_element_rect(element);
 
 	// Create a button over the bottom right of the element
@@ -226,7 +185,6 @@ function create_button(element, color) {
 
 				// Get a hash of the element
 				get_element_hash(element, function(hash, node) {
-//					console.log(dataURI);
 					console.log(hash);
 
 					// Remove the element
@@ -253,14 +211,55 @@ function remove_all_buttons() {
 function add_buttons_to_all_tags(parent_element) {
 	// Add a new button to the right bottom corner of each element
 	for (var tag in TAGS1) {
-		var color = TAGS1[tag];
 		var elements = parent_element.getElementsByTagName(tag);
 		for (var j=0; j<elements.length; ++j) {
 			var element = elements[j];
-			create_button(element, color);
+			create_button(element);
 		}
 	}
 }
+
+
+window.addEventListener('message', function(event) {
+	if (!event.data || !event.data.hasOwnProperty('message')) {
+		return;
+	}
+
+	// Wait for the iframe to tell us that it has loaded
+	if (event.data.message === 'iframe_loaded') {
+		// Get the iframe
+		var iframes = document.getElementsByTagName('iframe');
+		var i = event.data.iframe_index;
+		var iframe_window = window.frames[i];
+		var node = null;
+		for (var j=0; j<iframes.length; ++j) {
+			if (iframes[j].contentWindow == iframe_window) {
+				node = iframes[j];
+				break;
+			}
+		}
+
+		// Get a hash of the element
+		get_element_hash(node, function(hash, node) {
+			// Set the opacity to 1.0
+			node.style.opacity = 1.0;
+			node.style.border = '5px solid blue';
+
+			// Add a new button
+			create_button(node);
+		});
+	// Wait for the hash to be sent back from the iframes
+	} else if (event.data.message === 'hash_iframe_response') {
+		var hash = event.data.hash;
+		var id = event.data.id;
+		var cb = cb_table[id];
+		var element = element_table[id];
+		cb(hash, element);
+		delete cb_table[id];
+		delete element_table[id];
+	}
+}, false);
+
 
 // When the page is done loading, add a button to all the tags we care about
 window.addEventListener('load', function() {
@@ -280,16 +279,13 @@ window.addEventListener('load', function() {
 //				console.log(node);
 				// Set the opacity to 1.0
 				node.style.opacity = 1.0;
-				node.style.border = '1px solid red';
+				node.style.border = '5px solid purple';
+
+				// Add a new button
+				create_button(node);
 			});
 		}
 	}
-
-	// Remove old buttons
-	remove_all_buttons();
-
-	// Add a new button to each element we care about
-	add_buttons_to_all_tags(document);
 
 	// When new nodes are created ...
 	var observer = new MutationObserver(function (mutations) {
@@ -308,9 +304,10 @@ window.addEventListener('load', function() {
 							console.log(hash);
 							// Set the opacity to 1.0
 							node.style.opacity = 1.0;
+							node.style.border = '5px solid green';
 
 							// Add a new button
-							add_buttons_to_all_tags(node);
+							create_button(node);
 						});
 					}
 				}
