@@ -5,11 +5,11 @@
 // FIXME: Add support for blocking links with css background-image styles
 var canvases = [];
 var BUTTON_SIZE = 15;
-var has_loaded = false;
-var next_id = 0;
-var cb_table = {};
-var element_table = {};
-var known_elements = {};
+var g_has_loaded = false;
+var g_next_id = 0;
+var g_cb_table = {};
+var g_element_table = {};
+var g_known_elements = {};
 
 var TAGS1 = {
 	'img' : 'blue',
@@ -107,9 +107,9 @@ function get_element_hash(element, cb) {
 			img.src = element.src;
 			break;
 		case 'iframe':
-			var id = next_id++;
-			cb_table[id] = cb;
-			element_table[id] = element;
+			var id = g_next_id++;
+			g_cb_table[id] = cb;
+			g_element_table[id] = element;
 			var request = {message: 'hash_iframe', id: id};
 			element.contentWindow.postMessage(request, '*');
 			break;
@@ -254,23 +254,23 @@ window.addEventListener('message', function(event) {
 	} else if (event.data.message === 'hash_iframe_response') {
 		var hash = event.data.hash;
 		var id = event.data.id;
-		var cb = cb_table[id];
-		var element = element_table[id];
+		var cb = g_cb_table[id];
+		var element = g_element_table[id];
 		cb(hash, element);
-		delete cb_table[id];
-		delete element_table[id];
+		delete g_cb_table[id];
+		delete g_element_table[id];
 	}
 }, false);
 
 
 // When the page is done loading, add a button to all the tags we care about
 window.addEventListener('load', function() {
-	has_loaded = true;
+	g_has_loaded = true;
 }, false);
 
 // When the page resizes, add a button to all the tags we care about
 window.addEventListener('resize', function(event) {
-	if (! has_loaded)
+	if (! g_has_loaded)
 		return;
 
 	// Remove old buttons
@@ -302,12 +302,12 @@ var show_all_tags_we_care_about = function() {
 				continue;
 
 			// Only look at elements that have not already been examined
-			if (! known_elements.hasOwnProperty(element.id)) {
+			if (! g_known_elements.hasOwnProperty(element.id)) {
 
 				// Element image has a source
 				// FIXME: Update this to work on non images
 				if (element.src && element.src.length > 0) {
-					known_elements[element.id] = 1;
+					g_known_elements[element.id] = 1;
 					console.log(element);
 
 					// Element's image has not loaded yet
