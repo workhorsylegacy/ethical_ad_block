@@ -2,7 +2,7 @@
 // This software is licensed under GPL v3 or later
 
 
-// FIXME: Add support for blocking links with css background-image styles
+
 var canvases = [];
 var BUTTON_SIZE = 15;
 var g_has_loaded = false;
@@ -12,6 +12,7 @@ var g_element_table = {};
 var g_known_elements = {};
 
 var TAGS1 = {
+	'a' : 'purple',
 	'img' : 'blue',
 	'video' : 'blue',
 	'object' : 'yellow',
@@ -20,6 +21,7 @@ var TAGS1 = {
 };
 
 var TAGS2 = {
+	'a' : 'purple',
 	'img' : 'blue',
 	'video' : 'blue',
 	'object' : 'yellow',
@@ -116,6 +118,7 @@ function get_element_hash(element, cb) {
 		case 'embed':
 		case 'object':
 		case 'video':
+		case 'a':
 			hash = hex_md5(element.outerHTML);
 			cb(hash, element);
 			break;
@@ -287,6 +290,21 @@ chrome.runtime.onMessage.addListener(function(msg, sender, sendResponse) {
 	}
 });
 
+function generate_random_id() {
+	// Get a 20 character id
+	var code_table = "0123456789ABCDEFGHIJKLMNOPQRSTUVWXYZ";
+	var id = [];
+	for (var i = 0; i < 20; ++i) {
+		// Get a random number between 0 and 35
+		var num = Math.floor((Math.random() * 36));
+
+		// Get the character that corresponds to the number
+		id.push(code_table[num]);
+	}
+
+	return id.join('');
+}
+
 // Keep looking at page elements, and ad buttons to ones that loaded
 var show_all_tags_we_care_about = function() {
 	console.log('called show_all_tags_we_care_about ...');
@@ -296,27 +314,63 @@ var show_all_tags_we_care_about = function() {
 		for (var i=0; i<elements.length; ++i) {
 			var element = elements[i];
 
-			// Skip elements that do not have ids
-			// FIXME: Add a randomly generated id, if there is none
-			if (element.id === undefined)
-				continue;
+			// If the element does not have an id, generate a random one
+			if (element.id === '' || element.id === undefined) {
+				element.id = generate_random_id();
+			}
 
 			// Only look at elements that have not already been examined
 			if (! g_known_elements.hasOwnProperty(element.id)) {
 
 				// Element image has a source
-				// FIXME: Update this to work on non images
-				if (element.src && element.src.length > 0) {
-					g_known_elements[element.id] = 1;
-					console.log(element);
+				switch (element.tagName.toLowerCase()) {
+					case 'img':
+						if (element.src && element.src.length > 0) {
+							g_known_elements[element.id] = 1;
+							console.log(element);
 
-					// Element's image has not loaded yet
-					if (element.clientWidth === 0) {
-						var load_cb = function(evt) {
-							var node = evt.path[0];
-							node.removeEventListener('load', load_cb);
+							// Element's image has not loaded yet
+							if (element.clientWidth === 0) {
+								var load_cb = function(evt) {
+									var node = evt.path[0];
+									node.removeEventListener('load', load_cb);
 
-							get_element_hash(node, function(hash, n) {
+									get_element_hash(node, function(hash, n) {
+										// Set the opacity to 1.0
+										n.style.opacity = 1.0;
+										n.style.border = '5px solid purple';
+
+										// Add a new button
+										create_button(n);
+									});
+								};
+
+								element.addEventListener('load', load_cb, false);
+							// Element's image has already loaded
+							} else {
+								var node = element;
+
+								get_element_hash(node, function(hash, n) {
+									// Set the opacity to 1.0
+									n.style.opacity = 1.0;
+									n.style.border = '5px solid purple';
+
+									// Add a new button
+									create_button(n);
+								});
+							}
+						}
+						break;
+					case 'a':
+						// Anchor has a background image
+						var bg = window.getComputedStyle(element)['background-image'];
+						if (bg && bg !== 'none' && bg.length > 0) {
+							g_known_elements[element.id] = 1;
+							console.log(element);
+							console.log(bg);
+
+							// FIXME: This does not hash the image
+							get_element_hash(element, function(hash, n) {
 								// Set the opacity to 1.0
 								n.style.opacity = 1.0;
 								n.style.border = '5px solid purple';
@@ -324,22 +378,16 @@ var show_all_tags_we_care_about = function() {
 								// Add a new button
 								create_button(n);
 							});
-						};
+						// Anchor does not have a background image
+						} else {
+							g_known_elements[element.id] = 1;
 
-						element.addEventListener('load', load_cb, false);
-					// Element's image has already loaded
-					} else {
-						var node = element;
-
-						get_element_hash(node, function(hash, n) {
 							// Set the opacity to 1.0
-							n.style.opacity = 1.0;
-							n.style.border = '5px solid purple';
-
-							// Add a new button
-							create_button(n);
-						});
-					}
+							element.style.opacity = 1.0;
+						}
+						break;
+					default:
+						console.log("FIXME: Add support for the '" + element.tagName.toLowerCase() + "' element.");
 				}
 			}
 		}
