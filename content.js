@@ -114,6 +114,7 @@ function get_element_hash(element, cb) {
 			break;
 		case 'embed':
 		case 'object':
+		case 'video':
 			hash = hex_md5(element.outerHTML);
 			cb(hash, element);
 			break;
@@ -264,7 +265,7 @@ window.addEventListener('message', function(event) {
 // When the page is done loading, add a button to all the tags we care about
 window.addEventListener('load', function() {
 	has_loaded = true;
-
+/*
 	// All the tags we care about will have a low opacity from the CSS
 	// So set the opacity to 1.0 if the tag is not black listed
 	for (var tag in TAGS2) {
@@ -290,6 +291,7 @@ window.addEventListener('load', function() {
 	// When new nodes are created ...
 	var observer = new MutationObserver(function (mutations) {
 		mutations.forEach(function (mutation) {
+			console.log(mutation);
 			// For each node ...
 			for (var i=0; i<mutation.addedNodes.length; ++i) {
 				var node = mutation.addedNodes[i];
@@ -315,7 +317,10 @@ window.addEventListener('load', function() {
 		});
 	});
 
-	observer.observe(document, {childList: true, subtree: true});
+	var config = {childList: true, subtree: true, attributes: true, characterData: true};
+	observer.observe(document, config);
+	console.log('observer running ...');
+*/
 }, false);
 
 // When the page resizes, add a button to all the tags we care about
@@ -336,8 +341,67 @@ chrome.runtime.onMessage.addListener(function(msg, sender, sendResponse) {
 		console.log(msg.data);
 	}
 });
-	
 
+// Add buttons to elements that have loaded before the document load event
+var known_elements = {};
+var show_all_tags_we_care_about = function() {
+	console.log('called show_all_tags_we_care_about ...');
 
+	for (var tag in TAGS2) {
+		var elements = document.getElementsByTagName(tag);
+		for (var i=0; i<elements.length; ++i) {
+			var element = elements[i];
 
+			// Skip elements that do not have ids
+			// FIXME: Add a randomly generated id, if there is none
+			if (element.id === undefined)
+				continue;
+
+			// Only look at elements that have not already been examined
+			if (! known_elements.hasOwnProperty(element.id)) {
+
+				// Element image has a source
+				// FIXME: Update this to work on non images
+				if (element.src && element.src.length > 0) {
+					known_elements[element.id] = 1;
+					console.log(element);
+
+					// Element's image has not loaded yet
+					if (element.clientWidth === 0) {
+						var load_cb = function(evt) {
+							var node = evt.path[0];
+							node.removeEventListener('load', load_cb);
+
+							get_element_hash(node, function(hash, n) {
+								// Set the opacity to 1.0
+								n.style.opacity = 1.0;
+								n.style.border = '5px solid purple';
+
+								// Add a new button
+								create_button(n);
+							});
+						};
+
+						element.addEventListener('load', load_cb, false);
+					// Element's image has already loaded
+					} else {
+						var node = element;
+
+						get_element_hash(node, function(hash, n) {
+							// Set the opacity to 1.0
+							n.style.opacity = 1.0;
+							n.style.border = '5px solid green';
+
+							// Add a new button
+							create_button(n);
+						});
+					}
+				}
+			}
+		}
+	}
+
+	setTimeout(show_all_tags_we_care_about, 500);
+};
+show_all_tags_we_care_about();
 
