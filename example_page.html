@@ -14,31 +14,23 @@
 	</head>
 	<body>
 		<h1>To run from a web server:<br />python -m http.server 8000</h1>
-		<img id="img_a" width="128" height="128" />
-		<img id="img_b" width="128" height="128" />
+		<img id="img_a" />
+		<img id="img_b" />
+		<iframe id="iframe_a"></iframe>
+		<iframe id="iframe_b"></iframe>
+		<br />
 		<img id="img_c" src="icon_128.png" />
 		<img id="img_d" src="icon_128.png" />
-		<!--
-		<iframe id="a"></iframe>
-		<iframe id="b"></iframe>
-		<iframe id="c"></iframe>
-		<iframe id="d"></iframe>
+		<iframe id="iframe_c" src="http://reddit.com"></iframe>
+		<iframe id="iframe_d" src="http://slashdot.org"></iframe>
 
-		<iframe id="e" src="http://planet.ubuntu.com"></iframe>
-		<iframe id="f" src="http://planet.fedoraproject.org"></iframe>
-		<iframe id="g" src="http://planet.gnome.org"></iframe>
-		<iframe id="h" src="http://planetkde.org"></iframe>
-		-->
 		<script>
 			window.addEventListener('load', function() {
 				document.getElementById('img_a').src = 'icon_128.png';
 				document.getElementById('img_b').src = 'icon_128.png';
-				/*
-				document.getElementById('a').src = 'http://reddit.com';
-				document.getElementById('b').src = 'http://slashdot.org';
-				document.getElementById('c').src = 'http://news.ycombinator.com';
-				document.getElementById('d').src = 'http://wikipedia.org';
-				*/
+
+				document.getElementById('iframe_a').src = 'http://news.ycombinator.com';
+				document.getElementById('iframe_b').src = 'http://wikipedia.org';
 			}, false);
 		</script>
 	</body>

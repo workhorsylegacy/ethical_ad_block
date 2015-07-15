@@ -9,6 +9,7 @@ var has_loaded = false;
 var next_id = 0;
 var cb_table = {};
 var element_table = {};
+var known_elements = {};
 
 var TAGS1 = {
 	'img' : 'blue',
@@ -244,7 +245,7 @@ window.addEventListener('message', function(event) {
 		get_element_hash(node, function(hash, node) {
 			// Set the opacity to 1.0
 			node.style.opacity = 1.0;
-			node.style.border = '5px solid blue';
+			node.style.border = '5px solid purple';
 
 			// Add a new button
 			create_button(node);
@@ -265,62 +266,6 @@ window.addEventListener('message', function(event) {
 // When the page is done loading, add a button to all the tags we care about
 window.addEventListener('load', function() {
 	has_loaded = true;
-/*
-	// All the tags we care about will have a low opacity from the CSS
-	// So set the opacity to 1.0 if the tag is not black listed
-	for (var tag in TAGS2) {
-		var elements = document.getElementsByTagName(tag);
-		for (var i=0; i<elements.length; ++i) {
-			var node = elements[i];
-//			console.log(node);
-
-			// Get a hash of the element
-			get_element_hash(node, function(hash, node) {
-				console.log(hash);
-//				console.log(node);
-				// Set the opacity to 1.0
-				node.style.opacity = 1.0;
-				node.style.border = '5px solid purple';
-
-				// Add a new button
-				create_button(node);
-			});
-		}
-	}
-
-	// When new nodes are created ...
-	var observer = new MutationObserver(function (mutations) {
-		mutations.forEach(function (mutation) {
-			console.log(mutation);
-			// For each node ...
-			for (var i=0; i<mutation.addedNodes.length; ++i) {
-				var node = mutation.addedNodes[i];
-
-				// If the node type is one we care about ...
-				if (node && node.tagName) {
-					var element_type = node.tagName.toLowerCase();
-					if (TAGS2.hasOwnProperty(element_type)) {
-
-						// Get a hash of the element
-						get_element_hash(node, function(hash, node) {
-							console.log(hash);
-							// Set the opacity to 1.0
-							node.style.opacity = 1.0;
-							node.style.border = '5px solid green';
-
-							// Add a new button
-							create_button(node);
-						});
-					}
-				}
-			}
-		});
-	});
-
-	var config = {childList: true, subtree: true, attributes: true, characterData: true};
-	observer.observe(document, config);
-	console.log('observer running ...');
-*/
 }, false);
 
 // When the page resizes, add a button to all the tags we care about
@@ -342,8 +287,7 @@ chrome.runtime.onMessage.addListener(function(msg, sender, sendResponse) {
 	}
 });
 
-// Add buttons to elements that have loaded before the document load event
-var known_elements = {};
+// Keep looking at page elements, and ad buttons to ones that loaded
 var show_all_tags_we_care_about = function() {
 	console.log('called show_all_tags_we_care_about ...');
 
@@ -390,7 +334,7 @@ var show_all_tags_we_care_about = function() {
 						get_element_hash(node, function(hash, n) {
 							// Set the opacity to 1.0
 							n.style.opacity = 1.0;
-							n.style.border = '5px solid green';
+							n.style.border = '5px solid purple';
 
 							// Add a new button
 							create_button(n);
