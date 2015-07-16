@@ -3,8 +3,8 @@
 
 
 
-var canvases = [];
 var BUTTON_SIZE = 15;
+var g_canvases = [];
 var g_has_loaded = false;
 var g_next_id = 0;
 var g_cb_table = {};
@@ -151,7 +151,7 @@ function create_button(element) {
 	context.rect(0, 0, BUTTON_SIZE, BUTTON_SIZE);
 	context.fillStyle = color;
 	context.fill();
-	canvases.push(canvas);
+	g_canvases.push(canvas);
 
 	// Give the element a border when the mouse hovers over the button
 	var mouse_enter = function() {
@@ -170,9 +170,9 @@ function create_button(element) {
 		canvas.removeEventListener('mouseenter', mouse_enter);
 		canvas.removeEventListener('mouseleave', mouse_leave);
 		document.body.removeChild(canvas);
-		var i = canvases.indexOf(canvas);
+		var i = g_canvases.indexOf(canvas);
 		if (i != -1) {
-			canvases.splice(i, 1);
+			g_canvases.splice(i, 1);
 		}
 
 		// Remove the border around the element
@@ -206,22 +206,12 @@ function create_button(element) {
 }
 
 function remove_all_buttons() {
-	for (var i=0; i<canvases.length; ++i) {
-		var canvas = canvases[i];
+	for (var i=0; i<g_canvases.length; ++i) {
+		var canvas = g_canvases[i];
 		document.body.removeChild(canvas);
 	}
-	canvases = [];
-}
-
-function add_buttons_to_all_tags(parent_element) {
-	// Add a new button to the right bottom corner of each element
-	for (var tag in TAGS1) {
-		var elements = parent_element.getElementsByTagName(tag);
-		for (var j=0; j<elements.length; ++j) {
-			var element = elements[j];
-			create_button(element);
-		}
-	}
+	g_canvases = [];
+	g_known_elements = [];
 }
 
 
@@ -280,7 +270,7 @@ window.addEventListener('resize', function(event) {
 	remove_all_buttons();
 
 	// Add a new button to each element we care about
-	add_buttons_to_all_tags(document);
+	check_elements_that_may_be_ads();
 }, false);
 
 
@@ -305,10 +295,8 @@ function generate_random_id() {
 	return id.join('');
 }
 
-// Keep looking at page elements, and ad buttons to ones that loaded
-var show_all_tags_we_care_about = function() {
-	console.log('called show_all_tags_we_care_about ...');
 
+function check_elements_that_may_be_ads() {
 	for (var tag in TAGS2) {
 		var elements = document.getElementsByTagName(tag);
 		for (var i=0; i<elements.length; ++i) {
@@ -392,8 +380,16 @@ var show_all_tags_we_care_about = function() {
 			}
 		}
 	}
+}
 
-	setTimeout(show_all_tags_we_care_about, 500);
+
+// Keep looking at page elements, and add buttons to ones that loaded
+var check_elements_loop = function() {
+//	console.log('called check_elements_loop ...');
+
+	check_elements_that_may_be_ads();
+
+	setTimeout(check_elements_loop, 500);
 };
-show_all_tags_we_care_about();
+check_elements_loop();
 
