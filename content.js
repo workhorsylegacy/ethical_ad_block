@@ -4,8 +4,6 @@
 
 
 var BUTTON_SIZE = 15;
-var g_canvases = [];
-var g_has_loaded = false;
 var g_next_id = 0;
 var g_cb_table = {};
 var g_element_table = {};
@@ -128,93 +126,6 @@ function get_element_hash(element, cb) {
 }
 
 
-// Adds a close button to the bottom right of the element
-function create_button(element) {
-	var tag = element.tagName.toLowerCase();
-	var color = TAGS1[tag];
-	var rect = get_element_rect(element);
-
-	// Create a button over the bottom right of the element
-	var canvas = document.createElement('canvas');
-	canvas.width = BUTTON_SIZE;
-	canvas.height = BUTTON_SIZE;
-	canvas.style.width = BUTTON_SIZE + 'px';
-	canvas.style.height = BUTTON_SIZE + 'px';
-	canvas.style.position = 'absolute';
-	canvas.style.left = rect.left + window.pageXOffset + (rect.width - BUTTON_SIZE) + 'px';
-	canvas.style.top = rect.top + window.pageYOffset + (rect.height - BUTTON_SIZE) + 'px';
-	canvas.style.zIndex = 100000;
-	document.body.appendChild(canvas);
-
-	// Make the button a color
-	var context = canvas.getContext('2d');
-	context.rect(0, 0, BUTTON_SIZE, BUTTON_SIZE);
-	context.fillStyle = color;
-	context.fill();
-	g_canvases.push(canvas);
-
-	// Give the element a border when the mouse hovers over the button
-	var mouse_enter = function() {
-		element.style['border'] = '10px solid ' + color;
-		console.log(element);
-	};
-
-	// Remove the border when the mouse stops hovering over the button
-	var mouse_leave = function() {
-		element.style['border'] = '';
-	};
-
-	// Remove the element when the button is clicked
-	canvas.addEventListener('click', function() {
-		// Remove the button
-		canvas.removeEventListener('mouseenter', mouse_enter);
-		canvas.removeEventListener('mouseleave', mouse_leave);
-		document.body.removeChild(canvas);
-		var i = g_canvases.indexOf(canvas);
-		if (i != -1) {
-			g_canvases.splice(i, 1);
-		}
-
-		// Remove the border around the element
-		element.style['border'] = '';
-
-		// Wait for the next set of DOM events, so the element's border will be removed
-		setTimeout(function() {
-			// Get a screen shot from the background script
-			rect = get_element_rect(element);
-			get_screen_shot(rect, function(image, dataURI) {
-				document.body.appendChild(image);
-
-				// Hide the element
-				element.style.display = 'none';
-
-				// Get a hash of the element
-				get_element_hash(element, function(hash, node) {
-					console.log(hash);
-
-					// Remove the element
-					node.parentElement.removeChild(node);
-				});
-			});
-		}, 100);
-
-	}, false);
-
-	// Setup mouse events
-	canvas.addEventListener('mouseenter', mouse_enter, false);
-	canvas.addEventListener('mouseleave', mouse_leave, false);
-}
-
-function remove_all_buttons() {
-	for (var i=0; i<g_canvases.length; ++i) {
-		var canvas = g_canvases[i];
-		document.body.removeChild(canvas);
-	}
-	g_canvases = [];
-	g_known_elements = [];
-}
-
-
 window.addEventListener('message', function(event) {
 	if (!event.data || !event.data.hasOwnProperty('message')) {
 		return;
@@ -239,9 +150,6 @@ window.addEventListener('message', function(event) {
 			// Set the opacity to 1.0
 			node.style.opacity = 1.0;
 			node.style.border = '5px solid purple';
-
-			// Add a new button
-			create_button(node);
 		});
 	// Wait for the hash to be sent back from the iframes
 	} else if (event.data.message === 'hash_iframe_response') {
@@ -253,24 +161,6 @@ window.addEventListener('message', function(event) {
 		delete g_cb_table[id];
 		delete g_element_table[id];
 	}
-}, false);
-
-
-// When the page is done loading, add a button to all the tags we care about
-window.addEventListener('load', function() {
-	g_has_loaded = true;
-}, false);
-
-// When the page resizes, add a button to all the tags we care about
-window.addEventListener('resize', function(event) {
-	if (! g_has_loaded)
-		return;
-
-	// Remove old buttons
-	remove_all_buttons();
-
-	// Add a new button to each element we care about
-	check_elements_that_may_be_ads();
 }, false);
 
 
@@ -293,6 +183,84 @@ function generate_random_id() {
 	}
 
 	return id.join('');
+}
+
+
+function create_button(element) {
+	// Add a button when the mouse is over the element
+	var mouse_enter = function(e) {
+		var node = e.path[0];
+		console.log(node);
+		var tag = node.tagName.toLowerCase();
+		var color = TAGS1[tag];
+		var rect = get_element_rect(node);
+
+		// Create a button over the bottom right of the element
+		var canvas = document.createElement('canvas');
+		canvas.width = BUTTON_SIZE;
+		canvas.height = BUTTON_SIZE;
+		canvas.style.width = BUTTON_SIZE + 'px';
+		canvas.style.height = BUTTON_SIZE + 'px';
+		canvas.style.position = 'absolute';
+		canvas.style.left = rect.left + window.pageXOffset + (rect.width - BUTTON_SIZE) + 'px';
+		canvas.style.top = rect.top + window.pageYOffset + (rect.height - BUTTON_SIZE) + 'px';
+		canvas.style.zIndex = 100000;
+		document.body.appendChild(canvas);
+
+		// Make the button a color
+		var context = canvas.getContext('2d');
+		context.rect(0, 0, BUTTON_SIZE, BUTTON_SIZE);
+		context.fillStyle = color;
+		context.fill();
+
+		// Connect the canvas to the element
+		node.canvas = canvas;
+		canvas.node = node;
+
+		// Remove the element when the button is clicked
+		canvas.addEventListener('click', function(e) {
+			var canvas = e.path[0];
+			var node = canvas.node;
+
+			// Remove the button
+			document.body.removeChild(canvas);
+
+			// Remove the border around the element
+			node.style['border'] = '';
+
+			// Wait for the next set of DOM events, so the element's border will be removed
+			setTimeout(function() {
+				// Get a screen shot from the background script
+				rect = get_element_rect(node);
+				get_screen_shot(rect, function(image, dataURI) {
+					document.body.appendChild(image);
+
+					// Hide the element
+					node.style.display = 'none';
+
+					// Get a hash of the element
+					get_element_hash(node, function(hash, node) {
+						console.log(hash);
+
+						// Remove the element
+						node.parentElement.removeChild(node);
+					});
+				});
+			}, 100);
+
+		}, false);
+	};
+
+	// Remove the button when the mouse leaves the element
+	var mouse_leave = function(e) {
+		var node = e.path[0];
+		console.log(node);
+		var canvas = node.canvas;
+		document.body.removeChild(canvas);
+	};
+
+	element.addEventListener('mouseenter', mouse_enter, false);
+	element.addEventListener('mouseout', mouse_leave, false);
 }
 
 
@@ -327,9 +295,6 @@ function check_elements_that_may_be_ads() {
 										// Set the opacity to 1.0
 										n.style.opacity = 1.0;
 										n.style.border = '5px solid purple';
-
-										// Add a new button
-										create_button(n);
 									});
 								};
 
@@ -342,11 +307,10 @@ function check_elements_that_may_be_ads() {
 									// Set the opacity to 1.0
 									n.style.opacity = 1.0;
 									n.style.border = '5px solid purple';
-
-									// Add a new button
-									create_button(n);
 								});
 							}
+
+							create_button(element);
 						}
 						break;
 					case 'a':
@@ -362,9 +326,6 @@ function check_elements_that_may_be_ads() {
 								// Set the opacity to 1.0
 								n.style.opacity = 1.0;
 								n.style.border = '5px solid purple';
-
-								// Add a new button
-								create_button(n);
 							});
 						// Anchor does not have a background image
 						} else {
@@ -373,6 +334,8 @@ function check_elements_that_may_be_ads() {
 							// Set the opacity to 1.0
 							element.style.opacity = 1.0;
 						}
+
+						create_button(element);
 						break;
 					default:
 						console.log("FIXME: Add support for the '" + element.tagName.toLowerCase() + "' element.");
