@@ -8,6 +8,8 @@ var g_next_id = 0;
 var g_cb_table = {};
 var g_element_table = {};
 var g_known_elements = {};
+var g_cursor_x = 0;
+var g_cursor_y = 0;
 
 var TAGS1 = {
 	'a' : 'purple',
@@ -186,11 +188,21 @@ function generate_random_id() {
 }
 
 
+document.addEventListener('mousemove', function(e) {
+	g_cursor_x = e.pageX;
+	g_cursor_y = e.pageY;
+}, false);
+
 function create_button(element) {
 	// Add a button when the mouse is over the element
 	var mouse_enter = function(e) {
 		var node = e.path[0];
-		console.log(node);
+
+		// Just return if there is already a canvas
+		if (node.canvas !== null && node.canvas !== undefined) {
+			return;
+		}
+
 		var tag = node.tagName.toLowerCase();
 		var color = TAGS1[tag];
 		var rect = get_element_rect(node);
@@ -217,13 +229,30 @@ function create_button(element) {
 		node.canvas = canvas;
 		canvas.node = node;
 
+		// Keep checking the mouse position. If it moves out of the element, remove the button
+		var rect_interval = setInterval(function() {
+			if (g_cursor_x < rect.left || g_cursor_x > rect.left + rect.width ||
+				g_cursor_y < rect.top || g_cursor_y > rect.top + rect.height) {
+				node.canvas = null;
+				document.body.removeChild(canvas);
+				clearInterval(rect_interval);
+				rect_interval = null;
+			}
+		}, 100);
+
 		// Remove the element when the button is clicked
 		canvas.addEventListener('click', function(e) {
 			var canvas = e.path[0];
 			var node = canvas.node;
 
 			// Remove the button
+			element.removeEventListener('mouseenter', mouse_enter);
+			node.canvas = null;
 			document.body.removeChild(canvas);
+			if (rect_interval) {
+				clearInterval(rect_interval);
+				rect_interval = null;
+			}
 
 			// Remove the border around the element
 			node.style['border'] = '';
@@ -251,16 +280,7 @@ function create_button(element) {
 		}, false);
 	};
 
-	// Remove the button when the mouse leaves the element
-	var mouse_leave = function(e) {
-		var node = e.path[0];
-		console.log(node);
-		var canvas = node.canvas;
-		document.body.removeChild(canvas);
-	};
-
 	element.addEventListener('mouseenter', mouse_enter, false);
-	element.addEventListener('mouseout', mouse_leave, false);
 }
 
 
@@ -319,7 +339,6 @@ function check_elements_that_may_be_ads() {
 						if (bg && bg !== 'none' && bg.length > 0) {
 							g_known_elements[element.id] = 1;
 							console.log(element);
-							console.log(bg);
 
 							// FIXME: This does not hash the image
 							get_element_hash(element, function(hash, n) {
