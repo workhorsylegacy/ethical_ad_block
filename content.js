@@ -231,8 +231,8 @@ function create_button(element) {
 
 		// Keep checking the mouse position. If it moves out of the element, remove the button
 		var rect_interval = setInterval(function() {
-			if (g_cursor_x < rect.left || g_cursor_x > rect.left + rect.width ||
-				g_cursor_y < rect.top || g_cursor_y > rect.top + rect.height) {
+			if (g_cursor_x < rect.left + window.pageXOffset || g_cursor_x > rect.left + window.pageXOffset + rect.width ||
+				g_cursor_y < rect.top + window.pageYOffset || g_cursor_y > rect.top + window.pageYOffset + rect.height) {
 				node.canvas = null;
 				document.body.removeChild(canvas);
 				clearInterval(rect_interval);
