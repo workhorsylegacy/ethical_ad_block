@@ -152,7 +152,7 @@ window.addEventListener('message', function(event) {
 		get_element_hash(node, function(hash, node) {
 			// Set the opacity to 1.0
 			node.style.opacity = 1.0;
-			node.style.border = '5px solid purple';
+			node.style.border = '5px solid red';
 		});
 	// Wait for the hash to be sent back from the iframes
 	} else if (event.data.message === 'hash_iframe_response') {
@@ -337,7 +337,7 @@ function check_elements_that_may_be_ads() {
 									get_element_hash(node, function(hash, n) {
 										// Set the opacity to 1.0
 										n.style.opacity = 1.0;
-										n.style.border = '5px solid purple';
+										n.style.border = '5px solid blue';
 									});
 								};
 
@@ -349,7 +349,7 @@ function check_elements_that_may_be_ads() {
 								get_element_hash(node, function(hash, n) {
 									// Set the opacity to 1.0
 									n.style.opacity = 1.0;
-									n.style.border = '5px solid purple';
+									n.style.border = '5px solid blue';
 								});
 							}
 
@@ -393,13 +393,21 @@ function check_elements_that_may_be_ads() {
 					// FIXME: None of these elements can be properly hashed yet
 					case 'object':
 					case 'embed':
+						g_known_elements[element.id] = 1;
+						console.log(element);
+
+						// Set the opacity to 1.0
+						element.style.opacity = 1.0;
+						element.style.border = '5px solid yellow';
+						create_button(element);
+						break;
 					case 'video':
 						g_known_elements[element.id] = 1;
 						console.log(element);
 
 						// Set the opacity to 1.0
 						element.style.opacity = 1.0;
-						element.style.border = '5px solid purple';
+						element.style.border = '5px solid blue';
 						create_button(element);
 						break;
 					default:
