@@ -27,9 +27,6 @@
 		<iframe id="iframe_c" src="http://reddit.com"></iframe>
 		<iframe id="iframe_d" src="http://slashdot.org"></iframe>
 
-		<h2>Link with CSS background image</h2>
-		<a href="http://google.com" style="background-image: url(icon_128.png); display: block; width: 128px; height: 128px;">http://google.com</a>
-
 		<h2>Object</h2>
 		<object data="icon_128.png"></object>
 
@@ -37,6 +34,24 @@
 		<video controls>
 			<source src="http://techslides.com/demos/sample-videos/small.webm">
 		</video>
+
+		<h2>Link with CSS background image</h2>
+		<a href="http://google.com" style="background-image: url(icon_128.png); display: block; width: 128px; height: 128px;">http://google.com</a>
+
+		<h2>Link around element</h2>
+		<a href="http://google.com" style="display: inline-block;">
+			<video controls>
+				<source src="http://techslides.com/demos/sample-videos/small.webm">
+			</video>
+		</a>
+		<a href="http://google.com" style="display: inline-block;">
+			<img id="img_z" src="icon_128.png" />
+		</a>
+		<a href="http://google.com" style="display: inline-block; width: 100px; height: 100px;">
+			<div style="padding: 20px; background-color: red; border: 5px solid black;">
+				A div inside a link
+			</div>
+		</a>
 
 		<script>
 			window.addEventListener('load', function() {

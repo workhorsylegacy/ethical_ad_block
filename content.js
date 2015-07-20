@@ -286,6 +286,16 @@ function create_button(element) {
 	element.addEventListener('mouseenter', mouse_enter, false);
 }
 
+function is_inside_link_element(element) {
+	var parent = element.parentElement;
+	while (parent) {
+		if (parent.tagName.toLowerCase() === 'a') {
+			return true;
+		}
+		parent = parent.parentElement;
+	}
+	return false;
+}
 
 function check_elements_that_may_be_ads() {
 	for (var tag in TAGS2) {
@@ -300,9 +310,19 @@ function check_elements_that_may_be_ads() {
 
 			// Only look at elements that have not already been examined
 			if (! g_known_elements.hasOwnProperty(element.id)) {
+				var name = element.tagName.toLowerCase();
+
+				// Skip the element if it is inside a link
+				if (name in TAGS2) {
+					if (is_inside_link_element(element)) {
+						g_known_elements[element.id] = 1;
+						element.style.opacity = 1.0;
+						continue;
+					}
+				}
 
 				// Element image has a source
-				switch (element.tagName.toLowerCase()) {
+				switch (name) {
 					case 'img':
 						if (element.src && element.src.length > 0) {
 							g_known_elements[element.id] = 1;
@@ -337,10 +357,11 @@ function check_elements_that_may_be_ads() {
 						}
 						break;
 					case 'a':
+						g_known_elements[element.id] = 1;
+
 						// Anchor has a background image
 						var bg = window.getComputedStyle(element)['background-image'];
 						if (bg && bg !== 'none' && bg.length > 0) {
-							g_known_elements[element.id] = 1;
 							console.log(element);
 
 							// FIXME: This does not hash the image
@@ -348,18 +369,28 @@ function check_elements_that_may_be_ads() {
 								// Set the opacity to 1.0
 								n.style.opacity = 1.0;
 								n.style.border = '5px solid purple';
-							});
-						// Anchor does not have a background image
-						} else {
-							g_known_elements[element.id] = 1;
 
+								create_button(n);
+							});
+						// Anchor has children
+						} else if (element.children.length > 0) {
+							console.log(element);
+
+							// FIXME: This does not hash the image
+							get_element_hash(element, function(hash, n) {
+								// Set the opacity to 1.0
+								n.style.opacity = 1.0;
+								n.style.border = '5px solid purple';
+
+								create_button(n);
+							});
+						// Anchor is just text
+						} else {
 							// Set the opacity to 1.0
 							element.style.opacity = 1.0;
 						}
-
-						create_button(element);
 						break;
-					// FIXME: None of these elements can be properly hashed
+					// FIXME: None of these elements can be properly hashed yet
 					case 'object':
 					case 'embed':
 					case 'video':
