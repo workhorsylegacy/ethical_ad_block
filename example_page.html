@@ -14,17 +14,29 @@
 	</head>
 	<body>
 		<h1>To run from a web server:<br />python -m http.server 8000</h1>
+
+		<h2>Elements loaded AFTER page load</h2>
 		<img id="img_a" />
 		<img id="img_b" />
 		<iframe id="iframe_a"></iframe>
 		<iframe id="iframe_b"></iframe>
-		<br />
+
+		<h2>Elements loaded BEFORE page load</h2>
 		<img id="img_c" src="icon_128.png" />
 		<img id="img_d" src="icon_128.png" />
 		<iframe id="iframe_c" src="http://reddit.com"></iframe>
 		<iframe id="iframe_d" src="http://slashdot.org"></iframe>
-		<br />
+
+		<h2>Link with CSS background image</h2>
 		<a href="http://google.com" style="background-image: url(icon_128.png); display: block; width: 128px; height: 128px;">http://google.com</a>
+
+		<h2>Object</h2>
+		<object data="icon_128.png"></object>
+
+		<h2>Video</h2>
+		<video controls>
+			<source src="http://techslides.com/demos/sample-videos/small.webm">
+		</video>
 
 		<script>
 			window.addEventListener('load', function() {

@@ -2,7 +2,7 @@
 // This software is licensed under GPL v3 or later
 
 
-
+// FIXME: Don't check elements that are inside links
 var BUTTON_SIZE = 15;
 var g_next_id = 0;
 var g_cb_table = {};
@@ -123,7 +123,7 @@ function get_element_hash(element, cb) {
 			cb(hash, element);
 			break;
 		default:
-			throw "FIXME: Add hashing of the '" + element.tagName.toLowerCase() + "' element.";
+			throw "Unexpected element '" + element.tagName.toLowerCase() + "' to hash.";
 	}
 }
 
@@ -162,6 +162,8 @@ window.addEventListener('message', function(event) {
 		cb(hash, element);
 		delete g_cb_table[id];
 		delete g_element_table[id];
+
+		create_button(element);
 	}
 }, false);
 
@@ -356,8 +358,19 @@ function check_elements_that_may_be_ads() {
 
 						create_button(element);
 						break;
+					case 'object':
+					case 'embed':
+					case 'video':
+						g_known_elements[element.id] = 1;
+						console.log(element);
+
+						// Set the opacity to 1.0
+						element.style.opacity = 1.0;
+						element.style.border = '5px solid purple';
+						create_button(element);
+						break;
 					default:
-						console.log("FIXME: Add support for the '" + element.tagName.toLowerCase() + "' element.");
+						throw "Unexpected element '" + element.tagName.toLowerCase() + "' to check for ads.";
 				}
 			}
 		}
