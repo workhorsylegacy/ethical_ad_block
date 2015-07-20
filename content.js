@@ -3,6 +3,7 @@
 
 
 // FIXME: Don't check elements that are inside links
+// FIXME: Don't check elements that are too small
 var BUTTON_SIZE = 15;
 var g_next_id = 0;
 var g_cb_table = {};
@@ -358,6 +359,7 @@ function check_elements_that_may_be_ads() {
 
 						create_button(element);
 						break;
+					// FIXME: None of these elements can be properly hashed
 					case 'object':
 					case 'embed':
 					case 'video':
