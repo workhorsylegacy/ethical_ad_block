@@ -29,6 +29,11 @@ var TAGS2 = {
 	'embed' : 'yellow'
 };
 
+var TAGS3 = {
+	'img' : 'blue',
+	'video' : 'blue'
+};
+
 function get_element_rect(element) {
 	var rect = element.getBoundingClientRect();
 	rect = {
@@ -297,6 +302,11 @@ function is_inside_link_element(element) {
 	return false;
 }
 
+function is_too_small(element) {
+	var rect = get_element_rect(element);
+	return (rect.width < 20 || rect.height < 20);
+}
+
 function check_elements_that_may_be_ads() {
 	for (var tag in TAGS2) {
 		var elements = document.getElementsByTagName(tag);
@@ -313,7 +323,7 @@ function check_elements_that_may_be_ads() {
 				var name = element.tagName.toLowerCase();
 
 				// Skip the element if it is inside a link
-				if (name in TAGS2) {
+				if (name in TAGS3) {
 					if (is_inside_link_element(element)) {
 						g_known_elements[element.id] = 1;
 						element.style.opacity = 1.0;
@@ -337,7 +347,12 @@ function check_elements_that_may_be_ads() {
 									get_element_hash(node, function(hash, n) {
 										// Set the opacity to 1.0
 										n.style.opacity = 1.0;
-										n.style.border = '5px solid blue';
+										if (! is_too_small(n)) {
+											n.style.border = '5px solid blue';
+											create_button(n);
+										} else {
+//											n.style.border = '5px solid green';
+										}
 									});
 								};
 
@@ -349,11 +364,14 @@ function check_elements_that_may_be_ads() {
 								get_element_hash(node, function(hash, n) {
 									// Set the opacity to 1.0
 									n.style.opacity = 1.0;
-									n.style.border = '5px solid blue';
+									if (! is_too_small(n)) {
+										n.style.border = '5px solid blue';
+										create_button(n);
+									} else {
+//										n.style.border = '5px solid green';
+									}
 								});
 							}
-
-							create_button(element);
 						}
 						break;
 					case 'a':
@@ -368,9 +386,12 @@ function check_elements_that_may_be_ads() {
 							get_element_hash(element, function(hash, n) {
 								// Set the opacity to 1.0
 								n.style.opacity = 1.0;
-								n.style.border = '5px solid purple';
-
-								create_button(n);
+								if (! is_too_small(n)) {
+									n.style.border = '5px solid purple';
+									create_button(n);
+								} else {
+//									n.style.border = '5px solid green';
+								}
 							});
 						// Anchor has children
 						} else if (element.children.length > 0) {
@@ -380,9 +401,12 @@ function check_elements_that_may_be_ads() {
 							get_element_hash(element, function(hash, n) {
 								// Set the opacity to 1.0
 								n.style.opacity = 1.0;
-								n.style.border = '5px solid purple';
-
-								create_button(n);
+								if (! is_too_small(n)) {
+									n.style.border = '5px solid purple';
+									create_button(n);
+								} else {
+//									n.style.border = '5px solid green';
+								}
 							});
 						// Anchor is just text
 						} else {
@@ -407,8 +431,12 @@ function check_elements_that_may_be_ads() {
 
 						// Set the opacity to 1.0
 						element.style.opacity = 1.0;
-						element.style.border = '5px solid blue';
-						create_button(element);
+						if (! is_too_small(element)) {
+							element.style.border = '5px solid blue';
+							create_button(element);
+						} else {
+//							element.style.border = '5px solid green';
+						}
 						break;
 					default:
 						throw "Unexpected element '" + element.tagName.toLowerCase() + "' to check for ads.";
