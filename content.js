@@ -36,12 +36,33 @@ function get_element_rect(element) {
 	var rect = element.getBoundingClientRect();
 	rect = {
 		bottom: rect.bottom,
-		height: rect.height,
+		top: rect.top,
 		left: rect.left,
 		right: rect.right,
-		top: rect.top,
-		width: rect.width
+		height: rect.height,
+		width: rect.width,
+		x: rect.x,
+		y: rect.y
 	};
+	return rect;
+}
+
+function get_element_rect_with_children(element) {
+	var rect = get_element_rect(element);
+	var cs = to_array(element.children);
+	while (cs.length > 0) {
+		var c = cs.pop();
+		var c_rect = get_element_rect(c);
+		if (c_rect.bottom > rect.bottom) rect.bottom = c_rect.bottom;
+		if (c_rect.top < rect.top) rect.top = c_rect.top;
+		if (c_rect.left < rect.left) rect.left = c_rect.left;
+		if (c_rect.right > rect.right) rect.right = c_rect.right;
+		if (c_rect.x < rect.x) rect.x = c_rect.x;
+		if (c_rect.y < rect.y) rect.y = c_rect.y;
+		rect.height = rect.bottom - rect.top;
+		rect.width = rect.right - rect.left;
+		cs = cs.concat(to_array(c.children));
+	}
 	return rect;
 }
 
@@ -245,15 +266,15 @@ function create_button(element, container_element) {
 
 			// Wait for the next set of DOM events, so the element's border will be removed
 			setTimeout(function() {
+				// If there is a container element, use that instead
+				if (container_element) {
+					node = container_element;
+				}
+
 				// Get a screen shot from the background script
-				rect = get_element_rect(node);
+				rect = get_element_rect_with_children(node);
 				get_screen_shot(rect, function(image, dataURI) {
 					document.body.appendChild(image);
-
-					// If there is a container element, remove that instead
-					if (container_element) {
-						node = container_element;
-					}
 
 					// Hide the element
 					node.style.display = 'none';
@@ -266,7 +287,7 @@ function create_button(element, container_element) {
 						node.parentElement.removeChild(node);
 					});
 				});
-			}, 100);
+			}, 300);
 
 		}, false);
 	};
