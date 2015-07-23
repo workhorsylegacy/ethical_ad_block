@@ -293,7 +293,7 @@ function is_too_small(element) {
 function to_array(obj) {
 	var retval = [];
 	for (var i=0; i<obj.length; ++i) {
-		retval.push(obj[0]);
+		retval.push(obj[i]);
 	}
 	return retval;
 }
