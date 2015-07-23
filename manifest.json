@@ -20,6 +20,7 @@
 			"matches": ["<all_urls>"],
 			"run_at": "document_start",
 			"all_frames": true,
+			"css": ["default_iframe.css"],
 			"js": ["content_iframe.js", "md5.js"]
 		},
 		{

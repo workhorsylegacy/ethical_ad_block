@@ -2,108 +2,44 @@
 // This software is licensed under GPL v3 or later
 
 
-// If running in an iframe, and not an iframe inside another iframe
-if (window.location !== window.parent.location && window.parent === window.top) {
 
-	// Tell the parent window that this iframe has loaded
-	window.addEventListener('load', function() {
-
-		// Get the index of this iframe in the parent window
-		var iframe_index = -1;
-		for (var i=0; i<window.parent.frames.length; ++i) {
-			if (window.parent.frames[i] === window) {
-				iframe_index = i;
-				break;
+window.addEventListener('message', function(event) {
+	if (event.data && event.data.message === 'show_iframe_parent') {
+		for (var i=0; i<window.frames.length; ++i) {
+			if (window.frames[i] === event.source) {
+				window.frames[i].frameElement.style.border = '5px solid red';
+				return;
 			}
 		}
+	} else if (event.data && event.data.message === 'show_iframe_body') {
+		// Make the iframe's body visible
+		window.document.body.style.opacity = 1.0;
 
+		// Send the iframe's parent the show iframe message
 		var request = {
-			message: 'iframe_loaded',
-			iframe_index: iframe_index
+			message: 'show_iframe_parent'
 		};
 		window.parent.postMessage(request, '*');
-	}, false);
+	}
+}, false);
 
-	// Add a message event handler
-	window.addEventListener('message', function(event) {
-		// Hashing the iframe
-		if (event.data && event.data.hasOwnProperty('message') && event.data.message == 'hash_iframe') {
-//			console.log(event);
-			var id = event.data.id;
 
-			// Create a hash of the iframe
-			var serializer = new XMLSerializer();
-			var hash = serializer.serializeToString(document);
-			var imgs = document.getElementsByTagName('img');
-			var count_down = imgs.length;
-//			console.log(count_down);
+// Tell the parent window that this iframe has loaded
+window.addEventListener('load', function() {
+	// If running in an iframe
+	if (window !== window.top) {
+		// Create a hash of the iframe
+		var serializer = new XMLSerializer();
+		var hash = serializer.serializeToString(document);
+		hash = hex_md5(hash);
 
-			// iframe has no images
-			if (imgs.length === 0) {
-				hash = hex_md5(hash);
-//				console.log(hash);
-				var response = {
-					message: 'hash_iframe_response',
-					hash: hash,
-					id: id
-				};
-//				console.log(response);
-				window.parent.postMessage(response, '*');
-			}
-
-			// iframe has images
-			for (var i=0; i<imgs.length; ++i) {
-				var iframe_img = imgs[i];
-//				console.log(iframe_img.src);
-				var img = new Image;
-				img.crossOrigin = 'Anonymous';
-				img.onload = function() {
-//					console.log('onload');
-					// Create a hash of the image
-					var temp_canvas = document.createElement('canvas');
-					temp_canvas.width = img.width;
-					temp_canvas.height = img.height;
-					var ctx = temp_canvas.getContext('2d');
-					ctx.drawImage(img, 0, 0);
-					var data_url = temp_canvas.toDataURL();
-					hash += iframe_img.outerHTML + data_url;
-					count_down -= 1;
-
-					// If this is the last image to load,
-					// post the hash back to the parent page
-					if (count_down < 1) {
-						hash = hex_md5(hash);
-//						console.log(hash);
-						var response = {
-							message: 'hash_iframe_response',
-							hash: hash,
-							id: id
-						};
-//						console.log(response);
-						window.parent.postMessage(response, '*');
-					}
-				};
-				img.onerror = function() {
-//					console.log('onerror');
-					count_down -= 1;
-
-					// If this is the last image to load,
-					// post the hash back to the parent page
-					if (count_down < 1) {
-						hash = hex_md5(hash);
-//						console.log(hash);
-						var response = {
-							message: 'hash_iframe_response',
-							hash: hash,
-							id: id
-						};
-//						console.log(response);
-						window.parent.postMessage(response, '*');
-					}
-				};
-				img.src = iframe_img.src;
-			}
-		}
-	}, false);
-}
-
+		// Send the top window the hash
+		var request = {
+			message: 'iframe_loaded',
+			hash: hash
+		};
+		window.top.postMessage(request, '*');
+	} else {
+//		window.document.body.style.opacity = 1.0;
+	}
+}, false);

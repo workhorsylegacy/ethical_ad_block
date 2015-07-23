@@ -11,8 +11,8 @@ video {
 	opacity: 0.2;
 }
 
-iframe {
-	opacity: 0.2;
+body {
+	opacity: 1.0;
 }
 
 object {

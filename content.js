@@ -115,11 +115,7 @@ function get_element_hash(element, cb) {
 			img.src = element.src;
 			break;
 		case 'iframe':
-			var id = g_next_id++;
-			g_cb_table[id] = cb;
-			g_element_table[id] = element;
-			var request = {message: 'hash_iframe', id: id};
-			element.contentWindow.postMessage(request, '*');
+			throw "Can't hash iframe";
 			break;
 		case 'embed':
 		case 'object':
@@ -135,41 +131,23 @@ function get_element_hash(element, cb) {
 
 
 window.addEventListener('message', function(event) {
-	if (!event.data || !event.data.hasOwnProperty('message')) {
-		return;
-	}
-
 	// Wait for the iframe to tell us that it has loaded
-	if (event.data.message === 'iframe_loaded') {
-		// Get the iframe
-		var iframes = document.getElementsByTagName('iframe');
-		var i = event.data.iframe_index;
-		var iframe_window = window.frames[i];
-		var node = null;
-		for (var j=0; j<iframes.length; ++j) {
-			if (iframes[j].contentWindow == iframe_window) {
-				node = iframes[j];
-				break;
+	if (event.data && event.data.message === 'iframe_loaded') {
+		// FIXME: Remove the iframe if the hash is in the black list
+		if (event.data.hash) {
+			try {
+				var element = event.source.frameElement;
+				create_button(element);
+			} catch (SecurityError) {
+				// pass
 			}
 		}
 
-		// Get a hash of the element
-		get_element_hash(node, function(hash, node) {
-			// Set the opacity to 1.0
-			node.style.opacity = 1.0;
-			node.style.border = '5px solid red';
-		});
-	// Wait for the hash to be sent back from the iframes
-	} else if (event.data.message === 'hash_iframe_response') {
-		var hash = event.data.hash;
-		var id = event.data.id;
-		var cb = g_cb_table[id];
-		var element = g_element_table[id];
-		cb(hash, element);
-		delete g_cb_table[id];
-		delete g_element_table[id];
-
-		create_button(element);
+		// Send the iframe window back the show iframe message
+		var request = {
+			message: 'show_iframe_body'
+		};
+		event.source.postMessage(request, '*');
 	}
 }, false);
 
