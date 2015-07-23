@@ -2,8 +2,6 @@
 // This software is licensed under GPL v3 or later
 
 
-// FIXME: Don't check elements that are inside links
-// FIXME: Don't check elements that are too small
 var BUTTON_SIZE = 15;
 var g_next_id = 0;
 var g_cb_table = {};
@@ -137,7 +135,7 @@ window.addEventListener('message', function(event) {
 		if (event.data.hash) {
 			try {
 				var element = event.source.frameElement;
-				create_button(element);
+				create_button(element, null);
 			} catch (SecurityError) {
 				// pass
 			}
@@ -179,7 +177,7 @@ document.addEventListener('mousemove', function(e) {
 	g_cursor_y = e.pageY;
 }, false);
 
-function create_button(element) {
+function create_button(element, container_element) {
 	// Add a button when the mouse is over the element
 	var mouse_enter = function(e) {
 		var node = e.path[0];
@@ -190,7 +188,7 @@ function create_button(element) {
 		}
 
 		var tag = node.tagName.toLowerCase();
-		var color = TAGS1[tag];
+		var color = TAGS1[(container_element ? container_element.tagName : node.tagName).toLowerCase()];
 		var rect = get_element_rect(node);
 
 		// Create a button over the bottom right of the element
@@ -214,6 +212,7 @@ function create_button(element) {
 		// Connect the canvas to the element
 		node.canvas = canvas;
 		canvas.node = node;
+		canvas.container_element = container_element;
 
 		// Keep checking the mouse position. If it moves out of the element, remove the button
 		var rect_interval = setInterval(function() {
@@ -230,6 +229,7 @@ function create_button(element) {
 		canvas.addEventListener('click', function(e) {
 			var canvas = e.path[0];
 			var node = canvas.node;
+			var container_element = canvas.container_element;
 
 			// Remove the button
 			element.removeEventListener('mouseenter', mouse_enter);
@@ -249,6 +249,11 @@ function create_button(element) {
 				rect = get_element_rect(node);
 				get_screen_shot(rect, function(image, dataURI) {
 					document.body.appendChild(image);
+
+					// If there is a container element, remove that instead
+					if (container_element) {
+						node = container_element;
+					}
 
 					// Hide the element
 					node.style.display = 'none';
@@ -285,6 +290,14 @@ function is_too_small(element) {
 	return (rect.width < 20 || rect.height < 20);
 }
 
+function to_array(obj) {
+	var retval = [];
+	for (var i=0; i<obj.length; ++i) {
+		retval.push(obj[0]);
+	}
+	return retval;
+}
+
 function check_elements_that_may_be_ads() {
 	for (var tag in TAGS2) {
 		var elements = document.getElementsByTagName(tag);
@@ -301,7 +314,7 @@ function check_elements_that_may_be_ads() {
 				var name = element.tagName.toLowerCase();
 
 				// Skip the element if it is inside a link
-				if (name in TAGS3) {
+				if (TAGS3.hasOwnProperty(name)) {
 					if (is_inside_link_element(element)) {
 						g_known_elements[element.id] = 1;
 						element.style.opacity = 1.0;
@@ -327,7 +340,7 @@ function check_elements_that_may_be_ads() {
 										n.style.opacity = 1.0;
 										if (! is_too_small(n)) {
 											n.style.border = '5px solid blue';
-											create_button(n);
+											create_button(n, null);
 										} else {
 //											n.style.border = '5px solid green';
 										}
@@ -344,7 +357,7 @@ function check_elements_that_may_be_ads() {
 									n.style.opacity = 1.0;
 									if (! is_too_small(n)) {
 										n.style.border = '5px solid blue';
-										create_button(n);
+										create_button(n, null);
 									} else {
 //										n.style.border = '5px solid green';
 									}
@@ -366,7 +379,7 @@ function check_elements_that_may_be_ads() {
 								n.style.opacity = 1.0;
 								if (! is_too_small(n)) {
 									n.style.border = '5px solid purple';
-									create_button(n);
+									create_button(n, null);
 								} else {
 //									n.style.border = '5px solid green';
 								}
@@ -375,15 +388,26 @@ function check_elements_that_may_be_ads() {
 						} else if (element.children.length > 0) {
 							console.log(element);
 
-							// FIXME: This does not hash the image
 							get_element_hash(element, function(hash, n) {
-								// Set the opacity to 1.0
+								// Add a button to the link
 								n.style.opacity = 1.0;
 								if (! is_too_small(n)) {
 									n.style.border = '5px solid purple';
-									create_button(n);
-								} else {
-//									n.style.border = '5px solid green';
+									create_button(n, null);
+								}
+
+								// Add buttons to any children that are big enough
+								var cs = to_array(n.children);
+								while (cs.length > 0) {
+									var c = cs.pop();
+									cs = cs.concat(to_array(c.children));
+									if (c.tagName.toLowerCase() in TAGS2) {
+										c.style.opacity = 1.0;
+										if (! is_too_small(c)) {
+											c.style.border = '5px solid purple';
+											create_button(c, n);
+										}
+									}
 								}
 							});
 						// Anchor is just text
@@ -401,7 +425,7 @@ function check_elements_that_may_be_ads() {
 						// Set the opacity to 1.0
 						element.style.opacity = 1.0;
 						element.style.border = '5px solid yellow';
-						create_button(element);
+						create_button(element, null);
 						break;
 					case 'video':
 						g_known_elements[element.id] = 1;
@@ -411,7 +435,7 @@ function check_elements_that_may_be_ads() {
 						element.style.opacity = 1.0;
 						if (! is_too_small(element)) {
 							element.style.border = '5px solid blue';
-							create_button(element);
+							create_button(element, null);
 						} else {
 //							element.style.border = '5px solid green';
 						}
