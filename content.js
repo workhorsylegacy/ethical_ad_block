@@ -401,7 +401,9 @@ function check_elements_that_may_be_ads() {
 								while (cs.length > 0) {
 									var c = cs.pop();
 									cs = cs.concat(to_array(c.children));
-									if (c.tagName.toLowerCase() in TAGS2) {
+									// If the child is a tag we care about, or it has a background image
+									var bg = window.getComputedStyle(c)['background-image'];
+									if (c.tagName.toLowerCase() in TAGS2 || bg && bg !== 'none' && bg.length > 0) {
 										c.style.opacity = 1.0;
 										if (! is_too_small(c)) {
 											c.style.border = '5px solid purple';
