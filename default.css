@@ -1,25 +1,31 @@
 
 a {
 	opacity: 0.2;
+	pointer-events: none;
 }
 
 img {
 	opacity: 0.2;
+	pointer-events: none;
 }
 
 video {
 	opacity: 0.2;
+	pointer-events: none;
 }
 
 body {
 	opacity: 1.0;
+	pointer-events: all;
 }
 
 object {
 	opacity: 0.2;
+	pointer-events: none;
 }
 
 embed {
 	opacity: 0.2;
+	pointer-events: none;
 }
 

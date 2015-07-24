@@ -339,6 +339,7 @@ function check_elements_that_may_be_ads() {
 					if (is_inside_link_element(element)) {
 						g_known_elements[element.id] = 1;
 						element.style.opacity = 1.0;
+						element.style.pointerEvents = 'all';
 						continue;
 					}
 				}
@@ -359,6 +360,7 @@ function check_elements_that_may_be_ads() {
 									get_element_hash(node, function(hash, n) {
 										// Set the opacity to 1.0
 										n.style.opacity = 1.0;
+										n.style.pointerEvents = 'all';
 										if (! is_too_small(n)) {
 											n.style.border = '5px solid blue';
 											create_button(n, null);
@@ -376,6 +378,7 @@ function check_elements_that_may_be_ads() {
 								get_element_hash(node, function(hash, n) {
 									// Set the opacity to 1.0
 									n.style.opacity = 1.0;
+									n.style.pointerEvents = 'all';
 									if (! is_too_small(n)) {
 										n.style.border = '5px solid blue';
 										create_button(n, null);
@@ -398,6 +401,7 @@ function check_elements_that_may_be_ads() {
 							get_element_hash(element, function(hash, n) {
 								// Set the opacity to 1.0
 								n.style.opacity = 1.0;
+								n.style.pointerEvents = 'all';
 								if (! is_too_small(n)) {
 									n.style.border = '5px solid purple';
 									create_button(n, null);
@@ -412,6 +416,7 @@ function check_elements_that_may_be_ads() {
 							get_element_hash(element, function(hash, n) {
 								// Add a button to the link
 								n.style.opacity = 1.0;
+								n.style.pointerEvents = 'all';
 								if (! is_too_small(n)) {
 									n.style.border = '5px solid purple';
 									create_button(n, null);
@@ -426,6 +431,7 @@ function check_elements_that_may_be_ads() {
 									var bg = window.getComputedStyle(c)['background-image'];
 									if (c.tagName.toLowerCase() in TAGS2 || bg && bg !== 'none' && bg.length > 0) {
 										c.style.opacity = 1.0;
+										c.style.pointerEvents = 'all';
 										if (! is_too_small(c)) {
 											c.style.border = '5px solid purple';
 											create_button(c, n);
@@ -437,6 +443,7 @@ function check_elements_that_may_be_ads() {
 						} else {
 							// Set the opacity to 1.0
 							element.style.opacity = 1.0;
+							element.style.pointerEvents = 'all';
 						}
 						break;
 					// FIXME: None of these elements can be properly hashed yet
@@ -447,6 +454,7 @@ function check_elements_that_may_be_ads() {
 
 						// Set the opacity to 1.0
 						element.style.opacity = 1.0;
+						element.style.pointerEvents = 'all';
 						element.style.border = '5px solid yellow';
 						create_button(element, null);
 						break;
@@ -456,6 +464,7 @@ function check_elements_that_may_be_ads() {
 
 						// Set the opacity to 1.0
 						element.style.opacity = 1.0;
+						element.style.pointerEvents = 'all';
 						if (! is_too_small(element)) {
 							element.style.border = '5px solid blue';
 							create_button(element, null);
