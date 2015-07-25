@@ -7,7 +7,10 @@ window.addEventListener('message', function(event) {
 	if (event.data && event.data.message === 'show_iframe_parent') {
 		for (var i=0; i<window.frames.length; ++i) {
 			if (window.frames[i] === event.source) {
-				window.frames[i].frameElement.style.border = '5px solid red';
+				var frame = window.frames[i].frameElement;
+				frame.style.opacity = 1.0;
+				frame.style.pointerEvents = 'all';
+				frame.style.border = '5px solid red';
 				return;
 			}
 		}
