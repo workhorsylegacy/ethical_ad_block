@@ -136,6 +136,7 @@ function get_element_hash(element, cb) {
 		case 'iframe':
 			throw "Can't hash iframe";
 			break;
+		// FIXME: video, object, and embed can NOT be properly hashed yet
 		case 'embed':
 		case 'object':
 		case 'video':
@@ -319,6 +320,10 @@ function to_array(obj) {
 	return retval;
 }
 
+function is_ad(hash) {
+	return false;
+}
+
 function check_elements_that_may_be_ads() {
 	for (var tag in TAGS2) {
 		var elements = document.getElementsByTagName(tag);
@@ -358,14 +363,18 @@ function check_elements_that_may_be_ads() {
 									node.removeEventListener('load', load_cb);
 
 									get_element_hash(node, function(hash, n) {
-										// Set the opacity to 1.0
-										n.style.opacity = 1.0;
-										n.style.pointerEvents = 'all';
-										if (! is_too_small(n)) {
-											n.style.border = '5px solid blue';
-											create_button(n, null);
+										if (is_ad(hash)) {
+											document.body.removeChild(n);
 										} else {
-//											n.style.border = '5px solid green';
+											// Set the opacity to 1.0
+											n.style.opacity = 1.0;
+											n.style.pointerEvents = 'all';
+											if (! is_too_small(n)) {
+												n.style.border = '5px solid blue';
+												create_button(n, null);
+											} else {
+	//											n.style.border = '5px solid green';
+											}
 										}
 									});
 								};
@@ -376,14 +385,18 @@ function check_elements_that_may_be_ads() {
 								var node = element;
 
 								get_element_hash(node, function(hash, n) {
-									// Set the opacity to 1.0
-									n.style.opacity = 1.0;
-									n.style.pointerEvents = 'all';
-									if (! is_too_small(n)) {
-										n.style.border = '5px solid blue';
-										create_button(n, null);
+									if (is_ad(hash)) {
+										document.body.removeChild(n);
 									} else {
-//										n.style.border = '5px solid green';
+										// Set the opacity to 1.0
+										n.style.opacity = 1.0;
+										n.style.pointerEvents = 'all';
+										if (! is_too_small(n)) {
+											n.style.border = '5px solid blue';
+											create_button(n, null);
+										} else {
+	//										n.style.border = '5px solid green';
+										}
 									}
 								});
 							}
@@ -399,14 +412,18 @@ function check_elements_that_may_be_ads() {
 
 							// FIXME: This does not hash the image
 							get_element_hash(element, function(hash, n) {
-								// Set the opacity to 1.0
-								n.style.opacity = 1.0;
-								n.style.pointerEvents = 'all';
-								if (! is_too_small(n)) {
-									n.style.border = '5px solid purple';
-									create_button(n, null);
+								if (is_ad(hash)) {
+									document.body.removeChild(n);
 								} else {
-//									n.style.border = '5px solid green';
+									// Set the opacity to 1.0
+									n.style.opacity = 1.0;
+									n.style.pointerEvents = 'all';
+									if (! is_too_small(n)) {
+										n.style.border = '5px solid purple';
+										create_button(n, null);
+									} else {
+	//									n.style.border = '5px solid green';
+									}
 								}
 							});
 						// Anchor has children
@@ -414,27 +431,31 @@ function check_elements_that_may_be_ads() {
 							console.log(element);
 
 							get_element_hash(element, function(hash, n) {
-								// Add a button to the link
-								n.style.opacity = 1.0;
-								n.style.pointerEvents = 'all';
-								if (! is_too_small(n)) {
-									n.style.border = '5px solid purple';
-									create_button(n, null);
-								}
+								if (is_ad(hash)) {
+									document.body.removeChild(n);
+								} else {
+									// Add a button to the link
+									n.style.opacity = 1.0;
+									n.style.pointerEvents = 'all';
+									if (! is_too_small(n)) {
+										n.style.border = '5px solid purple';
+										create_button(n, null);
+									}
 
-								// Add buttons to any children that are big enough
-								var cs = to_array(n.children);
-								while (cs.length > 0) {
-									var c = cs.pop();
-									cs = cs.concat(to_array(c.children));
-									// If the child is a tag we care about, or it has a background image
-									var bg = window.getComputedStyle(c)['background-image'];
-									if (c.tagName.toLowerCase() in TAGS2 || bg && bg !== 'none' && bg.length > 0) {
-										c.style.opacity = 1.0;
-										c.style.pointerEvents = 'all';
-										if (! is_too_small(c)) {
-											c.style.border = '5px solid purple';
-											create_button(c, n);
+									// Add buttons to any children that are big enough
+									var cs = to_array(n.children);
+									while (cs.length > 0) {
+										var c = cs.pop();
+										cs = cs.concat(to_array(c.children));
+										// If the child is a tag we care about, or it has a background image
+										var bg = window.getComputedStyle(c)['background-image'];
+										if (c.tagName.toLowerCase() in TAGS2 || bg && bg !== 'none' && bg.length > 0) {
+											c.style.opacity = 1.0;
+											c.style.pointerEvents = 'all';
+											if (! is_too_small(c)) {
+												c.style.border = '5px solid purple';
+												create_button(c, n);
+											}
 										}
 									}
 								}
@@ -446,31 +467,42 @@ function check_elements_that_may_be_ads() {
 							element.style.pointerEvents = 'all';
 						}
 						break;
-					// FIXME: None of these elements can be properly hashed yet
 					case 'object':
 					case 'embed':
 						g_known_elements[element.id] = 1;
 						console.log(element);
 
-						// Set the opacity to 1.0
-						element.style.opacity = 1.0;
-						element.style.pointerEvents = 'all';
-						element.style.border = '5px solid yellow';
-						create_button(element, null);
+						get_element_hash(element, function(hash, n) {
+							if (is_ad(hash)) {
+								document.body.removeChild(n);
+							} else {
+								// Set the opacity to 1.0
+								n.style.opacity = 1.0;
+								n.style.pointerEvents = 'all';
+								n.style.border = '5px solid yellow';
+								create_button(n, null);
+							}
+						});
 						break;
 					case 'video':
 						g_known_elements[element.id] = 1;
 						console.log(element);
 
-						// Set the opacity to 1.0
-						element.style.opacity = 1.0;
-						element.style.pointerEvents = 'all';
-						if (! is_too_small(element)) {
-							element.style.border = '5px solid blue';
-							create_button(element, null);
-						} else {
-//							element.style.border = '5px solid green';
-						}
+						get_element_hash(element, function(hash, n) {
+							if (is_ad(n)) {
+								document.body.removeChild(n);
+							} else {
+								// Set the opacity to 1.0
+								n.style.opacity = 1.0;
+								n.style.pointerEvents = 'all';
+								if (! is_too_small(n)) {
+									n.style.border = '5px solid blue';
+									create_button(n, null);
+								} else {
+		//							n.style.border = '5px solid green';
+								}
+							}
+						});
 						break;
 					default:
 						throw "Unexpected element '" + element.tagName.toLowerCase() + "' to check for ads.";
