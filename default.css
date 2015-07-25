@@ -1,17 +1,10 @@
 
-a {
+a, img, video, iframe, object, embed {
 	opacity: 0.2;
 	pointer-events: none;
-}
-
-img {
-	opacity: 0.2;
-	pointer-events: none;
-}
-
-video {
-	opacity: 0.2;
-	pointer-events: none;
+	/*position: fixed;
+	top: 0;
+	left: 0;*/
 }
 
 body {
@@ -19,18 +12,5 @@ body {
 	pointer-events: all;
 }
 
-iframe {
-	opacity: 0.2;
-	pointer-events: none;
-}
 
-object {
-	opacity: 0.2;
-	pointer-events: none;
-}
-
-embed {
-	opacity: 0.2;
-	pointer-events: none;
-}
 

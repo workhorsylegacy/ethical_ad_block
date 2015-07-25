@@ -343,8 +343,7 @@ function check_elements_that_may_be_ads() {
 				if (TAGS3.hasOwnProperty(name)) {
 					if (is_inside_link_element(element)) {
 						g_known_elements[element.id] = 1;
-						element.style.opacity = 1.0;
-						element.style.pointerEvents = 'all';
+						show_element(element);
 						continue;
 					}
 				}
@@ -366,9 +365,7 @@ function check_elements_that_may_be_ads() {
 										if (is_ad(hash)) {
 											document.body.removeChild(n);
 										} else {
-											// Set the opacity to 1.0
-											n.style.opacity = 1.0;
-											n.style.pointerEvents = 'all';
+											show_element(n);
 											if (! is_too_small(n)) {
 												n.style.border = '5px solid blue';
 												create_button(n, null);
@@ -388,9 +385,7 @@ function check_elements_that_may_be_ads() {
 									if (is_ad(hash)) {
 										document.body.removeChild(n);
 									} else {
-										// Set the opacity to 1.0
-										n.style.opacity = 1.0;
-										n.style.pointerEvents = 'all';
+										show_element(n);
 										if (! is_too_small(n)) {
 											n.style.border = '5px solid blue';
 											create_button(n, null);
@@ -415,9 +410,7 @@ function check_elements_that_may_be_ads() {
 								if (is_ad(hash)) {
 									document.body.removeChild(n);
 								} else {
-									// Set the opacity to 1.0
-									n.style.opacity = 1.0;
-									n.style.pointerEvents = 'all';
+									show_element(n);
 									if (! is_too_small(n)) {
 										n.style.border = '5px solid purple';
 										create_button(n, null);
@@ -435,8 +428,7 @@ function check_elements_that_may_be_ads() {
 									document.body.removeChild(n);
 								} else {
 									// Add a button to the link
-									n.style.opacity = 1.0;
-									n.style.pointerEvents = 'all';
+									show_element(n);
 									if (! is_too_small(n)) {
 										n.style.border = '5px solid purple';
 										create_button(n, null);
@@ -450,8 +442,7 @@ function check_elements_that_may_be_ads() {
 										// If the child is a tag we care about, or it has a background image
 										var bg = window.getComputedStyle(c)['background-image'];
 										if (c.tagName.toLowerCase() in TAGS2 || bg && bg !== 'none' && bg.length > 0) {
-											c.style.opacity = 1.0;
-											c.style.pointerEvents = 'all';
+											show_element(c);
 											if (! is_too_small(c)) {
 												c.style.border = '5px solid purple';
 												create_button(c, n);
@@ -462,9 +453,7 @@ function check_elements_that_may_be_ads() {
 							});
 						// Anchor is just text
 						} else {
-							// Set the opacity to 1.0
-							element.style.opacity = 1.0;
-							element.style.pointerEvents = 'all';
+							show_element(element);
 						}
 						break;
 					case 'object':
@@ -476,9 +465,7 @@ function check_elements_that_may_be_ads() {
 							if (is_ad(hash)) {
 								document.body.removeChild(n);
 							} else {
-								// Set the opacity to 1.0
-								n.style.opacity = 1.0;
-								n.style.pointerEvents = 'all';
+								show_element(n);
 								n.style.border = '5px solid yellow';
 								create_button(n, null);
 							}
@@ -492,9 +479,7 @@ function check_elements_that_may_be_ads() {
 							if (is_ad(n)) {
 								document.body.removeChild(n);
 							} else {
-								// Set the opacity to 1.0
-								n.style.opacity = 1.0;
-								n.style.pointerEvents = 'all';
+								show_element(n);
 								if (! is_too_small(n)) {
 									n.style.border = '5px solid blue';
 									create_button(n, null);

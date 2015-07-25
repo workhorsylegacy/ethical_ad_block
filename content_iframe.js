@@ -4,12 +4,11 @@
 
 
 window.addEventListener('message', function(event) {
-	if (event.data && event.data.message === 'show_iframe_parent') {
+	if (event.data && event.data.message === 'show_iframe_element') {
 		for (var i=0; i<window.frames.length; ++i) {
 			if (window.frames[i] === event.source) {
 				var frame = window.frames[i].frameElement;
-				frame.style.opacity = 1.0;
-				frame.style.pointerEvents = 'all';
+				show_element(frame);
 				frame.style.border = '5px solid red';
 				return;
 			}
@@ -21,7 +20,7 @@ window.addEventListener('message', function(event) {
 
 		// Send the iframe's parent the show iframe message
 		var request = {
-			message: 'show_iframe_parent'
+			message: 'show_iframe_element'
 		};
 		window.parent.postMessage(request, '*');
 	}

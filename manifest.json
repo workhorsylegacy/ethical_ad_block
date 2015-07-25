@@ -21,13 +21,13 @@
 			"run_at": "document_start",
 			"all_frames": true,
 			"css": ["default_iframe.css"],
-			"js": ["content_iframe.js", "md5.js"]
+			"js": ["content_iframe.js", "shared.js", "md5.js"]
 		},
 		{
 			"matches": ["<all_urls>"],
 			"run_at": "document_end",
 			"css": ["default.css"],
-			"js": ["content.js", "md5.js"]
+			"js": ["content.js", "shared.js", "md5.js"]
 		}
 	],
 
