@@ -164,10 +164,12 @@ window.addEventListener('message', function(event) {
 		}
 
 		// Send the iframe window back the show iframe message
-		var request = {
-			message: 'show_iframe_body'
-		};
-		event.source.postMessage(request, '*');
+		if (event.source) {
+			var request = {
+				message: 'show_iframe_body'
+			};
+			event.source.postMessage(request, '*');
+		}
 	}
 }, false);
 
