@@ -325,7 +325,9 @@ function create_button(element, container_element) {
 					// Get a screen shot from the background script
 					rect = get_element_rect_with_children(node);
 					get_screen_shot(rect, function(image, dataURI) {
-						document.body.appendChild(image);
+						if (DEBUG) {
+							document.body.appendChild(image);
+						}
 
 						// Hide the element
 						node.style.display = 'none';
