@@ -29,7 +29,7 @@ function log_to_active_tab(message) {
 	});
 }
 
-
+// FIXME: When the headers are changed, it breaks some other headers
 chrome.webRequest.onHeadersReceived.addListener(function(details) {
 	// New headers
 	var new_headers = [

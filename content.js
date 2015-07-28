@@ -266,14 +266,20 @@ function create_button(element, container_element) {
 			// Button holder
 			var rect = get_element_rect_with_children(node);
 			var div = document.createElement('div');
+			div.className = 'nostyle';
+			div.style.padding = '10px';
 			div.style.position = 'absolute';
 			div.style.textAlign = 'center';
 			div.style.width = rect.width + 'px';
 			div.style.height = rect.height + 'px';
+			div.style.minWidth = '200px';
+			div.style.minHeight = '200px';
 			div.style.left = rect.left + window.pageXOffset + 'px';
 			div.style.top = rect.top + window.pageYOffset + 'px';
 			div.style.zIndex = 100000;
-			div.style.backgroundColor = 'grey';
+			div.style.backgroundColor = '#f0f0f0';
+			div.style.border = '1px solid black';
+			div.style.boxShadow = '10px 10px 5px grey';
 			document.body.appendChild(div);
 
 			// Keep moving the button holder to cover the element
@@ -285,9 +291,15 @@ function create_button(element, container_element) {
 				div.style.top = rect.top + window.pageYOffset + 'px';
 			}, 100);
 
+			// Title
+			var span = document.createElement('span');
+			span.innerHTML = 'Block Ad because it is ...';
+			div.appendChild(span);
+			div.appendChild(document.createElement('br'));
+
 			// Fraudulent button
 			var button_fraud = document.createElement('button');
-			button_fraud.innerHTML = 'Ad is Fraudulent';
+			button_fraud.innerHTML = 'Fraudulent';
 			div.appendChild(button_fraud);
 			div.appendChild(document.createElement('br'));
 			button_fraud.addEventListener('click', function(e) {
@@ -328,19 +340,19 @@ function create_button(element, container_element) {
 /*
 			// Resource taxing button
 			var button_resource = document.createElement('button');
-			button_resource.innerHTML = 'Ad is Resource taxing';
+			button_resource.innerHTML = 'Resource taxing';
 			div.appendChild(button_resource);
 			div.appendChild(document.createElement('br'));
 
 			// Malicious button
 			var button_malicious = document.createElement('button');
-			button_malicious.innerHTML = 'Ad is Malicious';
+			button_malicious.innerHTML = 'Malicious';
 			div.appendChild(button_malicious);
 			div.appendChild(document.createElement('br'));
 */
 			// Cancel button
 			var button_cancel = document.createElement('button');
-			button_cancel.innerHTML = 'Cancel';
+			button_cancel.innerHTML = 'or Cancel';
 			div.appendChild(button_cancel);
 			button_cancel.addEventListener('click', function(e) {
 				div.parentElement.removeChild(div);
