@@ -18,7 +18,7 @@ body {
   font-family: Arial;
   color: #ffffff;
   font-size: 20px;
-  background: #d93434;
+  background: #800080;
   padding: 5px 15px 5px 15px;
   margin: 5px;
   text-decoration: none;
@@ -26,7 +26,7 @@ body {
 }
 
 .nostyle button:hover {
-  background: #a11212;
+  background: #6a1f69;
   text-decoration: none;
 }
 

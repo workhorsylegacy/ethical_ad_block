@@ -213,6 +213,9 @@ function create_button(element, container_element) {
 
 		var tag = node.tagName.toLowerCase();
 		var color = TAGS1[(container_element ? container_element.tagName : node.tagName).toLowerCase()];
+		if (! DEBUG) {
+			color = 'purple';
+		}
 		var rect = get_element_rect(node);
 
 		// Create a button over the bottom right of the element
@@ -436,10 +439,10 @@ function check_elements_that_may_be_ads() {
 										} else {
 											show_element(n);
 											if (! is_too_small(n)) {
-												n.style.border = '5px solid blue';
+												set_border(n, 'blue');
 												create_button(n, null);
 											} else {
-	//											n.style.border = '5px solid green';
+//												set_border(n, 'green');
 											}
 										}
 									});
@@ -456,10 +459,10 @@ function check_elements_that_may_be_ads() {
 									} else {
 										show_element(n);
 										if (! is_too_small(n)) {
-											n.style.border = '5px solid blue';
+											set_border(n, 'blue');
 											create_button(n, null);
 										} else {
-	//										n.style.border = '5px solid green';
+//											set_border(n, 'green');
 										}
 									}
 								});
@@ -481,10 +484,10 @@ function check_elements_that_may_be_ads() {
 								} else {
 									show_element(n);
 									if (! is_too_small(n)) {
-										n.style.border = '5px solid purple';
+										set_border(n, 'purple');
 										create_button(n, null);
 									} else {
-	//									n.style.border = '5px solid green';
+										set_border(n, 'green');
 									}
 								}
 							});
@@ -499,7 +502,7 @@ function check_elements_that_may_be_ads() {
 									// Add a button to the link
 									show_element(n);
 									if (! is_too_small(n)) {
-										n.style.border = '5px solid purple';
+										set_border(n, 'purple');
 										create_button(n, null);
 									}
 
@@ -513,7 +516,7 @@ function check_elements_that_may_be_ads() {
 										if (c.tagName.toLowerCase() in TAGS2 || bg && bg !== 'none' && bg.length > 0) {
 											show_element(c);
 											if (! is_too_small(c)) {
-												c.style.border = '5px solid purple';
+												set_border(c, 'purple');
 												create_button(c, n);
 											}
 										}
@@ -535,7 +538,7 @@ function check_elements_that_may_be_ads() {
 								document.body.removeChild(n);
 							} else {
 								show_element(n);
-								n.style.border = '5px solid yellow';
+								set_border(n, 'yellow');
 								create_button(n, null);
 							}
 						});
@@ -550,10 +553,10 @@ function check_elements_that_may_be_ads() {
 							} else {
 								show_element(n);
 								if (! is_too_small(n)) {
-									n.style.border = '5px solid blue';
+									set_border(n, 'blue');
 									create_button(n, null);
 								} else {
-		//							n.style.border = '5px solid green';
+									set_border(n, 'green');
 								}
 							}
 						});

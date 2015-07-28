@@ -9,7 +9,7 @@ window.addEventListener('message', function(event) {
 			if (window.frames[i] == event.source) {
 				var f = window.frames[i].frameElement;
 				show_element(f);
-				f.style.border = '5px solid red';
+				set_border(f, 'red');
 				return;
 			}
 		}
