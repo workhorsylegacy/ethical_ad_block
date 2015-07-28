@@ -255,42 +255,97 @@ function create_button(element, container_element) {
 			var node = canvas.node;
 			var container_element = canvas.container_element;
 
-			// Remove the button
-			element.removeEventListener('mouseenter', mouse_enter);
-			node.canvas = null;
-			document.body.removeChild(canvas);
-			if (rect_interval) {
-				clearInterval(rect_interval);
-				rect_interval = null;
+			// Hide the button
+			canvas.style.display = 'none';
+
+			// If there is a container element, use that instead
+			if (container_element) {
+				node = container_element;
 			}
 
-			// Remove the border around the element
-			node.style['border'] = '';
+			// Button holder
+			var rect = get_element_rect_with_children(node);
+			var div = document.createElement('div');
+			div.style.position = 'absolute';
+			div.style.textAlign = 'center';
+			div.style.width = rect.width + 'px';
+			div.style.height = rect.height + 'px';
+			div.style.left = rect.left + window.pageXOffset + 'px';
+			div.style.top = rect.top + window.pageYOffset + 'px';
+			div.style.zIndex = 100000;
+			div.style.backgroundColor = 'grey';
+			document.body.appendChild(div);
 
-			// Wait for the next set of DOM events, so the element's border will be removed
-			setTimeout(function() {
-				// If there is a container element, use that instead
-				if (container_element) {
-					node = container_element;
+			// Keep moving the button holder to cover the element
+			var div_interval = setInterval(function() {
+				var rect = get_element_rect_with_children(node);
+				div.style.width = rect.width + 'px';
+				div.style.height = rect.height + 'px';
+				div.style.left = rect.left + window.pageXOffset + 'px';
+				div.style.top = rect.top + window.pageYOffset + 'px';
+			}, 100);
+
+			// Fraudulent button
+			var button_fraud = document.createElement('button');
+			button_fraud.innerHTML = 'Ad is Fraudulent';
+			div.appendChild(button_fraud);
+			div.appendChild(document.createElement('br'));
+			button_fraud.addEventListener('click', function(e) {
+				// Stop checking button and button holder positions
+				if (rect_interval) {
+					clearInterval(rect_interval);
+					rect_interval = null;
+				}
+				if (div_interval) {
+					clearInterval(div_interval);
+					div_interval = null;
 				}
 
-				// Get a screen shot from the background script
-				rect = get_element_rect_with_children(node);
-				get_screen_shot(rect, function(image, dataURI) {
-					document.body.appendChild(image);
+				// Remove the border and buttons
+				node.style.border = '';
+				div.parentElement.removeChild(div);
 
-					// Hide the element
-					node.style.display = 'none';
+				// Wait for the next set of DOM events, so the element's border will be removed
+				setTimeout(function() {
+					// Get a screen shot from the background script
+					rect = get_element_rect_with_children(node);
+					get_screen_shot(rect, function(image, dataURI) {
+						document.body.appendChild(image);
 
-					// Get a hash of the element
-					get_element_hash(node, function(hash, node) {
-						console.log(hash);
+						// Hide the element
+						node.style.display = 'none';
 
-						// Remove the element
-						node.parentElement.removeChild(node);
+						// Get a hash of the element
+						get_element_hash(node, function(hash, node) {
+							console.log(hash);
+
+							// Remove the element
+							node.parentElement.removeChild(node);
+						});
 					});
-				});
-			}, 300);
+				}, 333);
+			});
+/*
+			// Resource taxing button
+			var button_resource = document.createElement('button');
+			button_resource.innerHTML = 'Ad is Resource taxing';
+			div.appendChild(button_resource);
+			div.appendChild(document.createElement('br'));
+
+			// Malicious button
+			var button_malicious = document.createElement('button');
+			button_malicious.innerHTML = 'Ad is Malicious';
+			div.appendChild(button_malicious);
+			div.appendChild(document.createElement('br'));
+*/
+			// Cancel button
+			var button_cancel = document.createElement('button');
+			button_cancel.innerHTML = 'Cancel';
+			div.appendChild(button_cancel);
+			button_cancel.addEventListener('click', function(e) {
+				div.parentElement.removeChild(div);
+				canvas.style.display = '';
+			});
 
 		}, false);
 	};

@@ -16,7 +16,7 @@ window.addEventListener('message', function(event) {
 
 	} else if (event.data && event.data.message === 'show_iframe_body') {
 		// Make the iframe's body visible
-//		window.document.body.style.border = '10px solid yellow';
+		window.document.body.style.border = '10px solid yellow';
 		window.document.body.style.opacity = 1.0;
 		window.document.body.style.pointerEvents = 'all';
 
