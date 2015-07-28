@@ -300,12 +300,7 @@ function create_button(element, container_element) {
 			div.appendChild(span);
 			div.appendChild(document.createElement('br'));
 
-			// Fraudulent button
-			var button_fraud = document.createElement('button');
-			button_fraud.innerHTML = 'Fraudulent';
-			div.appendChild(button_fraud);
-			div.appendChild(document.createElement('br'));
-			button_fraud.addEventListener('click', function(e) {
+			function button_click(e) {
 				// Stop checking button and button holder positions
 				if (rect_interval) {
 					clearInterval(rect_interval);
@@ -341,20 +336,29 @@ function create_button(element, container_element) {
 						});
 					});
 				}, 333);
-			});
-/*
+			}
+
+			// Fraudulent button
+			var button_fraud = document.createElement('button');
+			button_fraud.innerHTML = 'Fraudulent';
+			div.appendChild(button_fraud);
+			div.appendChild(document.createElement('br'));
+			button_fraud.addEventListener('click', button_click);
+
 			// Resource taxing button
 			var button_resource = document.createElement('button');
 			button_resource.innerHTML = 'Resource taxing';
 			div.appendChild(button_resource);
 			div.appendChild(document.createElement('br'));
+			button_resource.addEventListener('click', button_click);
 
 			// Malicious button
 			var button_malicious = document.createElement('button');
 			button_malicious.innerHTML = 'Malicious';
 			div.appendChild(button_malicious);
 			div.appendChild(document.createElement('br'));
-*/
+			button_malicious.addEventListener('click', button_click);
+
 			// Cancel button
 			var button_cancel = document.createElement('button');
 			button_cancel.innerHTML = 'or Cancel';
