@@ -333,6 +333,20 @@ function create_button(element, container_element) {
 
 							// Remove the element
 							node.parentElement.removeChild(node);
+
+							// Tell the server that this hash is for an ad
+							var httpRequest = new XMLHttpRequest();
+							httpRequest.onreadystatechange = function() {
+								if (httpRequest.readyState === 4) {
+									console.log(httpRequest.status);
+									console.log(httpRequest.responseText);
+								}
+							};
+							var request = 'http://localhost:9000' +
+								'?vote_ad=' + hash +
+								'&type=' + 'fraudulent';
+							httpRequest.open('GET', request, true);
+							httpRequest.send(null);
 						});
 					});
 				}, 333);
