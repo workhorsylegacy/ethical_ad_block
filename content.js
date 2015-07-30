@@ -301,6 +301,8 @@ function create_button(element, container_element) {
 			div.appendChild(document.createElement('br'));
 
 			function button_click(e) {
+				var element = e.path[0];
+
 				// Stop checking button and button holder positions
 				if (rect_interval) {
 					clearInterval(rect_interval);
@@ -344,7 +346,7 @@ function create_button(element, container_element) {
 							};
 							var request = 'http://localhost:9000' +
 								'?vote_ad=' + hash +
-								'&type=' + 'fraudulent';
+								'&ad_type=' + element.ad_type;
 							httpRequest.open('GET', request, true);
 							httpRequest.send(null);
 						});
@@ -356,6 +358,7 @@ function create_button(element, container_element) {
 			var button_good = document.createElement('button');
 			button_good.innerHTML = 'Good';
 			button_good.className = 'btnGreen';
+			button_good.ad_type = 'good';
 			div.appendChild(button_good);
 			div.appendChild(document.createElement('br'));
 			button_good.addEventListener('click', button_click);
@@ -364,6 +367,7 @@ function create_button(element, container_element) {
 			var button_fraud = document.createElement('button');
 			button_fraud.innerHTML = 'Fraudulent';
 			button_fraud.className = 'btnRed';
+			button_fraud.ad_type = 'fraudulent';
 			div.appendChild(button_fraud);
 			div.appendChild(document.createElement('br'));
 			button_fraud.addEventListener('click', button_click);
@@ -372,6 +376,7 @@ function create_button(element, container_element) {
 			var button_resource = document.createElement('button');
 			button_resource.innerHTML = 'Resource taxing';
 			button_resource.className = 'btnRed';
+			button_resource.ad_type = 'taxing';
 			div.appendChild(button_resource);
 			div.appendChild(document.createElement('br'));
 			button_resource.addEventListener('click', button_click);
@@ -380,6 +385,7 @@ function create_button(element, container_element) {
 			var button_malicious = document.createElement('button');
 			button_malicious.innerHTML = 'Malicious';
 			button_malicious.className = 'btnRed';
+			button_malicious.ad_type = 'malicious';
 			div.appendChild(button_malicious);
 			div.appendChild(document.createElement('br'));
 			button_malicious.addEventListener('click', button_click);

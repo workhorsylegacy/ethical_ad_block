@@ -11,7 +11,10 @@ import (
 	"net/http"
 )
 
-var hashes map[string]uint64
+var hashes_good map[string]uint64
+var hashes_fraudulent map[string]uint64
+var hashes_taxing map[string]uint64
+var hashes_malicious map[string]uint64
 
 func httpCB(w http.ResponseWriter, r *http.Request) {
 	values := r.URL.Query()
@@ -19,17 +22,45 @@ func httpCB(w http.ResponseWriter, r *http.Request) {
 	// Vote for ad request
 	if _, ok := values["vote_ad"]; ok {
 		hash := values["vote_ad"][0]
+		ad_type := values["ad_type"][0]
+		var votes uint64 = 0
 
-		hashes[hash] += 1
-		fmt.Fprintf(w, "%s : %d\n", hash, hashes[hash])
+		switch ad_type {
+			case "good":
+				hashes_good[hash] += 1
+				votes = hashes_good[hash]
+			case "fraudulent":
+				hashes_fraudulent[hash] += 1
+				votes = hashes_fraudulent[hash]
+			case "taxing":
+				hashes_taxing[hash] += 1
+				votes = hashes_taxing[hash]
+			case "malicious":
+				hashes_malicious[hash] += 1
+				votes = hashes_malicious[hash]
+		}
+		fmt.Fprintf(w, "hash:%s, ad_type:%s, votes:%d\n", hash, ad_type, votes)
 
 	// List ads request
 	} else if _, ok := values["list"]; ok {
-		for hash, votes := range hashes {
-			fmt.Fprintf(w, "%s : %d\n", hash, votes)
+		fmt.Fprintf(w, "hashes_good:\n")
+		for hash, votes := range hashes_good {
+			fmt.Fprintf(w, "    %s : %d\n", hash, votes)
 		}
-		if len(hashes) == 0 {
-			fmt.Fprintf(w, "none\n")
+
+		fmt.Fprintf(w, "hashes_fraudulent:\n")
+		for hash, votes := range hashes_fraudulent {
+			fmt.Fprintf(w, "    %s : %d\n", hash, votes)
+		}
+
+		fmt.Fprintf(w, "hashes_taxing:\n")
+		for hash, votes := range hashes_taxing {
+			fmt.Fprintf(w, "    %s : %d\n", hash, votes)
+		}
+
+		fmt.Fprintf(w, "hashes_malicious:\n")
+		for hash, votes := range hashes_malicious {
+			fmt.Fprintf(w, "    %s : %d\n", hash, votes)
 		}
 
 	// Unexpected request
@@ -39,7 +70,10 @@ func httpCB(w http.ResponseWriter, r *http.Request) {
 }
 
 func main() {
-	hashes = make(map[string]uint64)
+	hashes_good = make(map[string]uint64)
+	hashes_fraudulent = make(map[string]uint64)
+	hashes_taxing = make(map[string]uint64)
+	hashes_malicious = make(map[string]uint64)
 
 	var err error
 	var port int64 = 9000
