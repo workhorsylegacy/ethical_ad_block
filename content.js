@@ -296,7 +296,7 @@ function create_button(element, container_element) {
 
 			// Title
 			var span = document.createElement('span');
-			span.innerHTML = 'Block Ad because it is ...';
+			span.innerHTML = 'This Ad is ...';
 			div.appendChild(span);
 			div.appendChild(document.createElement('br'));
 
@@ -352,9 +352,18 @@ function create_button(element, container_element) {
 				}, 333);
 			}
 
+			// Good button
+			var button_good = document.createElement('button');
+			button_good.innerHTML = 'Good';
+			button_good.className = 'btnGreen';
+			div.appendChild(button_good);
+			div.appendChild(document.createElement('br'));
+			button_good.addEventListener('click', button_click);
+
 			// Fraudulent button
 			var button_fraud = document.createElement('button');
 			button_fraud.innerHTML = 'Fraudulent';
+			button_fraud.className = 'btnRed';
 			div.appendChild(button_fraud);
 			div.appendChild(document.createElement('br'));
 			button_fraud.addEventListener('click', button_click);
@@ -362,6 +371,7 @@ function create_button(element, container_element) {
 			// Resource taxing button
 			var button_resource = document.createElement('button');
 			button_resource.innerHTML = 'Resource taxing';
+			button_resource.className = 'btnRed';
 			div.appendChild(button_resource);
 			div.appendChild(document.createElement('br'));
 			button_resource.addEventListener('click', button_click);
@@ -369,6 +379,7 @@ function create_button(element, container_element) {
 			// Malicious button
 			var button_malicious = document.createElement('button');
 			button_malicious.innerHTML = 'Malicious';
+			button_malicious.className = 'btnRed';
 			div.appendChild(button_malicious);
 			div.appendChild(document.createElement('br'));
 			button_malicious.addEventListener('click', button_click);

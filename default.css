@@ -12,13 +12,27 @@ body {
 	pointer-events: all;
 }
 
+.btnRed {
+  background: #e30831 !important;
+}
+
+.btnRed:hover {
+  background: #bc0729 !important;
+}
+
+.btnGreen {
+  background: #1dcb4e !important;
+}
+
+.btnGreen:hover {
+  background: #17a63f !important;
+}
 
 .nostyle button {
   border-radius: 28px;
   font-family: Arial;
   color: #ffffff;
-  font-size: 20px;
-  background: #800080;
+  background: #cbcbcb;
   padding: 5px 15px 5px 15px;
   margin: 5px;
   text-decoration: none;
@@ -26,7 +40,7 @@ body {
 }
 
 .nostyle button:hover {
-  background: #6a1f69;
+  background: #a7a7a7;
   text-decoration: none;
 }
 
