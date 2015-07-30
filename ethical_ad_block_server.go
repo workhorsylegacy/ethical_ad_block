@@ -5,12 +5,15 @@ package main
 
 import (
 	"fmt"
+	"os"
+	"log"
+	"strconv"
 	"net/http"
 )
 
 var hashes map[string]uint64
 
-func handler(w http.ResponseWriter, r *http.Request) {
+func httpCB(w http.ResponseWriter, r *http.Request) {
 	values := r.URL.Query()
 
 	// Vote for ad request
@@ -25,6 +28,9 @@ func handler(w http.ResponseWriter, r *http.Request) {
 		for hash, votes := range hashes {
 			fmt.Fprintf(w, "%s : %d\n", hash, votes)
 		}
+		if len(hashes) == 0 {
+			fmt.Fprintf(w, "none\n")
+		}
 
 	// Unexpected request
 	} else {
@@ -35,6 +41,19 @@ func handler(w http.ResponseWriter, r *http.Request) {
 func main() {
 	hashes = make(map[string]uint64)
 
-	http.HandleFunc("/", handler)
-	http.ListenAndServe(":9000", nil)
+	var err error
+	var port int64 = 9000
+	if len(os.Args) >= 1 {
+		port, err = strconv.ParseInt(os.Args[1], 10, 0)
+		if err != nil {
+			log.Fatal(err)
+		}
+	}
+
+	server_address := fmt.Sprintf("127.0.0.1:%v", port)
+	http.HandleFunc("/", httpCB)
+	err = http.ListenAndServe(server_address, nil)
+	if err != nil {
+		log.Fatal(err)
+	}
 }

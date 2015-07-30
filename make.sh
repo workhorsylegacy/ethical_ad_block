@@ -6,7 +6,7 @@
 if [ "$#" -ne 1 ]; then
 	echo "Build and run ethical_ad_block_server.exe" >&2
 	echo "Usage: make.sh port" >&2
-	echo "Example: make.sh 9090" >&2
+	echo "Example: make.sh 9000" >&2
 	exit 1
 fi
 
