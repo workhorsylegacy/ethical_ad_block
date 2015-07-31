@@ -1,8 +1,6 @@
 // Copyright (c) 2015 Matthew Brennan Jones <matthew.brennan.jones@gmail.com>
 // This software is licensed under GPL v3 or later
 
-
-
 window.addEventListener('message', function(event) {
 	if (event.data && event.data.message === 'show_iframe_element') {
 		for (var i=0; i<window.frames.length; ++i) {
@@ -26,10 +24,33 @@ window.addEventListener('message', function(event) {
 		};
 		// FIXME: For some reason, not all the messages are going to the parent
 		window.parent.postMessage(request, '*');
+	// Wait for the iframe to tell us that it has loaded
+	} else if (event.data && event.data.message === 'iframe_loaded') {
+		// FIXME: Remove the iframe if the hash is in the black list
+		if (event.data.hash) {
+			try {
+				var element = event.source.frameElement;
+				create_button(element, null);
+			} catch (SecurityError) {
+				// pass
+			}
+		}
+
+		// Send the iframe window back the show iframe message
+		if (event.source) {
+			var request = {
+				message: 'show_iframe_body'
+			};
+			event.source.postMessage(request, '*');
+		}
 	}
 }, false);
 
-
+document.addEventListener('mousemove', function(e) {
+	g_cursor_x = e.pageX;
+	g_cursor_y = e.pageY;
+//	console.log(g_cursor_x + ', ' + g_cursor_y);
+}, false);
 
 // If running in an iframe
 if (window !== window.top) {
@@ -56,5 +77,6 @@ if (window !== window.top) {
 	}, 300);
 }
 
+check_elements_loop();
 
 

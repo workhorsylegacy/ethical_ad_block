@@ -580,4 +580,12 @@ function check_elements_that_may_be_ads() {
 	}
 }
 
+// Keep looking at page elements, and add buttons to ones that loaded
+function check_elements_loop() {
+//	console.log('called check_elements_loop ...');
+
+	check_elements_that_may_be_ads();
+
+	setTimeout(check_elements_loop, 500);
+}
 

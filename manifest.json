@@ -20,14 +20,14 @@
 			"matches": ["<all_urls>"],
 			"run_at": "document_start",
 			"all_frames": true,
-			"css": ["default_iframe.css"],
-			"js": ["content_iframe.js", "shared.js", "md5.js"]
+			"css": ["shared.css", "default_iframe.css"],
+			"js": ["shared.js", "md5.js", "content_iframe.js"]
 		},
 		{
 			"matches": ["<all_urls>"],
 			"run_at": "document_end",
-			"css": ["default.css"],
-			"js": ["content.js", "shared.js", "md5.js"]
+			"css": ["shared.css", "default.css"],
+			"js": ["shared.js", "md5.js", "content.js"]
 		}
 	],
 
