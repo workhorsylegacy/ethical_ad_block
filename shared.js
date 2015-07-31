@@ -45,7 +45,7 @@ function generate_random_id() {
 }
 
 function show_element(element) {
-	element.style.position = 'static';
+	element.style.position = '';
 	element.style.top = '';
 	element.style.left = '';
 	element.style.opacity = 1.0;
