@@ -1,0 +1,316 @@
+
+a, img, video, iframe, object, embed {
+	opacity: 0.2;
+	pointer-events: none;
+	/*position: fixed;
+	top: 0;
+	left: 0;*/
+}
+
+.btnRed {
+  background: #e30831 !important;
+}
+
+.btnRed:hover {
+  background: #bc0729 !important;
+}
+
+.btnGreen {
+  background: #1dcb4e !important;
+}
+
+.btnGreen:hover {
+  background: #17a63f !important;
+}
+
+.nostyle button {
+  border-radius: 28px;
+  font-family: Arial;
+  color: #ffffff;
+  background: #cbcbcb;
+  padding: 5px 15px 5px 15px;
+  margin: 5px;
+  text-decoration: none;
+  white-space: nowrap;
+}
+
+.nostyle button:hover {
+  background: #a7a7a7;
+  text-decoration: none;
+}
+
+
+/* http://www.w3schools.com/cssref/ */
+/* reset all styles to default */
+.nostyle * {
+	color: initial;
+	opacity: initial;
+
+
+	background: initial;
+	background-attachment: initial;
+	background-color: initial;
+	background-image: initial;
+	background-position: initial;
+	background-repeat: initial;
+	background-clip: initial;
+	background-origin: initial;
+	background-size: initial;
+	border: initial;
+	border-bottom: initial;
+	border-bottom-color: initial;
+	border-bottom-left-radius: initial;
+	border-bottom-right-radius: initial;
+	border-bottom-style: initial;
+	border-bottom-width: initial;
+	border-color: initial;
+	border-image: initial;
+	border-image-outset: initial;
+	border-image-repeat: initial;
+	border-image-slice: initial;
+	border-image-source: initial;
+	border-image-width: initial;
+	border-left: initial;
+	border-left-color: initial;
+	border-left-style: initial;
+	border-left-width: initial;
+	border-radius: initial;
+	border-right: initial;
+	border-right-color: initial;
+	border-right-style: initial;
+	border-right-width: initial;
+	border-style: initial;
+	border-top: initial;
+	border-top-color: initial;
+	border-top-left-radius: initial;
+	border-top-right-radius: initial;
+	border-top-style: initial;
+	border-top-width: initial;
+	border-width: initial;
+	box-decoration-break: initial;
+	box-shadow: initial;
+
+
+	bottom: initial;
+	clear: initial;
+	clip: initial;
+	display: initial;
+	float: initial;
+	height: initial;
+	left: initial;
+	margin: initial;
+	margin-bottom: initial;
+	margin-left: initial;
+	margin-right: initial;
+	margin-top: initial;
+	max-height: initial;
+	max-width: initial;
+	min-height: initial;
+	min-width: initial;
+	overflow: initial;
+	overflow-x: initial;
+	overflow-y: initial;
+	padding: initial;
+	padding-bottom: initial;
+	padding-left: initial;
+	padding-right: initial;
+	padding-top: initial;
+	position: initial;
+	right: initial;
+	top: initial;
+	visibility: initial;
+	width: initial;
+	vertical-align: initial;
+	z-index: initial;
+
+	align-content: initial;
+	align-items: initial;
+	align-self: initial;
+	flex: initial;
+	flex-basis: initial;
+	flex-direction: initial;
+	flex-flow: initial;
+	flex-grow: initial;
+	flex-shrink: initial;
+	flex-wrap: initial;
+	justify-content: initial;
+	order: initial;
+
+
+	hanging-punctuation: initial;
+	hyphens: initial;
+	letter-spacing: initial;
+	line-break: initial;
+	line-height: initial;
+	overflow-wrap: initial;
+	tab-size: initial;
+	text-align: initial;
+	text-align-last: initial;
+	text-combine-upright: initial;
+	text-indent: initial;
+	text-justify: initial;
+	text-transform: initial;
+	white-space: initial;
+	word-break: initial;
+	word-spacing: initial;
+	word-wrap: initial;
+
+
+	text-decoration: initial;
+	text-decoration-color: initial;
+	text-decoration-line: initial;
+	text-decoration-style: initial;
+	text-shadow: initial;
+	text-underline-position: initial;
+
+
+	@font-face: initial;
+	@font-feature-values: initial;
+	fon: initial;
+	font-family: initial;
+	font-feature-settings: initial;
+	font-kerning: initial;
+	font-language-override: initial;
+	font-size: initial;
+	font-size-adjust: initial;
+	font-stretch: initial;
+	font-style: initial;
+	font-synthesis: initial;
+	font-variant: initial;
+	font-variant-alternates: initial;
+	font-variant-caps: initial;
+	font-variant-east-asian: initial;
+	font-variant-ligatures: initial;
+	font-variant-numeric: initial;
+	font-variant-position: initial;
+	font-weight: initial;
+
+
+	direction: initial;
+	text-orientation: initial;
+	text-combine-upright: initial;
+	unicode-bidi: initial;
+	writing-mode: initial;
+
+
+	border-collapse: initial;
+	border-spacing: initial;
+	caption-side: initial;
+	empty-cells: initial;
+	table-layout: initial;
+
+
+	counter-increment: initial;
+	counter-reset: initial;
+	list-style: initial;
+	list-style-image: initial;
+	list-style-position: initial;
+	list-style-type: initial;
+
+
+	@keyframes: initial;
+	animation: initial;
+	animation-delay: initial;
+	animation-direction: initial;
+	animation-duration: initial;
+	animation-fill-mode: initial;
+	animation-iteration-count: initial;
+	animation-name: initial;
+	animation-play-state: initial;
+	animation-timing-function: initial;
+
+
+	backface-visibility: initial;
+	perspective: initial;
+	perspective-origin: initial;
+	transform: initial;
+	transform-origin: initial;
+	transform-style: initial;
+
+
+	transition: initial;
+	transition-property: initial;
+	transition-duration: initial;
+	transition-timing-function: initial;
+	transition-delay: initial;
+
+
+	box-sizing: initial;
+	content: initial;
+	cursor: initial;
+	ime-mode: initial;
+	nav-down: initial;
+	nav-index: initial;
+	nav-left: initial;
+	nav-right: initial;
+	nav-up: initial;
+	outline: initial;
+	outline-color: initial;
+	outline-offset: initial;
+	outline-style: initial;
+	outline-width: initial;
+	resize: initial;
+	text-overflow: initial;
+
+
+	break-after: initial;
+	break-before: initial;
+	break-inside: initial;
+	column-count: initial;
+	column-fill: initial;
+	column-gap: initial;
+	column-rule: initial;
+	column-rule-color: initial;
+	column-rule-style: initial;
+	column-rule-width: initial;
+	column-span: initial;
+	column-width: initial;
+	columns: initial;
+	widows: initial;
+
+
+	orphans: initial;
+	page-break-after: initial;
+	page-break-before: initial;
+	page-break-inside: initial;
+
+
+	marks: initial;
+	quotes: initial;
+
+
+	filter: initial;
+
+
+	image-orientation: initial;
+	image-rendering: initial;
+	image-resolution: initial;
+	object-fit: initial;
+	object-position: initial;
+
+
+	mask: initial;
+	mask-type: initial;
+
+
+	mark: initial;
+	mark-after: initial;
+	mark-before: initial;
+	phonemes: initial;
+	rest: initial;
+	rest-after: initial;
+	rest-before: initial;
+	voice-balance: initial;
+	voice-duration: initial;
+	voice-pitch: initial;
+	voice-pitch-range: initial;
+	voice-rate: initial;
+	voice-stress: initial;
+	voice-volume: initial;
+
+
+	marquee-direction: initial;
+	marquee-play-count: initial;
+	marquee-speed: initial;
+	marquee-style: initial;
+}
