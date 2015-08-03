@@ -45,9 +45,9 @@ function generate_random_id() {
 }
 
 function show_element(element) {
-	element.style.position = '';
-	element.style.top = '';
-	element.style.left = '';
+	element.style.position = 'unset';
+	element.style.top = 'unset';
+	element.style.left = 'unset';
 	element.style.opacity = 1.0;
 	element.style.pointerEvents = 'all';
 }
