@@ -259,10 +259,10 @@ function create_button(element, container_element) {
 			div.style.padding = '10px';
 			div.style.position = 'absolute';
 			div.style.textAlign = 'center';
-			div.style.width = rect.width + 'px';
-			div.style.height = rect.height + 'px';
 			div.style.minWidth = '200px';
 			div.style.minHeight = '230px';
+			div.style.width = rect.width + 'px';
+			div.style.height = rect.height + 'px';
 			div.style.left = rect.left + window.pageXOffset + 'px';
 			div.style.top = rect.top + window.pageYOffset + 'px';
 			div.style.zIndex = 100000;
