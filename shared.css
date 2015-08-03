@@ -23,6 +23,14 @@ a, img, video, iframe, object, embed {
   background: #17a63f !important;
 }
 
+.btnYellow {
+  background: #dccb10 !important;
+}
+
+.btnYellow:hover {
+  background: #bdae0c !important;
+}
+
 .nostyle button {
   border-radius: 28px;
   font-family: Arial;

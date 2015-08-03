@@ -347,7 +347,7 @@ function create_button(element, container_element) {
 			// Fraudulent button
 			var button_fraud = document.createElement('button');
 			button_fraud.innerHTML = 'Fraudulent';
-			button_fraud.className = 'btnRed';
+			button_fraud.className = 'btnYellow';
 			button_fraud.ad_type = 'fraudulent';
 			div.appendChild(button_fraud);
 			div.appendChild(document.createElement('br'));
@@ -356,7 +356,7 @@ function create_button(element, container_element) {
 			// Resource taxing button
 			var button_resource = document.createElement('button');
 			button_resource.innerHTML = 'Resource taxing';
-			button_resource.className = 'btnRed';
+			button_resource.className = 'btnYellow';
 			button_resource.ad_type = 'taxing';
 			div.appendChild(button_resource);
 			div.appendChild(document.createElement('br'));
