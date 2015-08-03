@@ -73,12 +73,20 @@ function get_element_rect(element) {
 	return rect;
 }
 
+// NOTE: The video tag always has a child with a rect top of zero.
+// So this does not include the children of the video tag.
 function get_element_rect_with_children(element) {
+	// Just return the rect if it a video tag
+	if (element.tagName.toLowerCase() === 'video') {
+		return get_element_rect(element);
+	}
+
+	// Update the rect to overlap all the child rects
 	var rect = get_element_rect(element);
-	var cs = to_array(element.children);
-	while (cs.length > 0) {
-		var c = cs.pop();
-		var c_rect = get_element_rect(c);
+	var children = to_array(element.children);
+	while (children.length > 0) {
+		var child = children.pop();
+		var c_rect = get_element_rect(child);
 		if (c_rect.bottom > rect.bottom) rect.bottom = c_rect.bottom;
 		if (c_rect.top < rect.top) rect.top = c_rect.top;
 		if (c_rect.left < rect.left) rect.left = c_rect.left;
@@ -87,7 +95,11 @@ function get_element_rect_with_children(element) {
 		if (c_rect.y < rect.y) rect.y = c_rect.y;
 		rect.height = rect.bottom - rect.top;
 		rect.width = rect.right - rect.left;
-		cs = cs.concat(to_array(c.children));
+
+		// Only get the children if not a video tag
+		if (child.tagName.toLowerCase() !== 'video') {
+			children = children.concat(to_array(child.children));
+		}
 	}
 	return rect;
 }
