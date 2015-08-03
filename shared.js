@@ -247,44 +247,44 @@ function create_button(element, container_element) {
 				node = container_element;
 			}
 
-			// Button holder
+			// Button menu
 			var rect = get_element_rect_with_children(node);
-			var div = document.createElement('div');
-			div.className = 'nostyle';
-			div.style.padding = '10px';
-			div.style.position = 'absolute';
-			div.style.textAlign = 'center';
-			div.style.minWidth = '200px';
-			div.style.minHeight = '230px';
-			div.style.width = rect.width + 'px';
-			div.style.height = rect.height + 'px';
-			div.style.left = rect.left + window.pageXOffset + 'px';
-			div.style.top = rect.top + window.pageYOffset + 'px';
-			div.style.zIndex = 100000;
-			div.style.backgroundColor = '#f0f0f0';
-			div.style.border = '1px solid black';
-			div.style.boxShadow = '10px 10px 5px grey';
-			document.body.appendChild(div);
+			var menu = document.createElement('div');
+			menu.className = 'nostyle';
+			menu.style.padding = '10px';
+			menu.style.position = 'absolute';
+			menu.style.textAlign = 'center';
+			menu.style.minWidth = '200px';
+			menu.style.minHeight = '230px';
+			menu.style.width = rect.width + 'px';
+			menu.style.height = rect.height + 'px';
+			menu.style.left = rect.left + window.pageXOffset + 'px';
+			menu.style.top = rect.top + window.pageYOffset + 'px';
+			menu.style.zIndex = 100000;
+			menu.style.backgroundColor = '#f0f0f0';
+			menu.style.border = '1px solid black';
+			menu.style.boxShadow = '10px 10px 5px grey';
+			document.body.appendChild(menu);
 
-			// Keep moving the button holder to cover the element
+			// Keep moving the button menu to cover the element
 			var div_interval = setInterval(function() {
 				var rect = get_element_rect_with_children(node);
-				div.style.width = rect.width + 'px';
-				div.style.height = rect.height + 'px';
-				div.style.left = rect.left + window.pageXOffset + 'px';
-				div.style.top = rect.top + window.pageYOffset + 'px';
+				menu.style.width = rect.width + 'px';
+				menu.style.height = rect.height + 'px';
+				menu.style.left = rect.left + window.pageXOffset + 'px';
+				menu.style.top = rect.top + window.pageYOffset + 'px';
 			}, 100);
 
 			// Title
 			var span = document.createElement('span');
-			span.innerHTML = 'This Ad is ...';
-			div.appendChild(span);
-			div.appendChild(document.createElement('br'));
+			span.innerHTML = 'This Element is ...';
+			menu.appendChild(span);
+			menu.appendChild(document.createElement('br'));
 
 			function button_click(e) {
 				var element = e.path[0];
 
-				// Stop checking button and button holder positions
+				// Stop checking button and button menu positions
 				if (element.rect_interval) {
 					clearInterval(element.rect_interval);
 					element.rect_interval = null;
@@ -296,7 +296,7 @@ function create_button(element, container_element) {
 
 				// Remove the border and buttons
 				node.style.border = '';
-				div.parentElement.removeChild(div);
+				menu.parentElement.removeChild(menu);
 
 				// Wait for the next set of DOM events, so the element's border will be removed
 				setTimeout(function() {
@@ -342,8 +342,8 @@ function create_button(element, container_element) {
 			button_good.ad_type = 'good';
 			button_good.div_interval = div_interval;
 			button_good.rect_interval = rect_interval;
-			div.appendChild(button_good);
-			div.appendChild(document.createElement('br'));
+			menu.appendChild(button_good);
+			menu.appendChild(document.createElement('br'));
 			button_good.addEventListener('click', button_click);
 
 			// Fraudulent button
@@ -353,8 +353,8 @@ function create_button(element, container_element) {
 			button_fraud.ad_type = 'fraudulent';
 			button_fraud.div_interval = div_interval;
 			button_fraud.rect_interval = rect_interval;
-			div.appendChild(button_fraud);
-			div.appendChild(document.createElement('br'));
+			menu.appendChild(button_fraud);
+			menu.appendChild(document.createElement('br'));
 			button_fraud.addEventListener('click', button_click);
 
 			// Resource taxing button
@@ -364,8 +364,8 @@ function create_button(element, container_element) {
 			button_resource.ad_type = 'taxing';
 			button_resource.div_interval = div_interval;
 			button_resource.rect_interval = rect_interval;
-			div.appendChild(button_resource);
-			div.appendChild(document.createElement('br'));
+			menu.appendChild(button_resource);
+			menu.appendChild(document.createElement('br'));
 			button_resource.addEventListener('click', button_click);
 
 			// Malicious button
@@ -375,8 +375,8 @@ function create_button(element, container_element) {
 			button_malicious.ad_type = 'malicious';
 			button_malicious.div_interval = div_interval;
 			button_malicious.rect_interval = rect_interval;
-			div.appendChild(button_malicious);
-			div.appendChild(document.createElement('br'));
+			menu.appendChild(button_malicious);
+			menu.appendChild(document.createElement('br'));
 			button_malicious.addEventListener('click', button_click);
 
 			// Cancel button
@@ -384,11 +384,11 @@ function create_button(element, container_element) {
 			button_cancel.innerHTML = 'or Cancel';
 			button_cancel.div_interval = div_interval;
 			button_cancel.rect_interval = rect_interval;
-			div.appendChild(button_cancel);
+			menu.appendChild(button_cancel);
 			button_cancel.addEventListener('click', function(e) {
 				var element = e.path[0];
 
-				// Stop checking button and button holder positions
+				// Stop checking button and button menu positions
 				if (element.rect_interval) {
 					clearInterval(element.rect_interval);
 					element.rect_interval = null;
@@ -398,7 +398,7 @@ function create_button(element, container_element) {
 					element.div_interval = null;
 				}
 
-				div.parentElement.removeChild(div);
+				menu.parentElement.removeChild(menu);
 				canvas.style.display = '';
 			});
 
