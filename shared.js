@@ -183,6 +183,11 @@ function get_element_hash(element, cb) {
 }
 
 function create_button(element, container_element) {
+	// Just return if this element already has a button
+	if (element.canvas) {
+		return;
+	}
+
 	// Add a button when the mouse is over the element
 	var mouse_enter = function(e) {
 		var node = e.path[0];
@@ -437,7 +442,7 @@ function is_ad(hash) {
 }
 
 function check_elements_that_may_be_ads() {
-	for (var tag in TAGS2) {
+	for (var tag in TAGS1) {
 		var elements = document.getElementsByTagName(tag);
 		for (var i=0; i<elements.length; ++i) {
 			var element = elements[i];
@@ -462,6 +467,14 @@ function check_elements_that_may_be_ads() {
 
 				// Element image has a source
 				switch (name) {
+					// NOTE: For some reason, this is not triggered for all iframes. So
+					// we also do it when the message 'show_iframe_element' is posted to the
+					// iframe itself.
+					case 'iframe':
+						show_element(element);
+						set_border(element, 'red');
+						create_button(element, null);
+						break;
 					case 'img':
 						if (element.src && element.src.length > 0) {
 							g_known_elements[element.id] = 1;

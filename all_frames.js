@@ -1,20 +1,23 @@
 // Copyright (c) 2015 Matthew Brennan Jones <matthew.brennan.jones@gmail.com>
 // This software is licensed under GPL v3 or later
 
+
 window.addEventListener('message', function(event) {
+	// NOTE: For some reason, not all of these messages are received. So
+	// We also set up the iframe in check_elements_that_may_be_ads()
 	if (event.data && event.data.message === 'show_iframe_element') {
 		for (var i=0; i<window.frames.length; ++i) {
 			if (window.frames[i] == event.source) {
 				var f = window.frames[i].frameElement;
 				show_element(f);
 				set_border(f, 'red');
+				create_button(f, null);
 				return;
 			}
 		}
 
 	} else if (event.data && event.data.message === 'show_iframe_body') {
 		// Make the iframe's body visible
-//		window.document.body.style.border = '10px solid yellow';
 		window.document.body.style.opacity = 1.0;
 		window.document.body.style.pointerEvents = 'all';
 
@@ -22,7 +25,6 @@ window.addEventListener('message', function(event) {
 		var request = {
 			message: 'show_iframe_element'
 		};
-		// FIXME: For some reason, not all the messages are going to the parent
 		window.parent.postMessage(request, '*');
 	// Wait for the iframe to tell us that it has loaded
 	} else if (event.data && event.data.message === 'iframe_loaded') {
