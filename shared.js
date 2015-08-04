@@ -2,6 +2,18 @@
 // This software is licensed under GPL v3 or later
 
 
+/*
+TODO:
+. Getting element screen shots breaks inside iframes
+. Getting screen shots gets the wrong area in Windows 8.1 tablet
+. Move popup menu to top window when inside iframe
+. Popup menu can get stuck off partially off screen
+. Ad info posted to the server should include URL, and extension id
+. We need a way to count active users.
+. Make it work on Firefox
+. Make it work on touch screens
+*/
+
 var DEBUG = true;
 var BUTTON_SIZE = 15;
 var BORDER_SIZE = DEBUG ? 5 : 1;
