@@ -1,8 +1,10 @@
 // Copyright (c) 2015 Matthew Brennan Jones <matthew.brennan.jones@gmail.com>
 // This software is licensed under GPL v3 or later
 
+
 var DEBUG = true;
 var BUTTON_SIZE = 15;
+var BORDER_SIZE = DEBUG ? 5 : 1;
 var g_known_elements = {};
 var g_cursor_x = 0;
 var g_cursor_y = 0;
@@ -53,8 +55,12 @@ function show_element(element) {
 }
 
 function set_border(element, color) {
+	if (! element.border_color) {
+		element.border_color = color;
+	}
+
 	if (DEBUG) {
-		element.style.border = '5px solid ' + color;
+		element.style.border = BORDER_SIZE + 'px solid ' + color;
 	}
 }
 
@@ -188,6 +194,10 @@ function create_button(element, container_element) {
 		return;
 	}
 
+	if (! element.prev_border) {
+		element.prev_border = element.style.border;
+	}
+
 	// Add a button when the mouse is over the element
 	var mouse_enter = function(e) {
 		var node = e.path[0];
@@ -202,6 +212,7 @@ function create_button(element, container_element) {
 //		if (! DEBUG) {
 			color = 'purple';
 //		}
+		node.style.border = BORDER_SIZE + 'px dashed ' + node.border_color;
 		var rect = get_element_rect(node);
 
 		// Create a button over the bottom right of the element
@@ -231,6 +242,7 @@ function create_button(element, container_element) {
 		var rect_interval = setInterval(function() {
 			if (g_cursor_x < rect.left + window.pageXOffset || g_cursor_x > rect.left + window.pageXOffset + rect.width ||
 				g_cursor_y < rect.top + window.pageYOffset || g_cursor_y > rect.top + window.pageYOffset + rect.height) {
+				node.style.border = element.prev_border;
 				node.canvas = null;
 				document.body.removeChild(canvas);
 				clearInterval(rect_interval);
