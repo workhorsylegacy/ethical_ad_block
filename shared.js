@@ -170,7 +170,7 @@ function get_element_hash(element, cb) {
 				hash = hex_md5(element.outerHTML);
 				cb(hash, element);
 			};
-			img.src = element.src;
+			img.src = element.src || element.srcset;
 			break;
 		case 'iframe':
 			throw "Can't hash iframe";
@@ -488,7 +488,7 @@ function check_elements_that_may_be_ads() {
 						create_button(element, null);
 						break;
 					case 'img':
-						if (element.src && element.src.length > 0) {
+						if (element.src && element.src.length > 0 || element.srcset && element.srcset.length > 0) {
 							g_known_elements[element.id] = 1;
 							console.log(element);
 
