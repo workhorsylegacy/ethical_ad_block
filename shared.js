@@ -4,6 +4,9 @@
 
 /*
 TODO:
+. When we show elements, we just force the opacity and pointerEvents to 1.0 and 'all'. 
+	This will break items that did not have them on 1.0 and 'all' to begin with.
+. News story titles on Google news do not show
 . Getting element screen shots breaks inside iframes
 . Getting screen shots gets the wrong area in Windows 8.1 tablet
 . Move popup menu to top window when inside iframe
