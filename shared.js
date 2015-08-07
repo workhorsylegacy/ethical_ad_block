@@ -255,9 +255,16 @@ function create_button(element, container_element) {
 
 		// Keep checking the mouse position. If it moves out of the element, remove the button
 		var rect_interval = setInterval(function() {
-			if (g_cursor_x < rect.left + window.pageXOffset || g_cursor_x > rect.left + window.pageXOffset + rect.width ||
-				g_cursor_y < rect.top + window.pageYOffset || g_cursor_y > rect.top + window.pageYOffset + rect.height) {
-				node.style.border = element.prev_border;
+			var r = get_element_rect(node);
+			var l = r.left + window.pageXOffset;
+			var t = r.top + window.pageYOffset;
+			l = l < 0.0 ? 0.0 : l;
+			t = t < 0.0 ? 0.0 : t;
+			if (g_cursor_x <= l ||
+				g_cursor_x >= l + r.width ||
+				g_cursor_y <= t ||
+				g_cursor_y >= t + r.height) {
+				node.style.border = node.prev_border;
 				node.canvas = null;
 				document.body.removeChild(canvas);
 				clearInterval(rect_interval);
@@ -327,7 +334,7 @@ function create_button(element, container_element) {
 				}
 
 				// Remove the border and buttons
-				node.style.border = '';
+				node.style.border = node.prev_border;
 				menu.parentElement.removeChild(menu);
 
 				// Wait for the next set of DOM events, so the element's border will be removed

@@ -2,6 +2,18 @@
 // This software is licensed under GPL v3 or later
 
 
+// Save the mouse position when it moves
+document.addEventListener('mousemove', function(e) {
+	g_cursor_x = e.pageX;
+	g_cursor_y = e.pageY;
+}, false);
+
+// When the mouse exits the page, reset the saved mouse position to 0, 0
+document.addEventListener('mouseout', function(e) {
+	g_cursor_x = 0;
+	g_cursor_y = 0;
+}, false);
+
 window.addEventListener('message', function(event) {
 	// NOTE: For some reason, not all of these messages are received. So
 	// We also set up the iframe in check_elements_that_may_be_ads()
@@ -46,12 +58,6 @@ window.addEventListener('message', function(event) {
 			event.source.postMessage(request, '*');
 		}
 	}
-}, false);
-
-document.addEventListener('mousemove', function(e) {
-	g_cursor_x = e.pageX;
-	g_cursor_y = e.pageY;
-//	console.log(g_cursor_x + ', ' + g_cursor_y);
 }, false);
 
 // If running in an iframe
