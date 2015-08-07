@@ -4,6 +4,7 @@
 
 /*
 TODO:
+. When an element is the only one in an iframe, or the largest, make closing it close the iframe instead.
 . When we show elements, we just force the opacity and pointerEvents to 1.0 and 'all'. 
 	This will break items that did not have them on 1.0 and 'all' to begin with.
 . News story titles on Google news do not show
