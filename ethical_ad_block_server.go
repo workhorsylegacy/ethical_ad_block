@@ -13,10 +13,10 @@ import (
 	"time"
 )
 
-var hashes_good map[string]uint64
-var hashes_fraudulent map[string]uint64
-var hashes_taxing map[string]uint64
-var hashes_malicious map[string]uint64
+var ads_good map[string]uint64
+var ads_fraudulent map[string]uint64
+var ads_taxing map[string]uint64
+var ads_malicious map[string]uint64
 var user_ids map[string]time.Time
 
 func httpCB(w http.ResponseWriter, r *http.Request) {
@@ -24,65 +24,72 @@ func httpCB(w http.ResponseWriter, r *http.Request) {
 
 	// Vote for ad request
 	if _, ok := values["vote_ad"]; ok {
-		hash := values["vote_ad"][0]
+		// FIXME: This will break if these arguments are not present
+		// Get the arguments
+		ad_id := values["vote_ad"][0]
 		ad_type := values["ad_type"][0]
 		user_id := values["user_id"][0]
-		var votes uint64 = 0
+
+		// Figure out which type of vote it will be
+		var ad_map *map[string]uint64
+		switch ad_type {
+			case "good": ad_map = &ads_good
+			case "fraudulent": ad_map = &ads_fraudulent
+			case "taxing": ad_map = &ads_taxing
+			case "malicious": ad_map = &ads_malicious
+			default:
+				fmt.Fprintf(w, "Invalid ad_type\n")
+				return
+		}
+
+		// Cast the vote
+		(*ad_map)[ad_id] += 1
+		votes := (*ad_map)[ad_id]
 
 		// Save the time that the user voted
 		user_ids[user_id] = time.Now()
 
-		switch ad_type {
-			case "good":
-				hashes_good[hash] += 1
-				votes = hashes_good[hash]
-			case "fraudulent":
-				hashes_fraudulent[hash] += 1
-				votes = hashes_fraudulent[hash]
-			case "taxing":
-				hashes_taxing[hash] += 1
-				votes = hashes_taxing[hash]
-			case "malicious":
-				hashes_malicious[hash] += 1
-				votes = hashes_malicious[hash]
-		}
-		fmt.Fprintf(w, "hash:%s, ad_type:%s, votes:%d\n", hash, ad_type, votes)
+		// Return the response
+		fmt.Fprintf(w, "ad_id:%s, ad_type:%s, votes:%d\n", ad_id, ad_type, votes)
 
 	// List ads request
 	} else if _, ok := values["list"]; ok {
-		fmt.Fprintf(w, "hashes_good:\n")
-		for hash, votes := range hashes_good {
-			fmt.Fprintf(w, "    %s : %d\n", hash, votes)
+		// Print the values of all the ad maps
+		fmt.Fprintf(w, "ads_good:\n")
+		for ad_id, votes := range ads_good {
+			fmt.Fprintf(w, "    %s : %d\n", ad_id, votes)
 		}
 
-		fmt.Fprintf(w, "hashes_fraudulent:\n")
-		for hash, votes := range hashes_fraudulent {
-			fmt.Fprintf(w, "    %s : %d\n", hash, votes)
+		fmt.Fprintf(w, "ads_fraudulent:\n")
+		for ad_id, votes := range ads_fraudulent {
+			fmt.Fprintf(w, "    %s : %d\n", ad_id, votes)
 		}
 
-		fmt.Fprintf(w, "hashes_taxing:\n")
-		for hash, votes := range hashes_taxing {
-			fmt.Fprintf(w, "    %s : %d\n", hash, votes)
+		fmt.Fprintf(w, "ads_taxing:\n")
+		for ad_id, votes := range ads_taxing {
+			fmt.Fprintf(w, "    %s : %d\n", ad_id, votes)
 		}
 
-		fmt.Fprintf(w, "hashes_malicious:\n")
-		for hash, votes := range hashes_malicious {
-			fmt.Fprintf(w, "    %s : %d\n", hash, votes)
+		fmt.Fprintf(w, "ads_malicious:\n")
+		for ad_id, votes := range ads_malicious {
+			fmt.Fprintf(w, "    %s : %d\n", ad_id, votes)
 		}
 
 	// Unexpected request
 	} else {
-		fmt.Fprintf(w, "Unexpected request")
+		fmt.Fprintf(w, "Unexpected request\n")
 	}
 }
 
 func main() {
-	hashes_good = make(map[string]uint64)
-	hashes_fraudulent = make(map[string]uint64)
-	hashes_taxing = make(map[string]uint64)
-	hashes_malicious = make(map[string]uint64)
+	// Initialize all the maps
+	ads_good = make(map[string]uint64)
+	ads_fraudulent = make(map[string]uint64)
+	ads_taxing = make(map[string]uint64)
+	ads_malicious = make(map[string]uint64)
 	user_ids = make(map[string]time.Time)
 
+	// Get the port number
 	var err error
 	var port int64 = 9000
 	if len(os.Args) >= 1 {
@@ -92,6 +99,7 @@ func main() {
 		}
 	}
 
+	// Run the server
 	server_address := fmt.Sprintf("127.0.0.1:%v", port)
 	http.HandleFunc("/", httpCB)
 	err = http.ListenAndServe(server_address, nil)
