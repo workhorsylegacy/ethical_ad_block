@@ -147,7 +147,7 @@ chrome.runtime.onMessage.addListener(function(msg, sender, sendResponse) {
 chrome.tabs.onUpdated.addListener(function (tabId, changeInfo, tab) {
 	active_url = tab.url;
 
-	if (changeInfo.status == 'complete') {
+	if (changeInfo.status === 'complete') {
 		// Send the user id to each new tab
 		var message = {
 			action: 'get_g_user_id',
