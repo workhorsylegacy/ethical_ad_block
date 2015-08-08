@@ -14,6 +14,12 @@ document.addEventListener('mouseout', function(e) {
 	g_cursor_y = 0;
 }, false);
 
+chrome.runtime.onMessage.addListener(function(msg, sender, sendResponse) {
+	if (msg.action === 'get_g_user_id') {
+		g_user_id = msg.data;
+	}
+});
+
 window.addEventListener('message', function(event) {
 	// NOTE: For some reason, not all of these messages are received. So
 	// We also set up the iframe in check_elements_that_may_be_ads()

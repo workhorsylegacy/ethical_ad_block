@@ -24,6 +24,7 @@ var BORDER_SIZE = DEBUG ? 5 : 1;
 var g_known_elements = {};
 var g_cursor_x = 0;
 var g_cursor_y = 0;
+var g_user_id = null;
 
 var TAGS1 = {
 	'a' : 'purple',
@@ -366,7 +367,8 @@ function create_button(element, container_element) {
 								}
 							};
 							var request = 'http://localhost:9000' +
-								'?vote_ad=' + hash +
+								'?id=' + g_user_id +
+								'&vote_ad=' + hash +
 								'&ad_type=' + element.ad_type;
 							httpRequest.open('GET', request, true);
 							httpRequest.send(null);

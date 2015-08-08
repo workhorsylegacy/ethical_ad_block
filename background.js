@@ -21,6 +21,26 @@ BLACKLIST = [];
 var messages = [];
 var is_ready = false;
 var active_url = null;
+var g_user_id = null;
+
+
+
+function generate_random_id() {
+	// Get a 20 character id
+	var code_table = "0123456789ABCDEFGHIJKLMNOPQRSTUVWXYZ";
+	var id = [];
+	for (var i = 0; i < 20; ++i) {
+		// Get a random number between 0 and 35
+		var num = Math.floor((Math.random() * 36));
+
+		// Get the character that corresponds to the number
+		id.push(code_table[num]);
+	}
+
+	return id.join('');
+}
+
+g_user_id = generate_random_id();
 
 function log_to_active_tab(message) {
 	chrome.tabs.query({active: true, currentWindow: true}, function(tabs) {
@@ -106,6 +126,7 @@ chrome.webRequest.onBeforeRequest.addListener(function(info) {
 chrome.runtime.onMessage.addListener(function(msg, sender, sendResponse) {
 	if (msg.action === 'screen_shot') {
 		var rect = msg.rect;
+
 		chrome.tabs.query({active: true, currentWindow: true}, function(tabs) {
 			var tab = tabs[0];
 
@@ -131,6 +152,13 @@ chrome.tabs.onUpdated.addListener(function (tabId, changeInfo, tab) {
 	active_url = tab.url;
 
 	if (changeInfo.status == 'complete') {
+		// Send the user id to each new tab
+		var message = {
+			action: 'get_g_user_id',
+			data: g_user_id
+		};
+		chrome.tabs.sendMessage(tabId, message, function(response) {});
+
 		// Log messages to the tab's console
 		is_ready = true;
 		for (var i=0; i<messages.length; ++i) {
