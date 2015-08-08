@@ -367,7 +367,7 @@ function create_button(element, container_element) {
 								}
 							};
 							var request = 'http://localhost:9000' +
-								'?id=' + g_user_id +
+								'?user_id=' + g_user_id +
 								'&vote_ad=' + hash +
 								'&ad_type=' + element.ad_type;
 							httpRequest.open('GET', request, true);

@@ -8,6 +8,7 @@ import (
 	"os"
 	"log"
 	"strconv"
+	"time"
 	"net/http"
 )
 
@@ -15,6 +16,7 @@ var hashes_good map[string]uint64
 var hashes_fraudulent map[string]uint64
 var hashes_taxing map[string]uint64
 var hashes_malicious map[string]uint64
+var user_ids map[string]time.Time
 
 func httpCB(w http.ResponseWriter, r *http.Request) {
 	values := r.URL.Query()
@@ -23,7 +25,11 @@ func httpCB(w http.ResponseWriter, r *http.Request) {
 	if _, ok := values["vote_ad"]; ok {
 		hash := values["vote_ad"][0]
 		ad_type := values["ad_type"][0]
+		user_id := values["user_id"][0]
 		var votes uint64 = 0
+
+		// Save the time that the user voted
+		user_ids[user_id] = time.Now()
 
 		switch ad_type {
 			case "good":
@@ -74,6 +80,7 @@ func main() {
 	hashes_fraudulent = make(map[string]uint64)
 	hashes_taxing = make(map[string]uint64)
 	hashes_malicious = make(map[string]uint64)
+	user_ids = make(map[string]time.Time)
 
 	var err error
 	var port int64 = 9000
