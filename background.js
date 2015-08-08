@@ -127,22 +127,18 @@ chrome.runtime.onMessage.addListener(function(msg, sender, sendResponse) {
 	if (msg.action === 'screen_shot') {
 		var rect = msg.rect;
 
-		chrome.tabs.query({active: true, currentWindow: true}, function(tabs) {
-			var tab = tabs[0];
-
-			// Screen capture the tab and send it to the tab's console
-			chrome.tabs.captureVisibleTab(
-				null,
-				{},
-				function(dataUrl) {
-					var message = {
-						action: 'screen_shot',
-						data: dataUrl
-					};
-					chrome.tabs.sendMessage(tab.id, message, function(response) {});
-				}
-			);
-		});
+		// Screen capture the tab and send it to the tab's console
+		chrome.tabs.captureVisibleTab(
+			null,
+			{},
+			function(dataUrl) {
+				var message = {
+					action: 'screen_shot',
+					data: dataUrl
+				};
+				chrome.tabs.sendMessage(sender.tab.id, message, function(response) {});
+			}
+		);
 	}
 });
 
