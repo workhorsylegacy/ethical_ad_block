@@ -49,6 +49,21 @@ func httpCB(w http.ResponseWriter, r *http.Request) {
 			user_ads[user_id] = NewAdData()
 		}
 
+		// Remove the previous vote, if there already is one for this ad
+		if _, ok := user_ads[user_id].good[ad_id]; ok {
+			delete(user_ads[user_id].good, ad_id)
+			all_ads.good[ad_id] -= 1
+		} else if _, ok := user_ads[user_id].fraudulent[ad_id]; ok {
+			delete(user_ads[user_id].fraudulent, ad_id)
+			all_ads.fraudulent[ad_id] -= 1
+		} else if _, ok := user_ads[user_id].taxing[ad_id]; ok {
+			delete(user_ads[user_id].taxing, ad_id)
+			all_ads.taxing[ad_id] -= 1
+		} else if _, ok := user_ads[user_id].malicious[ad_id]; ok {
+			delete(user_ads[user_id].malicious, ad_id)
+			all_ads.malicious[ad_id] -= 1
+		}
+
 		// Figure out which type of vote it will be
 		var ad_map *map[string]uint64
 		var ad_map_user *map[string]uint64
