@@ -33,12 +33,16 @@ var user_ads map[string]*AdData
 var all_ads *AdData
 var user_ids map[string]time.Time
 
+func hasKey(self map[string][]string, key string) bool {
+	_, ok := self[key]
+	return ok
+}
+
 func httpCB(w http.ResponseWriter, r *http.Request) {
 	values := r.URL.Query()
 
 	// Vote for ad request
-	if _, ok := values["vote_ad"]; ok {
-		// FIXME: This will break if these arguments are not present
+	if hasKey(values, "vote_ad") && hasKey(values, "ad_type") && hasKey(values, "user_id"){
 		// Get the arguments
 		ad_id := values["vote_ad"][0]
 		ad_type := values["ad_type"][0]
@@ -98,7 +102,7 @@ func httpCB(w http.ResponseWriter, r *http.Request) {
 		fmt.Fprintf(w, "ad_id:%s, ad_type:%s, votes:%d, user_votes:%d\n", ad_id, ad_type, votes, user_votes)
 
 	// List ads request
-	} else if _, ok := values["list"]; ok {
+	} else if hasKey(values, "list") {
 		// Print the values of all the ad maps
 		fmt.Fprintf(w, "good:\n")
 		for ad_id, votes := range all_ads.good {
