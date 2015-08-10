@@ -195,7 +195,7 @@ function get_element_hash(element, cb) {
 		case 'img':
 			// Copy the image to a cross origin safe one
 			// then hash it
-			var img = new Image;
+			var img = new Image();
 			img.crossOrigin = 'Anonymous';
 			img.onload = function() {
 				// Create a hash of the image
@@ -213,15 +213,25 @@ function get_element_hash(element, cb) {
 				alert('Failed to hash img: ' + element.outerHTML);
 				cb(null, element);
 			};
-			img.src = element.src || element.srcset;
+			if (element.src && element.src.length) {
+				img.src = element.src;
+			} else if (element.srcset && element.srcset.length) {
+				img.src = element.srcset;
+			}
 			break;
 		case 'iframe':
-			throw "Can't hash iframe";
+			var hash = hex_md5(element.src);
+			cb(hash, element);
 			break;
-		// FIXME: video, object, and embed can NOT be properly hashed yet
 		case 'embed':
 		case 'object':
+			var hash = hex_md5(element.data);
+			cb(hash, element);
+			break;
 		case 'video':
+			var hash = hex_md5(element.src);
+			cb(hash, element);
+			break;
 		case 'a':
 			var hash = null;
 			if (element.href && element.href.length > 0) {
@@ -543,9 +553,17 @@ function check_elements_that_may_be_ads() {
 					// we also do it when the message 'show_iframe_element' is posted to the
 					// iframe itself.
 					case 'iframe':
-						show_element(element);
-						set_border(element, 'red');
-						create_button(element, null);
+						get_element_hash(element, function(hash, n) {
+							isAd(hash, function(is_ad) {
+								if (is_ad) {
+									n.parentElement.removeChild(n);
+								} else {
+									show_element(n);
+									set_border(n, 'red');
+									create_button(n, null);
+								}
+							});
+						});
 						break;
 					case 'img':
 						if (element.src && element.src.length > 0 || element.srcset && element.srcset.length > 0) {
