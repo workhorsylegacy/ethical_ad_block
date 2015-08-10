@@ -4,6 +4,8 @@
 
 /*
 TODO:
+. There are problems with mixed content https://news.ycombinator.com/news
+. Show users a warning if another Ad Blocker is running
 . Many elements on http://streamtuner.me/ don't get seen as possible ads
 . Save the randomly generated user id in localStorage.
 . When an element is the only one in an iframe, or the largest, make closing it close the iframe instead.
@@ -478,8 +480,21 @@ function to_array(obj) {
 	return retval;
 }
 
-function is_ad(hash) {
-	return false;
+function isAd(hash, cb) {
+	var httpRequest = new XMLHttpRequest();
+	httpRequest.onreadystatechange = function() {
+		if (httpRequest.readyState === 4) {
+			console.log(httpRequest.status);
+			console.log(httpRequest.responseText);
+			var is_ad = (httpRequest.responseText.toLowerCase() === 'true');
+			cb(is_ad);
+		}
+	};
+	var request = 'http://localhost:9000' +
+		'?is_ad=' + hash;
+	console.log(request);
+	httpRequest.open('GET', request, true);
+	httpRequest.send(null);
 }
 
 function check_elements_that_may_be_ads() {
@@ -528,17 +543,19 @@ function check_elements_that_may_be_ads() {
 									node.removeEventListener('load', load_cb);
 
 									get_element_hash(node, function(hash, n) {
-										if (is_ad(hash)) {
-											document.body.removeChild(n);
-										} else {
-											show_element(n);
-											if (! is_too_small(n)) {
-												set_border(n, 'blue');
-												create_button(n, null);
+										isAd(hash, function(is_ad) {
+											if (is_ad) {
+												document.body.removeChild(n);
 											} else {
-//												set_border(n, 'green');
+												show_element(n);
+												if (! is_too_small(n)) {
+													set_border(n, 'blue');
+													create_button(n, null);
+												} else {
+	//												set_border(n, 'green');
+												}
 											}
-										}
+										});
 									});
 								};
 
@@ -548,17 +565,19 @@ function check_elements_that_may_be_ads() {
 								var node = element;
 
 								get_element_hash(node, function(hash, n) {
-									if (is_ad(hash)) {
-										document.body.removeChild(n);
-									} else {
-										show_element(n);
-										if (! is_too_small(n)) {
-											set_border(n, 'blue');
-											create_button(n, null);
+									isAd(hash, function(is_ad) {
+										if (is_ad) {
+											document.body.removeChild(n);
 										} else {
-//											set_border(n, 'green');
+											show_element(n);
+											if (! is_too_small(n)) {
+												set_border(n, 'blue');
+												create_button(n, null);
+											} else {
+	//											set_border(n, 'green');
+											}
 										}
-									}
+									});
 								});
 							}
 						}
@@ -573,49 +592,53 @@ function check_elements_that_may_be_ads() {
 
 							// FIXME: This does not hash the image
 							get_element_hash(element, function(hash, n) {
-								if (is_ad(hash)) {
-									document.body.removeChild(n);
-								} else {
-									show_element(n);
-									if (! is_too_small(n)) {
-										set_border(n, 'purple');
-										create_button(n, null);
+								isAd(hash, function(is_ad) {
+									if (is_ad) {
+										document.body.removeChild(n);
 									} else {
-										set_border(n, 'green');
+										show_element(n);
+										if (! is_too_small(n)) {
+											set_border(n, 'purple');
+											create_button(n, null);
+										} else {
+											set_border(n, 'green');
+										}
 									}
-								}
+								});
 							});
 						// Anchor has children
 						} else if (element.children.length > 0) {
 							console.log(element);
 
 							get_element_hash(element, function(hash, n) {
-								if (is_ad(hash)) {
-									document.body.removeChild(n);
-								} else {
-									// Add a button to the link
-									show_element(n);
-									if (! is_too_small(n)) {
-										set_border(n, 'purple');
-										create_button(n, null);
-									}
+								isAd(hash, function(is_ad) {
+									if (is_ad) {
+										document.body.removeChild(n);
+									} else {
+										// Add a button to the link
+										show_element(n);
+										if (! is_too_small(n)) {
+											set_border(n, 'purple');
+											create_button(n, null);
+										}
 
-									// Add buttons to any children that are big enough
-									var cs = to_array(n.children);
-									while (cs.length > 0) {
-										var c = cs.pop();
-										cs = cs.concat(to_array(c.children));
-										// If the child is a tag we care about, or it has a background image
-										var bg = window.getComputedStyle(c)['background-image'];
-										if (c.tagName.toLowerCase() in TAGS2 || bg && bg !== 'none' && bg.length > 0) {
-											show_element(c);
-											if (! is_too_small(c)) {
-												set_border(c, 'purple');
-												create_button(c, n);
+										// Add buttons to any children that are big enough
+										var cs = to_array(n.children);
+										while (cs.length > 0) {
+											var c = cs.pop();
+											cs = cs.concat(to_array(c.children));
+											// If the child is a tag we care about, or it has a background image
+											var bg = window.getComputedStyle(c)['background-image'];
+											if (c.tagName.toLowerCase() in TAGS2 || bg && bg !== 'none' && bg.length > 0) {
+												show_element(c);
+												if (! is_too_small(c)) {
+													set_border(c, 'purple');
+													create_button(c, n);
+												}
 											}
 										}
 									}
-								}
+								});
 							});
 						// Anchor is just text
 						} else {
@@ -628,13 +651,15 @@ function check_elements_that_may_be_ads() {
 						console.log(element);
 
 						get_element_hash(element, function(hash, n) {
-							if (is_ad(hash)) {
-								document.body.removeChild(n);
-							} else {
-								show_element(n);
-								set_border(n, 'yellow');
-								create_button(n, null);
-							}
+							isAd(hash, function(is_ad) {
+								if (is_ad) {
+									document.body.removeChild(n);
+								} else {
+									show_element(n);
+									set_border(n, 'yellow');
+									create_button(n, null);
+								}
+							});
 						});
 						break;
 					case 'video':
@@ -642,17 +667,19 @@ function check_elements_that_may_be_ads() {
 						console.log(element);
 
 						get_element_hash(element, function(hash, n) {
-							if (is_ad(n)) {
-								document.body.removeChild(n);
-							} else {
-								show_element(n);
-								if (! is_too_small(n)) {
-									set_border(n, 'blue');
-									create_button(n, null);
+							isAd(hash, function(is_ad) {
+								if (is_ad) {
+									document.body.removeChild(n);
 								} else {
-									set_border(n, 'green');
+									show_element(n);
+									if (! is_too_small(n)) {
+										set_border(n, 'blue');
+										create_button(n, null);
+									} else {
+										set_border(n, 'green');
+									}
 								}
-							}
+							});
 						});
 						break;
 					default:
