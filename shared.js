@@ -52,6 +52,27 @@ var TAGS3 = {
 	'video' : 'blue'
 };
 
+function ajaxGet(request, successCb, failCb) {
+	var httpRequest = new XMLHttpRequest();
+	httpRequest.onreadystatechange = function() {
+		if (httpRequest.readyState === 4) {
+			if (httpRequest.status === 200) {
+				successCb(httpRequest.responseText);
+			} else {
+				failCb(httpRequest.status);
+			}
+		} else if (httpRequest.readyState === 0) {
+			failCb(0);
+		}
+	};
+	httpRequest.onerror = function() {
+		failCb(0);
+	};
+	httpRequest.timeout = 3000;
+	httpRequest.open('GET', request, true);
+	httpRequest.send(null);
+}
+
 function generate_random_id() {
 	// Get a 20 character id
 	var code_table = "0123456789ABCDEFGHIJKLMNOPQRSTUVWXYZ";
@@ -367,19 +388,17 @@ function create_button(element, container_element) {
 							node.parentElement.removeChild(node);
 
 							// Tell the server that this hash is for an ad
-							var httpRequest = new XMLHttpRequest();
-							httpRequest.onreadystatechange = function() {
-								if (httpRequest.readyState === 4) {
-									console.log(httpRequest.status);
-									console.log(httpRequest.responseText);
-								}
-							};
 							var request = 'http://localhost:9000' +
 								'?user_id=' + g_user_id +
 								'&vote_ad=' + hash +
 								'&ad_type=' + element.ad_type;
-							httpRequest.open('GET', request, true);
-							httpRequest.send(null);
+							var successCb = function(responseText) {
+								console.log(responseText);
+							};
+							var failCb = function(status) {
+								cb(false);
+							};
+							ajaxGet(request, successCb, failCb);
 						});
 					});
 				}, 333);
@@ -483,17 +502,15 @@ function to_array(obj) {
 }
 
 function isAd(hash, cb) {
-	var httpRequest = new XMLHttpRequest();
-	httpRequest.onreadystatechange = function() {
-		if (httpRequest.readyState === 4) {
-			var is_ad = (httpRequest.responseText.toLowerCase() === 'true');
-			cb(is_ad);
-		}
+	var request = 'http://localhost:9000?is_ad=' + hash;
+	var successCb = function(responseText) {
+		var is_ad = (responseText.toLowerCase() === 'true');
+		cb(is_ad);
 	};
-	var request = 'http://localhost:9000' +
-		'?is_ad=' + hash;
-	httpRequest.open('GET', request, true);
-	httpRequest.send(null);
+	var failCb = function(status) {
+		cb(false);
+	};
+	ajaxGet(request, successCb, failCb);
 }
 
 function check_elements_that_may_be_ads() {
