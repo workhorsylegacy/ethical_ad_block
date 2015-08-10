@@ -571,7 +571,7 @@ function check_elements_that_may_be_ads() {
 							console.log(element);
 
 							// Element's image has not loaded yet
-							if (element.clientWidth === 0) {
+							if (! element.complete) {
 								var load_cb = function(evt) {
 									var node = evt.path[0];
 									node.removeEventListener('load', load_cb);
