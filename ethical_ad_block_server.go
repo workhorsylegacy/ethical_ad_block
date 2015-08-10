@@ -76,9 +76,6 @@ func responseIsAd(w http.ResponseWriter, values map[string][]string) {
 
 	// Figure out if this is an ad
 	is_ad = bad_count > good_count
-	if is_ad {
-		fmt.Printf("ad_id:%v\n", ad_id)
-	}
 
 	fmt.Fprintf(w, "%t", is_ad)
 }

@@ -170,7 +170,6 @@ function get_screen_shot(rect, cb) {
 
 function get_element_hash(element, cb) {
 	// Create a hash of the image and its src
-	var hash = null;
 	switch (element.tagName.toLowerCase()) {
 		case 'img':
 			// Copy the image to a cross origin safe one
@@ -185,13 +184,13 @@ function get_element_hash(element, cb) {
 				var ctx = temp_canvas.getContext('2d');
 				ctx.drawImage(img, 0, 0);
 				var data_url = temp_canvas.toDataURL();
-				hash = hex_md5(element.outerHTML + data_url);
+				var hash = hex_md5(data_url);
 				cb(hash, element);
 			};
 			img.onerror = function() {
 				// Create a hash of the image
-				hash = hex_md5(element.outerHTML);
-				cb(hash, element);
+				alert('Failed to hash img: ' + element.outerHTML);
+				cb(null, element);
 			};
 			img.src = element.src || element.srcset;
 			break;
@@ -203,7 +202,10 @@ function get_element_hash(element, cb) {
 		case 'object':
 		case 'video':
 		case 'a':
-			hash = hex_md5(element.outerHTML);
+			var hash = null;
+			if (element.href && element.href.length > 0) {
+				hash = hex_md5(element.href);
+			}
 			cb(hash, element);
 			break;
 		default:
@@ -484,15 +486,12 @@ function isAd(hash, cb) {
 	var httpRequest = new XMLHttpRequest();
 	httpRequest.onreadystatechange = function() {
 		if (httpRequest.readyState === 4) {
-			console.log(httpRequest.status);
-			console.log(httpRequest.responseText);
 			var is_ad = (httpRequest.responseText.toLowerCase() === 'true');
 			cb(is_ad);
 		}
 	};
 	var request = 'http://localhost:9000' +
 		'?is_ad=' + hash;
-	console.log(request);
 	httpRequest.open('GET', request, true);
 	httpRequest.send(null);
 }
@@ -545,7 +544,7 @@ function check_elements_that_may_be_ads() {
 									get_element_hash(node, function(hash, n) {
 										isAd(hash, function(is_ad) {
 											if (is_ad) {
-												document.body.removeChild(n);
+												n.parentElement.removeChild(n);
 											} else {
 												show_element(n);
 												if (! is_too_small(n)) {
@@ -567,7 +566,7 @@ function check_elements_that_may_be_ads() {
 								get_element_hash(node, function(hash, n) {
 									isAd(hash, function(is_ad) {
 										if (is_ad) {
-											document.body.removeChild(n);
+											n.parentElement.removeChild(n);
 										} else {
 											show_element(n);
 											if (! is_too_small(n)) {
@@ -594,7 +593,7 @@ function check_elements_that_may_be_ads() {
 							get_element_hash(element, function(hash, n) {
 								isAd(hash, function(is_ad) {
 									if (is_ad) {
-										document.body.removeChild(n);
+										n.parentElement.removeChild(n);
 									} else {
 										show_element(n);
 										if (! is_too_small(n)) {
@@ -613,7 +612,7 @@ function check_elements_that_may_be_ads() {
 							get_element_hash(element, function(hash, n) {
 								isAd(hash, function(is_ad) {
 									if (is_ad) {
-										document.body.removeChild(n);
+										n.parentElement.removeChild(n);
 									} else {
 										// Add a button to the link
 										show_element(n);
@@ -653,7 +652,7 @@ function check_elements_that_may_be_ads() {
 						get_element_hash(element, function(hash, n) {
 							isAd(hash, function(is_ad) {
 								if (is_ad) {
-									document.body.removeChild(n);
+									n.parentElement.removeChild(n);
 								} else {
 									show_element(n);
 									set_border(n, 'yellow');
@@ -669,7 +668,7 @@ function check_elements_that_may_be_ads() {
 						get_element_hash(element, function(hash, n) {
 							isAd(hash, function(is_ad) {
 								if (is_ad) {
-									document.body.removeChild(n);
+									n.parentElement.removeChild(n);
 								} else {
 									show_element(n);
 									if (! is_too_small(n)) {
