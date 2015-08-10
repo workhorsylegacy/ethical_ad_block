@@ -4,6 +4,8 @@
 
 /*
 TODO:
+. Many elements on http://streamtuner.me/ don't get seen as possible ads
+. Save the randomly generated user id in localStorage.
 . When an element is the only one in an iframe, or the largest, make closing it close the iframe instead.
 . When we show elements, we just force the opacity and pointerEvents to 1.0 and 'all'. 
 	This will break items that did not have them on 1.0 and 'all' to begin with.
@@ -64,9 +66,11 @@ function generate_random_id() {
 }
 
 function show_element(element) {
+/*
 	element.style.position = '';
 	element.style.top = '';
 	element.style.left = '';
+*/
 	element.style.opacity = 1.0;
 	element.style.pointerEvents = 'all';
 }
