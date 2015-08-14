@@ -235,21 +235,59 @@ function get_element_hash(element, cb) {
 			break;
 		case 'a':
 			var hash = null;
-			if (element.href && element.href.length > 0) {
+			var bg = window.getComputedStyle(element)['background-image'];
+			if (bg && bg !== 'none' && bg.length > 0 && bg.indexOf('url(') === 0 && bg[bg.length-1] === ')') {
+				var img = new Image();
+				img.crossOrigin = 'Anonymous';
+				img.onload = function() {
+					// Create a hash of the image
+					var temp_canvas = document.createElement('canvas');
+					temp_canvas.width = img.width;
+					temp_canvas.height = img.height;
+					var ctx = temp_canvas.getContext('2d');
+					ctx.drawImage(img, 0, 0);
+					var data_url = temp_canvas.toDataURL();
+					var hash = hex_md5(data_url);
+					cb(hash, element);
+				};
+				img.onerror = function() {
+					// Create a hash of the image
+					alert('Failed to hash img: ' + element.outerHTML);
+					cb(null, element);
+				};
+				img.src = bg.substring(4, bg.length-1);
+			} else if (element.children.length > 0) {
+				hash = hex_md5(element.href);
+			} else if (element.href && element.href.length > 0) {
 				hash = hex_md5(element.href);
 			}
 			cb(hash, element);
+
 			break;
 		default:
 			throw "Unexpected element '" + element.tagName.toLowerCase() + "' to hash.";
 	}
 }
 
-function hash_current_document() {
+function hash_current_document(cb) {
+	// Hash the first found meaningful element
+	var tags = ['img', 'video', 'embed', 'object', 'iframe', 'a'];
+	for (var i=0; i<tags.length; ++i) {
+		var tag = tags[i];
+		var elements = document.getElementsByTagName(tag);
+		if (elements.length > 0) {
+			get_element_hash(elements[0], function(hash, element) {
+				cb(hash);
+			});
+			return;
+		}
+	}
+
+	// If there are no elements, hash the document
 	var serializer = new XMLSerializer();
 	var hash = serializer.serializeToString(document);
 	hash = hex_md5(hash);
-	return hash;
+	cb(hash);
 }
 
 function create_button(element, container_element) {
@@ -405,18 +443,20 @@ function create_button(element, container_element) {
 							// Remove the element
 							node.parentElement.removeChild(node);
 
-							// Tell the server that this hash is for an ad
-							var request = 'http://localhost:9000' +
-								'?user_id=' + g_user_id +
-								'&vote_ad=' + hash +
-								'&ad_type=' + element.ad_type;
-							var successCb = function(responseText) {
-								console.log(responseText);
-							};
-							var failCb = function(status) {
-								cb(false);
-							};
-							ajaxGet(request, successCb, failCb);
+							if (hash) {
+								// Tell the server that this hash is for an ad
+								var request = 'http://localhost:9000' +
+									'?user_id=' + g_user_id +
+									'&vote_ad=' + hash +
+									'&ad_type=' + element.ad_type;
+								var successCb = function(responseText) {
+									console.log(responseText);
+								};
+								var failCb = function(status) {
+									console.log('Failed to connect to server.');
+								};
+								ajaxGet(request, successCb, failCb);
+							}
 						});
 					});
 				}, 333);
@@ -520,6 +560,13 @@ function to_array(obj) {
 }
 
 function isAd(hash, cb) {
+	// If the hash is null, just use false
+	if (hash == null || hash == undefined) {
+		cb(false);
+		return;
+	}
+
+	// Check the web server to see if this hash is for an ad
 	var request = 'http://localhost:9000?is_ad=' + hash;
 	var successCb = function(responseText) {
 		var is_ad = (responseText.toLowerCase() === 'true');

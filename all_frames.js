@@ -91,21 +91,21 @@ if (window !== window.top) {
 			load_interval = null;
 
 			// Create a hash of the iframe
-			var hash = hash_current_document();
+			hash_current_document(function(hash) {
+				// Save this hash inside the iframe element
+				var request = {
+					message: 'set_document_hash',
+					hash: hash
+				};
+				window.parent.postMessage(request, '*');
 
-			// Save this hash inside the iframe element
-			var request = {
-				message: 'set_document_hash',
-				hash: hash
-			};
-			window.parent.postMessage(request, '*');
-
-			// Send the top window the hash
-			request = {
-				message: 'iframe_loaded',
-				hash: hash
-			};
-			window.top.postMessage(request, '*');
+				// Send the top window the hash
+				request = {
+					message: 'iframe_loaded',
+					hash: hash
+				};
+				window.top.postMessage(request, '*');
+			});
 		}
 	}, 300);
 }
