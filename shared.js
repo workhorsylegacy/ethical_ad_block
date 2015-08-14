@@ -4,6 +4,7 @@
 
 /*
 TODO:
+. Add a moderator mode that shows all ads, including counts below them, and lets users vote on them
 . There are problems with mixed content https://news.ycombinator.com/news
 . Show users a warning if another Ad Blocker is running
 . Many elements on http://streamtuner.me/ don't get seen as possible ads
@@ -220,7 +221,7 @@ function get_element_hash(element, cb) {
 			}
 			break;
 		case 'iframe':
-			var hash = hex_md5(element.src);
+			var hash = element.getAttribute('document_hash');
 			cb(hash, element);
 			break;
 		case 'embed':
@@ -242,6 +243,13 @@ function get_element_hash(element, cb) {
 		default:
 			throw "Unexpected element '" + element.tagName.toLowerCase() + "' to hash.";
 	}
+}
+
+function hash_current_document() {
+	var serializer = new XMLSerializer();
+	var hash = serializer.serializeToString(document);
+	hash = hex_md5(hash);
+	return hash;
 }
 
 function create_button(element, container_element) {
@@ -553,17 +561,21 @@ function check_elements_that_may_be_ads() {
 					// we also do it when the message 'show_iframe_element' is posted to the
 					// iframe itself.
 					case 'iframe':
-						get_element_hash(element, function(hash, n) {
-							isAd(hash, function(is_ad) {
-								if (is_ad) {
-									n.parentElement.removeChild(n);
-								} else {
-									show_element(n);
-									set_border(n, 'red');
-									create_button(n, null);
-								}
+						var document_hash = element.getAttribute('document_hash');
+						if (document_hash && document_hash.length > 0) {
+//							alert(element);
+							get_element_hash(element, function(hash, n) {
+								isAd(hash, function(is_ad) {
+									if (is_ad) {
+										n.parentElement.removeChild(n);
+									} else {
+										show_element(n);
+										set_border(n, 'red');
+										create_button(n, null);
+									}
+								});
 							});
-						});
+						}
 						break;
 					case 'img':
 						if (element.src && element.src.length > 0 || element.srcset && element.srcset.length > 0) {

@@ -26,7 +26,9 @@ window.addEventListener('message', function(event) {
 	if (event.data && event.data.message === 'show_iframe_element') {
 		for (var i=0; i<window.frames.length; ++i) {
 			if (window.frames[i] == event.source) {
+				// Show the iframe and add a button
 				var f = window.frames[i].frameElement;
+//				alert(f.outerHTML);
 				show_element(f);
 				set_border(f, 'red');
 				create_button(f, null);
@@ -41,7 +43,8 @@ window.addEventListener('message', function(event) {
 
 		// Send the iframe's parent the show iframe message
 		var request = {
-			message: 'show_iframe_element'
+			message: 'show_iframe_element',
+			hash: event.data.hash
 		};
 		window.parent.postMessage(request, '*');
 	// Wait for the iframe to tell us that it has loaded
@@ -59,9 +62,20 @@ window.addEventListener('message', function(event) {
 		// Send the iframe window back the show iframe message
 		if (event.source) {
 			var request = {
-				message: 'show_iframe_body'
+				message: 'show_iframe_body',
+				hash: event.data.hash
 			};
 			event.source.postMessage(request, '*');
+		}
+	} else if (event.data && event.data.message === 'set_document_hash') {
+		// Get the hash of the document, and save it inside the parent iframe
+		var iframes = document.getElementsByTagName('iframe');
+		for (var i=0; i<iframes.length; ++i) {
+			if (iframes[i] === event.source.frameElement) {
+				iframes[i].setAttribute('document_hash', event.data.hash);
+				console.log(event.source.frameElement.getAttribute('document_hash'));
+				return;
+			}
 		}
 	}
 }, false);
@@ -77,12 +91,17 @@ if (window !== window.top) {
 			load_interval = null;
 
 			// Create a hash of the iframe
-			var serializer = new XMLSerializer();
-			var hash = serializer.serializeToString(document);
-			hash = hex_md5(hash);
+			var hash = hash_current_document();
+
+			// Save this hash inside the iframe element
+			var request = {
+				message: 'set_document_hash',
+				hash: hash
+			};
+			window.parent.postMessage(request, '*');
 
 			// Send the top window the hash
-			var request = {
+			request = {
 				message: 'iframe_loaded',
 				hash: hash
 			};
