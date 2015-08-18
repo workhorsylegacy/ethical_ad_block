@@ -4,6 +4,7 @@
 
 /*
 TODO:
+. Check why ads on stack overflow have different hashes, for the same ad after a reload.
 . Add a moderator mode that shows all ads, including counts below them, and lets users vote on them
 . There are problems with mixed content https://news.ycombinator.com/news
 . Show users a warning if another Ad Blocker is running
@@ -72,6 +73,25 @@ function ajaxGet(request, successCb, failCb) {
 	httpRequest.timeout = 3000;
 	httpRequest.open('GET', request, true);
 	httpRequest.send(null);
+}
+
+function get_iframe_guid(win) {
+	var retval = [];
+	var child = win;
+	var parent = win.parent;
+	while (parent && child && child !== window.top) {
+		for (var i=0; i < parent.frames.length; ++i) {
+			if (parent.frames[i] === child) {
+				retval.splice(0, 0, i);
+				break;
+			}
+		}
+		child = child.parent;
+		parent = child.parent;
+	}
+
+	retval.splice(0, 0, 0);
+	return retval.join('.');
 }
 
 function generate_random_id() {
@@ -218,6 +238,9 @@ function get_element_hash(element, cb) {
 				img.src = element.src;
 			} else if (element.srcset && element.srcset.length) {
 				img.src = element.srcset;
+			} else {
+				alert("Can't hash img with no source: " + element.outerHTML);
+				cb(null, element);
 			}
 			break;
 		case 'iframe':
@@ -610,24 +633,26 @@ function check_elements_that_may_be_ads() {
 					case 'iframe':
 						var document_hash = element.getAttribute('document_hash');
 						if (document_hash && document_hash.length > 0) {
+							g_known_elements[element.id] = 1;
+							var hash = document_hash;
 //							alert(element);
-							get_element_hash(element, function(hash, n) {
+//							get_element_hash(element, function(hash, n) {
 								isAd(hash, function(is_ad) {
 									if (is_ad) {
-										n.parentElement.removeChild(n);
+										element.parentElement.removeChild(element);
 									} else {
-										show_element(n);
-										set_border(n, 'red');
-										create_button(n, null);
+//										show_element(element);
+//										set_border(element, 'orange');
+//										create_button(element, null);
 									}
 								});
-							});
+//							});
 						}
 						break;
 					case 'img':
 						if (element.src && element.src.length > 0 || element.srcset && element.srcset.length > 0) {
 							g_known_elements[element.id] = 1;
-							console.log(element);
+//							console.log(element);
 
 							// Element's image has not loaded yet
 							if (! element.complete) {
@@ -681,7 +706,7 @@ function check_elements_that_may_be_ads() {
 						// Anchor has a background image
 						var bg = window.getComputedStyle(element)['background-image'];
 						if (bg && bg !== 'none' && bg.length > 0) {
-							console.log(element);
+//							console.log(element);
 
 							// FIXME: This does not hash the image
 							get_element_hash(element, function(hash, n) {
@@ -701,7 +726,7 @@ function check_elements_that_may_be_ads() {
 							});
 						// Anchor has children
 						} else if (element.children.length > 0) {
-							console.log(element);
+//							console.log(element);
 
 							get_element_hash(element, function(hash, n) {
 								isAd(hash, function(is_ad) {
@@ -741,7 +766,7 @@ function check_elements_that_may_be_ads() {
 					case 'object':
 					case 'embed':
 						g_known_elements[element.id] = 1;
-						console.log(element);
+//						console.log(element);
 
 						get_element_hash(element, function(hash, n) {
 							isAd(hash, function(is_ad) {
@@ -757,7 +782,7 @@ function check_elements_that_may_be_ads() {
 						break;
 					case 'video':
 						g_known_elements[element.id] = 1;
-						console.log(element);
+//						console.log(element);
 
 						get_element_hash(element, function(hash, n) {
 							isAd(hash, function(is_ad) {

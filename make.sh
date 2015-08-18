@@ -19,10 +19,19 @@ fi
 # Remove the exes
 rm -f ethical_ad_block_server.exe
 
-# Build the client exe
+# Build the server exe
 echo "Building ethical_ad_block_server.exe ..."
 go build ethical_ad_block_server.go
 
-# Run the client
-echo "Running ethical_ad_block_server.exe ..."
-ethical_ad_block_server.exe $1
+# Run the server
+echo "Running ethical_ad_block_server.exe at http://127.0.0.1:9000 ..."
+ethical_ad_block_server.exe $1 &
+
+# Run the example
+echo "Running examples at http://127.0.0.1:8000 ..."
+python -m http.server 8000 &
+
+# Run chrome
+echo "Starting Chrome with --allow-running-insecure-content ..."
+start chrome --allow-running-insecure-content
+

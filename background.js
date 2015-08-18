@@ -22,6 +22,7 @@ var messages = [];
 var is_ready = false;
 var active_url = null;
 var g_user_id = null;
+var g_loaded_frame_ids = {};
 
 
 
@@ -124,7 +125,21 @@ chrome.webRequest.onBeforeRequest.addListener(function(info) {
 
 
 chrome.runtime.onMessage.addListener(function(msg, sender, sendResponse) {
-	if (msg.action === 'screen_shot') {
+	if (msg.action === 'extension_loaded_into_frame') {
+		var id = msg.id;
+		console.info("!!!!!!!!: " + msg.id);
+		if (g_loaded_frame_ids.hasOwnProperty(sender.tab.id)) {
+			g_loaded_frame_ids[sender.tab.id][id] = 1;
+		}
+		sendResponse(null);
+		return true; // Make response async
+	} else if (msg.action === 'is_extension_loaded_into_frame') {
+		var id = msg.id;
+		var has_key = g_loaded_frame_ids[sender.tab.id].hasOwnProperty(id);
+//		console.info("????: " + msg.id + ', ' + has_key);
+		sendResponse(has_key);
+		return true; // Make response async
+	} else if (msg.action === 'screen_shot') {
 		var rect = msg.rect;
 
 		// Screen capture the tab and send it to the tab's console
@@ -139,6 +154,7 @@ chrome.runtime.onMessage.addListener(function(msg, sender, sendResponse) {
 				chrome.tabs.sendMessage(sender.tab.id, message, function(response) {});
 			}
 		);
+		return false; // FIXME: Update this to use sendResponse instead of sending another message
 	}
 });
 
@@ -146,6 +162,13 @@ chrome.runtime.onMessage.addListener(function(msg, sender, sendResponse) {
 // When the tab is ready
 chrome.tabs.onUpdated.addListener(function (tabId, changeInfo, tab) {
 	active_url = tab.url;
+	
+
+	// Clear the old frame ids for this tab
+	if (changeInfo.status === 'loading') {
+		console.info('!!!!!!!!!!!!!! Resetting frame dict: ' + changeInfo.status);
+		g_loaded_frame_ids[tabId] = {};
+	}
 
 	if (changeInfo.status === 'complete') {
 		// Send the user id to each new tab
