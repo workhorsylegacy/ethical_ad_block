@@ -10,7 +10,22 @@
 	<body style="padding: 50px;">
 
 		<iframe id="iframe_z" src="http://slashdot.org"></iframe>
+		<br />
 
+		FIXME: For some reason the content script won't load into this iframe
+		<br />
+		<iframe id="iframez2"></iframe>
+		<script>
+			var frame = document.getElementById('iframez2').contentDocument;
+			frame.open();
+			frame.writeln("<!doctype html><html><body>Iframe with hard coded document in body.</body></html>");
+			frame.close();
+		</script>
+		<br />
+
+		<iframe src="javascript:'<html><body>Iframe with hard coded document in body.</body></html>'"</iframe>
+		<br />
+		
 		<img id="img_d" src="icon_128.png" />
 
 	</body>

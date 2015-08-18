@@ -24,89 +24,44 @@ chrome.runtime.onMessage.addListener(function(msg, sender, sendResponse) {
 });
 
 window.addEventListener('message', function(event) {
-/*
-	// NOTE: For some reason, not all of these messages are received. So
-	// We also set up the iframe in check_elements_that_may_be_ads()
-	if (event.data && event.data.message === 'show_iframe_element') {
-		for (var i=0; i<window.frames.length; ++i) {
-			if (window.frames[i] == event.source) {
-				// Show the iframe and add a button
-				var f = window.frames[i].frameElement;
-//				alert(f.outerHTML);
-				show_element(f);
-				set_border(f, 'red');
-				create_button(f, null);
-				return;
-			}
-		}
-
-	} else if (event.data && event.data.message === 'show_iframe_body') {
-		// Make the iframe's body visible
-		window.document.body.style.opacity = 1.0;
-		window.document.body.style.pointerEvents = 'all';
-
-		// Send the iframe's parent the show iframe message
+	if (event.data && event.data.message === 'from_iframe_document_to_top_window') {
 		var request = {
-			message: 'show_iframe_element',
+			message: 'from_top_window_to_iframe_document',
 			hash: event.data.hash
 		};
-		window.parent.postMessage(request, '*');
-	// Wait for the iframe to tell us that it has loaded
-	} else if (event.data && event.data.message === 'iframe_loaded') {
-		// FIXME: Remove the iframe if the hash is in the black list
-		if (event.data.hash) {
-			try {
-				var element = event.source.frameElement;
-				create_button(element, null);
-			} catch (SecurityError) {
-				// pass
-			}
-		}
-
-		// Send the iframe window back the show iframe message
-		if (event.source) {
-			var request = {
-				message: 'show_iframe_body',
-				hash: event.data.hash
-			};
-			event.source.postMessage(request, '*');
-		}
-*/
-	if (event.data && event.data.message === 'show_iframe_element') {
-		
-	} else if (event.data && event.data.message === 'show_iframe_body') {
-		// Make the iframe's body visible
-		window.document.body.style.opacity = 1.0;
-		window.document.body.style.pointerEvents = 'all';
-
-		// Send the iframe's parent the show iframe message
+		event.source.postMessage(request, '*');
+	} else if (event.data && event.data.message === 'from_top_window_to_iframe_document') {
 		var request = {
-			message: 'show_iframe_element',
+			message: 'from_iframe_document_to_iframe_element',
 			hash: event.data.hash
 		};
+		// FIXME: This will often fail in iframes with no src, because they don't get content scripts loaded
 		window.parent.postMessage(request, '*');
-	} else if (event.data && event.data.message === 'set_document_hash') {
+	} else if (event.data && event.data.message === 'from_iframe_document_to_iframe_element') {
 		// Get the hash of the document, and save it inside the parent iframe
 		var iframes = document.getElementsByTagName('iframe');
 		for (var i=0; i<iframes.length; ++i) {
 			if (iframes[i] === event.source.frameElement) {
-//				alert('ass');
 				console.info('XXXXXXXXXXXXXXX');
 				iframes[i].setAttribute('document_hash', event.data.hash);
-//				console.log(event.source.frameElement.getAttribute('document_hash'));
 
 				show_element(iframes[i]);
 				set_border(iframes[i], 'red');
 				create_button(iframes[i], null);
 
-				var request = {
-					message: 'show_iframe_body',
-					hash: event.data.hash
-				};
-				event.source.postMessage(request, '*');
-				return;
+				break;
 			}
 		}
+
+		var request = {
+			message: 'from_iframe_element_to_iframe_document',
+			hash: event.data.hash
+		};
+		event.source.postMessage(request, '*');
+	// Make the iframe's document visible
+	} else if (event.data && event.data.message === 'from_iframe_element_to_iframe_document') {
+		show_element(window.document.body);
+		window.document.body.style.background = 'orange';
 	}
 }, false);
 
@@ -135,10 +90,10 @@ if (window !== window.top) {
 				hash_current_document(function(hash) {
 					// Save this hash inside the iframe element
 					var request = {
-						message: 'set_document_hash',
+						message: 'from_iframe_document_to_top_window',
 						hash: hash
 					};
-					window.parent.postMessage(request, '*');
+					window.top.postMessage(request, '*');
 				});
 			}
 		});
@@ -147,7 +102,7 @@ if (window !== window.top) {
 
 check_elements_loop();
 
-
+// FIXME: This is just for debugging
 // Tell the background page that this page has loaded the extension code
 var request = {
 	action: 'extension_loaded_into_frame',
