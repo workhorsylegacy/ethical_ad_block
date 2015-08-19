@@ -233,7 +233,7 @@ function get_element_hash(element, cb) {
 			img.onerror = function(e) {
 				var self = e.path[0];
 				// Create a hash of the image
-				alert('Failed to hash img: ' + self.src);
+				console.error('Failed to hash img: ' + self.src);
 				cb(null, element);
 			};
 			if (element.src && element.src.length > 0) {
@@ -241,7 +241,7 @@ function get_element_hash(element, cb) {
 			} else if (element.srcset && element.srcset.length > 0) {
 				img.src = element.srcset;
 			} else {
-				alert("Can't hash img with no source: " + element.outerHTML);
+				console.error("Can't hash img with no source: " + element.outerHTML);
 				cb(null, element);
 			}
 			break;
@@ -279,7 +279,7 @@ function get_element_hash(element, cb) {
 				img.onerror = function(e) {
 					var self = e.path[0];
 					// Create a hash of the image
-					alert('Failed to hash img: ' + self.src);
+					console.error('Failed to hash img: ' + self.src);
 					cb(null, element);
 				};
 				img.src = bg.substring(4, bg.length-1);
@@ -631,26 +631,47 @@ function check_elements_that_may_be_ads() {
 
 				// Element image has a source
 				switch (name) {
-					// NOTE: For some reason, this is not triggered for all iframes. So
-					// we also do it when the message 'from_iframe_document_to_iframe_element' is posted to the
-					// iframe itself.
 					case 'iframe':
+						// NOTE: The 'document_hash' attribute is set when the message 
+						// 'from_iframe_document_to_iframe_element' is posted to the iframe's window.			
 						var document_hash = element.getAttribute('document_hash');
 						if (document_hash && document_hash.length > 0) {
 							g_known_elements[element.id] = 1;
 							var hash = document_hash;
-//							alert(element);
-//							get_element_hash(element, function(hash, n) {
+							isAd(hash, function(is_ad) {
+								if (is_ad) {
+									element.parentElement.removeChild(element);
+								} else {
+//									show_element(element);
+//									set_border(element, 'orange');
+//									create_button(element, null);
+								}
+							});
+						// NOTE: In special cases the iframe does not get the content_script loaded into it.
+						// So we will have to manually check if the iframe's document is an ad.
+						} else if (element.src.toLowerCase() === 'about:blank' || element.src.toLowerCase().indexOf('javascript:') === 0 || ! element.getAttribute('src')) {
+							g_known_elements[element.id] = 1;
+
+							get_element_hash(element, function(hash, n) {
 								isAd(hash, function(is_ad) {
+									console.info('XXXXXXXXXXXXXXX');
 									if (is_ad) {
 										element.parentElement.removeChild(element);
 									} else {
-//										show_element(element);
-//										set_border(element, 'orange');
-//										create_button(element, null);
+										// Show the iframe element
+										show_element(element);
+										set_border(element, 'red');
+										create_button(element, null);
+
+										// Show the iframe's document
+										try {
+											show_element(element.contentDocument.body);
+										} catch(err) {
+
+										}
 									}
 								});
-//							});
+							});
 						}
 						break;
 					case 'img':

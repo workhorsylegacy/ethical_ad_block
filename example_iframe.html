@@ -12,7 +12,6 @@
 		<iframe id="iframe_z" src="http://slashdot.org"></iframe>
 		<br />
 
-		FIXME: For some reason the content script won't load into this iframe
 		<br />
 		<iframe id="iframez2"></iframe>
 		<script>
@@ -23,9 +22,15 @@
 		</script>
 		<br />
 
-		<iframe src="javascript:'<html><body>Iframe with hard coded document in body.</body></html>'"</iframe>
+		<iframe src="javascript:'<html><body>Iframe with hard coded document in body.</body></html>'"></iframe>
 		<br />
-		
+
+		<iframe src="about:blank" style="width: 100px; height: 100px;"></iframe>
+		<br />
+
+		<iframe style="width: 100px; height: 100px;"></iframe>
+		<br />
+
 		<img id="img_d" src="icon_128.png" />
 
 	</body>

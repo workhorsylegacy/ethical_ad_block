@@ -61,7 +61,7 @@ window.addEventListener('message', function(event) {
 	// Make the iframe's document visible
 	} else if (event.data && event.data.message === 'from_iframe_element_to_iframe_document') {
 		show_element(window.document.body);
-		window.document.body.style.background = 'orange';
+//		window.document.body.style.background = 'orange';
 	}
 }, false);
 
