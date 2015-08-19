@@ -218,25 +218,27 @@ function get_element_hash(element, cb) {
 			// then hash it
 			var img = new Image();
 			img.crossOrigin = 'Anonymous';
-			img.onload = function() {
+			img.onload = function(e) {
+				var self = e.path[0];
 				// Create a hash of the image
 				var temp_canvas = document.createElement('canvas');
-				temp_canvas.width = img.width;
-				temp_canvas.height = img.height;
+				temp_canvas.width = self.width;
+				temp_canvas.height = self.height;
 				var ctx = temp_canvas.getContext('2d');
-				ctx.drawImage(img, 0, 0);
+				ctx.drawImage(self, 0, 0);
 				var data_url = temp_canvas.toDataURL();
 				var hash = hex_md5(data_url);
 				cb(hash, element);
 			};
-			img.onerror = function() {
+			img.onerror = function(e) {
+				var self = e.path[0];
 				// Create a hash of the image
-				alert('Failed to hash img: ' + element.outerHTML);
+				alert('Failed to hash img: ' + self.src);
 				cb(null, element);
 			};
-			if (element.src && element.src.length) {
+			if (element.src && element.src.length > 0) {
 				img.src = element.src;
-			} else if (element.srcset && element.srcset.length) {
+			} else if (element.srcset && element.srcset.length > 0) {
 				img.src = element.srcset;
 			} else {
 				alert("Can't hash img with no source: " + element.outerHTML);
@@ -262,20 +264,22 @@ function get_element_hash(element, cb) {
 			if (bg && bg !== 'none' && bg.length > 0 && bg.indexOf('url(') === 0 && bg[bg.length-1] === ')') {
 				var img = new Image();
 				img.crossOrigin = 'Anonymous';
-				img.onload = function() {
+				img.onload = function(e) {
+					var self = e.path[0];
 					// Create a hash of the image
 					var temp_canvas = document.createElement('canvas');
-					temp_canvas.width = img.width;
-					temp_canvas.height = img.height;
+					temp_canvas.width = self.width;
+					temp_canvas.height = self.height;
 					var ctx = temp_canvas.getContext('2d');
-					ctx.drawImage(img, 0, 0);
+					ctx.drawImage(self, 0, 0);
 					var data_url = temp_canvas.toDataURL();
 					var hash = hex_md5(data_url);
 					cb(hash, element);
 				};
-				img.onerror = function() {
+				img.onerror = function(e) {
+					var self = e.path[0];
 					// Create a hash of the image
-					alert('Failed to hash img: ' + element.outerHTML);
+					alert('Failed to hash img: ' + self.src);
 					cb(null, element);
 				};
 				img.src = bg.substring(4, bg.length-1);
@@ -608,7 +612,7 @@ function check_elements_that_may_be_ads() {
 			var element = elements[i];
 
 			// If the element does not have an id, generate a random one
-			if (element.id === '' || element.id === undefined) {
+			if (element.id === '' || element.id === null || element.id === undefined) {
 				element.id = generate_random_id();
 			}
 
@@ -628,7 +632,7 @@ function check_elements_that_may_be_ads() {
 				// Element image has a source
 				switch (name) {
 					// NOTE: For some reason, this is not triggered for all iframes. So
-					// we also do it when the message 'show_iframe_element' is posted to the
+					// we also do it when the message 'from_iframe_document_to_iframe_element' is posted to the
 					// iframe itself.
 					case 'iframe':
 						var document_hash = element.getAttribute('document_hash');
