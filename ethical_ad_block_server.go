@@ -34,8 +34,8 @@ var all_ads *AdData
 var user_ids map[string]time.Time
 
 func hasKey(self map[string][]string, key string) bool {
-	_, ok := self[key]
-	return ok
+	value, ok := self[key]
+	return ok && value != nil && len(value) > 0 && value[0] != "null"
 }
 
 func httpCB(w http.ResponseWriter, r *http.Request) {
@@ -50,10 +50,21 @@ func httpCB(w http.ResponseWriter, r *http.Request) {
 	//  Check if element is an ad
 	} else if hasKey(values, "is_ad") {
 		responseIsAd(w, values)
+	// Clear all data
+	} else if hasKey(values, "clear") {
+		responseClear(w, values)
 	// Unexpected request
 	} else {
 		fmt.Fprintf(w, "Unexpected request\n")
 	}
+}
+
+func responseClear(w http.ResponseWriter, values map[string][]string) {
+	user_ads = make(map[string]*AdData)
+	all_ads = NewAdData()
+	user_ids = make(map[string]time.Time)
+
+	fmt.Fprintf(w, "ok")
 }
 
 func responseIsAd(w http.ResponseWriter, values map[string][]string) {

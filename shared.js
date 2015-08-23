@@ -4,6 +4,7 @@
 
 /*
 TODO:
+. Make hashing work with svg
 . Check why ads on stack overflow have different hashes, for the same ad after a reload.
 . Add a moderator mode that shows all ads, including counts below them, and lets users vote on them
 . There are problems with mixed content https://news.ycombinator.com/news
@@ -241,6 +242,7 @@ function get_element_hash(is_printed, element, cb) {
 				return;
 			}
 		}
+		console.error('Failed to hash iframe');
 		cb(null, element);
 		return;
 	}
@@ -284,12 +286,16 @@ function get_element_hash(is_printed, element, cb) {
 			break;
 		case 'iframe':
 			var hash = element.getAttribute('document_hash');
+			if (is_printed) {print_info(element, hash);}
 			cb(hash, element);
 			break;
 		case 'embed':
 		case 'object':
 			if (is_printed) {print_info(element, element.data);}
-			var hash = hex_md5(element.data);
+			var hash = null;
+			if (element.data) {
+				hash = hex_md5(element.data);
+			}
 			cb(hash, element);
 			break;
 		case 'video':
@@ -328,11 +334,14 @@ function get_element_hash(is_printed, element, cb) {
 			} else if (element.children.length > 0) {
 				if (is_printed) {print_info(element, element.href);}
 				hash = hex_md5(element.href);
+				cb(hash, element);
 			} else if (element.href && element.href.length > 0) {
 				if (is_printed) {print_info(element, element.href);}
 				hash = hex_md5(element.href);
+				cb(hash, element);
+			} else {
+				cb(hash, element);
 			}
-			cb(hash, element);
 
 			break;
 		default:
@@ -481,7 +490,7 @@ function create_button(element, container_element) {
 						node.style.display = 'none';
 
 						// Get a hash of the element
-						get_element_hash(false, node, function(hash, node) {
+						get_element_hash(true, node, function(hash, node) {
 							console.log(hash);
 
 							// Remove the element
