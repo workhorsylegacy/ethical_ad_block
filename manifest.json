@@ -28,7 +28,7 @@
 			"matches": ["<all_urls>"],
 			"run_at": "document_end",
 			"css": ["shared.css", "main_frame.css"],
-			"js": ["shared.js", "md5.js", "main_frame.js"]
+			"js": ["main_frame.js"]
 		}
 	],
 

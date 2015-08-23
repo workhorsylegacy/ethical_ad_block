@@ -28,6 +28,7 @@ var DEBUG = true;
 var BUTTON_SIZE = 15;
 var BORDER_SIZE = DEBUG ? 5 : 1;
 var g_known_elements = {};
+var g_patched_opacity_elements = {};
 var g_cursor_x = 0;
 var g_cursor_y = 0;
 var g_user_id = null;
@@ -110,12 +111,22 @@ function generate_random_id() {
 }
 
 function show_element(element) {
+	// Just return if the element is null
+	if (! element) {
+		return;
+	}
 /*
 	element.style.position = '';
 	element.style.top = '';
 	element.style.left = '';
 */
-	element.style.opacity = 1.0;
+
+	if (element.hasAttribute('_real_opacity')) {
+		element.style.opacity = element.getAttribute('_real_opacity');
+		element.removeAttribute('_real_opacity');
+	} else {
+		element.style.opacity = 1.0;
+	}
 	element.style.pointerEvents = 'all';
 }
 
@@ -614,6 +625,16 @@ function check_elements_that_may_be_ads() {
 			// If the element does not have an id, generate a random one
 			if (element.id === '' || element.id === null || element.id === undefined) {
 				element.id = generate_random_id();
+			}
+
+			// Save the previous opacity, just incase it was not 1.0
+			if (! g_patched_opacity_elements.hasOwnProperty(element.id)) {
+				g_patched_opacity_elements[element.id] = 1;
+
+				if (element.style.opacity) {
+					element.setAttribute('_real_opacity', element.style.opacity);
+				}
+				element.style.opacity = 0.2;
 			}
 
 			// Only look at elements that have not already been examined
