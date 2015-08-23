@@ -221,13 +221,37 @@ function get_screen_shot(rect, cb) {
 	chrome.runtime.sendMessage(message, function(response) {});
 }
 
-function get_element_hash(element, cb) {
+function get_element_hash(is_printed, element, cb) {
+	function print_info(element, data) {
+		console.info(element);
+		console.info('hash ' + element.tagName.toLowerCase() + ': ' + data);
+	}
+
+	// If the element is a document, create a hash of its children
+	if (element.nodeType === 9) {
+		// Hash the first found meaningful element
+		var tags = ['img', 'video', 'embed', 'object', 'iframe', 'a'];
+		for (var i=0; i<tags.length; ++i) {
+			var tag = tags[i];
+			var elements = element.getElementsByTagName(tag);
+			if (elements.length > 0) {
+				get_element_hash(is_printed, elements[0], function(hash, element) {
+					cb(hash, element);
+				});
+				return;
+			}
+		}
+		cb(null, element);
+		return;
+	}
+
 	// Create a hash of the image and its src
 	switch (element.tagName.toLowerCase()) {
 		case 'img':
 			// Copy the image to a cross origin safe one
 			// then hash it
 			var img = new Image();
+			img.element = element;
 			img.crossOrigin = 'Anonymous';
 			img.onload = function(e) {
 				var self = e.path[0];
@@ -238,14 +262,16 @@ function get_element_hash(element, cb) {
 				var ctx = temp_canvas.getContext('2d');
 				ctx.drawImage(self, 0, 0);
 				var data_url = temp_canvas.toDataURL();
+				if (is_printed) {print_info(element, data_url);}
 				var hash = hex_md5(data_url);
-				cb(hash, element);
+				cb(hash, self.element);
 			};
 			img.onerror = function(e) {
 				var self = e.path[0];
 				// Create a hash of the image
 				console.error('Failed to hash img: ' + self.src);
-				cb(null, element);
+//				console.info(self.element);
+				cb(null, self.element);
 			};
 			if (element.src && element.src.length > 0) {
 				img.src = element.src;
@@ -262,10 +288,12 @@ function get_element_hash(element, cb) {
 			break;
 		case 'embed':
 		case 'object':
+			if (is_printed) {print_info(element, element.data);}
 			var hash = hex_md5(element.data);
 			cb(hash, element);
 			break;
 		case 'video':
+			if (is_printed) {print_info(element, element.src);}
 			var hash = hex_md5(element.src);
 			cb(hash, element);
 			break;
@@ -274,6 +302,7 @@ function get_element_hash(element, cb) {
 			var bg = window.getComputedStyle(element)['background-image'];
 			if (bg && bg !== 'none' && bg.length > 0 && bg.indexOf('url(') === 0 && bg[bg.length-1] === ')') {
 				var img = new Image();
+				img.element = element;
 				img.crossOrigin = 'Anonymous';
 				img.onload = function(e) {
 					var self = e.path[0];
@@ -284,19 +313,23 @@ function get_element_hash(element, cb) {
 					var ctx = temp_canvas.getContext('2d');
 					ctx.drawImage(self, 0, 0);
 					var data_url = temp_canvas.toDataURL();
+					if (is_printed) {print_info(element, data_url);}
 					var hash = hex_md5(data_url);
-					cb(hash, element);
+					cb(hash, img.element);
 				};
 				img.onerror = function(e) {
 					var self = e.path[0];
 					// Create a hash of the image
 					console.error('Failed to hash img: ' + self.src);
-					cb(null, element);
+//					console.info(self.element);
+					cb(null, img.element);
 				};
 				img.src = bg.substring(4, bg.length-1);
 			} else if (element.children.length > 0) {
+				if (is_printed) {print_info(element, element.href);}
 				hash = hex_md5(element.href);
 			} else if (element.href && element.href.length > 0) {
+				if (is_printed) {print_info(element, element.href);}
 				hash = hex_md5(element.href);
 			}
 			cb(hash, element);
@@ -305,27 +338,6 @@ function get_element_hash(element, cb) {
 		default:
 			throw "Unexpected element '" + element.tagName.toLowerCase() + "' to hash.";
 	}
-}
-
-function hash_current_document(cb) {
-	// Hash the first found meaningful element
-	var tags = ['img', 'video', 'embed', 'object', 'iframe', 'a'];
-	for (var i=0; i<tags.length; ++i) {
-		var tag = tags[i];
-		var elements = document.getElementsByTagName(tag);
-		if (elements.length > 0) {
-			get_element_hash(elements[0], function(hash, element) {
-				cb(hash);
-			});
-			return;
-		}
-	}
-
-	// If there are no elements, hash the document
-	var serializer = new XMLSerializer();
-	var hash = serializer.serializeToString(document);
-	hash = hex_md5(hash);
-	cb(hash);
 }
 
 function create_button(element, container_element) {
@@ -469,7 +481,7 @@ function create_button(element, container_element) {
 						node.style.display = 'none';
 
 						// Get a hash of the element
-						get_element_hash(node, function(hash, node) {
+						get_element_hash(false, node, function(hash, node) {
 							console.log(hash);
 
 							// Remove the element
@@ -667,23 +679,16 @@ function check_elements_that_may_be_ads() {
 						} else if (element.src.toLowerCase() === 'about:blank' || element.src.toLowerCase().indexOf('javascript:') === 0 || ! element.getAttribute('src')) {
 							g_known_elements[element.id] = 1;
 
-							get_element_hash(element, function(hash, n) {
+							get_element_hash(false, element, function(hash, node) {
 								isAd(hash, function(is_ad) {
-									console.info('XXXXXXXXXXXXXXX');
+//									console.info('XXXXXXXXXXXXXXX');
 									if (is_ad) {
-										element.parentElement.removeChild(element);
+										node.parentElement.removeChild(node);
 									} else {
 										// Show the iframe element
-										show_element(element);
-										set_border(element, 'red');
-										create_button(element, null);
-
-										// Show the iframe's document
-										try {
-											show_element(element.contentDocument.body);
-										} catch(err) {
-
-										}
+										show_element(node);
+										set_border(node, 'red');
+										create_button(node, null);
 									}
 								});
 							});
@@ -700,7 +705,7 @@ function check_elements_that_may_be_ads() {
 									var node = evt.path[0];
 									node.removeEventListener('load', load_cb);
 
-									get_element_hash(node, function(hash, n) {
+									get_element_hash(false, node, function(hash, n) {
 										isAd(hash, function(is_ad) {
 											if (is_ad) {
 												n.parentElement.removeChild(n);
@@ -722,7 +727,7 @@ function check_elements_that_may_be_ads() {
 							} else {
 								var node = element;
 
-								get_element_hash(node, function(hash, n) {
+								get_element_hash(false, node, function(hash, n) {
 									isAd(hash, function(is_ad) {
 										if (is_ad) {
 											n.parentElement.removeChild(n);
@@ -748,8 +753,7 @@ function check_elements_that_may_be_ads() {
 						if (bg && bg !== 'none' && bg.length > 0) {
 //							console.log(element);
 
-							// FIXME: This does not hash the image
-							get_element_hash(element, function(hash, n) {
+							get_element_hash(false, element, function(hash, n) {
 								isAd(hash, function(is_ad) {
 									if (is_ad) {
 										n.parentElement.removeChild(n);
@@ -768,7 +772,7 @@ function check_elements_that_may_be_ads() {
 						} else if (element.children.length > 0) {
 //							console.log(element);
 
-							get_element_hash(element, function(hash, n) {
+							get_element_hash(false, element, function(hash, n) {
 								isAd(hash, function(is_ad) {
 									if (is_ad) {
 										n.parentElement.removeChild(n);
@@ -808,7 +812,7 @@ function check_elements_that_may_be_ads() {
 						g_known_elements[element.id] = 1;
 //						console.log(element);
 
-						get_element_hash(element, function(hash, n) {
+						get_element_hash(false, element, function(hash, n) {
 							isAd(hash, function(is_ad) {
 								if (is_ad) {
 									n.parentElement.removeChild(n);
@@ -824,7 +828,7 @@ function check_elements_that_may_be_ads() {
 						g_known_elements[element.id] = 1;
 //						console.log(element);
 
-						get_element_hash(element, function(hash, n) {
+						get_element_hash(false, element, function(hash, n) {
 							isAd(hash, function(is_ad) {
 								if (is_ad) {
 									n.parentElement.removeChild(n);

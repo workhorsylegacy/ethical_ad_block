@@ -31,6 +31,7 @@ window.addEventListener('message', function(event) {
 		};
 		event.source.postMessage(request, '*');
 	} else if (event.data && event.data.message === 'from_top_window_to_iframe_document') {
+		// FIXME: Here we need to check if this is an ad
 		var request = {
 			message: 'from_iframe_document_to_iframe_element',
 			hash: event.data.hash
@@ -42,13 +43,12 @@ window.addEventListener('message', function(event) {
 		var iframes = document.getElementsByTagName('iframe');
 		for (var i=0; i<iframes.length; ++i) {
 			if (iframes[i] === event.source.frameElement) {
-				console.info('XXXXXXXXXXXXXXX');
+//				console.info('XXXXXXXXXXXXXXX');
 				iframes[i].setAttribute('document_hash', event.data.hash);
 
 				show_element(iframes[i]);
 				set_border(iframes[i], 'red');
 				create_button(iframes[i], null);
-
 				break;
 			}
 		}
@@ -60,8 +60,7 @@ window.addEventListener('message', function(event) {
 		event.source.postMessage(request, '*');
 	// Make the iframe's document visible
 	} else if (event.data && event.data.message === 'from_iframe_element_to_iframe_document') {
-		show_element(window.document.body);
-//		window.document.body.style.background = 'orange';
+
 	}
 }, false);
 
@@ -81,13 +80,13 @@ if (window !== window.top) {
 		chrome.runtime.sendMessage(request, function(is_parent_extension_loaded) {
 //			console.info(is_parent_extension_loaded);
 
-			if (is_parent_extension_loaded && window.document.readyState === 'complete' && window.parent.document.readyState === 'complete') {
+			if (is_parent_extension_loaded && window.document.readyState === 'complete') {
 				clearInterval(load_interval);
 				load_interval = null;
 
 				// Create a hash of the iframe
-				console.info('AAAAAAAAAAA');
-				hash_current_document(function(hash) {
+//				console.info('AAAAAAAAAAA');
+				get_element_hash(true, document, function(hash, node) {
 					// Save this hash inside the iframe element
 					var request = {
 						message: 'from_iframe_document_to_top_window',
@@ -109,7 +108,7 @@ var request = {
 	id: frame_guid
 };
 chrome.runtime.sendMessage(request, function(response) {
-	console.info(frame_guid);
+//	console.info(frame_guid);
 });
 
 
