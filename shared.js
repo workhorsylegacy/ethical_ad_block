@@ -439,12 +439,6 @@ function create_button(element, container_element) {
 				menu.style.top = rect.top + window.pageYOffset + 'px';
 			}, 100);
 
-			// Title
-			var span = document.createElement('span');
-			span.innerHTML = 'This Element is ...';
-			menu.appendChild(span);
-			menu.appendChild(document.createElement('br'));
-
 			function button_click(e) {
 				var element = e.path[0];
 
