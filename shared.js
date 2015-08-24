@@ -4,21 +4,20 @@
 
 /*
 TODO:
-. Make hashing work with svg
-. Check why ads on stack overflow have different hashes, for the same ad after a reload.
-. Add a moderator mode that shows all ads, including counts below them, and lets users vote on them
+. Check why ads on http://stackoverflow.com have different hashes, for the same ad after a reload
 . There are problems with mixed content https://news.ycombinator.com/news
+. Many elements on http://streamtuner.me don't get seen as possible ads
+. News story titles on http://news.google.com do not show
+
+. When an element is the only one in an iframe/link, or the largest, make closing it close the iframe/link instead
+. Move screen shot pasting to top frame instead of current frame
+. Move popup menu to center of top frame
+. Make hashing work with svg
+. Save the randomly generated user id in localStorage
+
+. Add a moderator mode that shows all ads, including counts below them, and lets users vote on them
 . Show users a warning if another Ad Blocker is running
-. Many elements on http://streamtuner.me/ don't get seen as possible ads
-. Save the randomly generated user id in localStorage.
-. When an element is the only one in an iframe, or the largest, make closing it close the iframe instead.
-. News story titles on Google news do not show
-. Getting element screen shots breaks inside iframes
 . Getting screen shots gets the wrong area in Windows 8.1 tablet
-. Move popup menu to top window when inside iframe
-. Popup menu can get stuck off partially off screen
-. Ad info posted to the server should include URL, and extension id
-. We need a way to count active users.
 . Make it work on Firefox
 . Make it work on touch screens
 */
