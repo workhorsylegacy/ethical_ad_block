@@ -16,6 +16,7 @@ TODO:
 
 . Add a moderator mode that shows all ads, including counts below them, and lets users vote on them
 . Show users a warning if another Ad Blocker is running
+. Ad element screen shot to ad voting
 . Getting screen shots gets the wrong area in Windows 8.1 tablet
 . Make it work on Firefox
 . Make it work on touch screens
@@ -186,6 +187,33 @@ function get_element_rect_with_children(element) {
 	return rect;
 }
 
+function image_to_data_url(element, src, cb) {
+	var img = new Image();
+	img.crossOrigin = 'Anonymous';
+	img.onload = function(e) {
+		var self = e.path[0];
+		var temp_canvas = document.createElement('canvas');
+		temp_canvas.width = self.width;
+		temp_canvas.height = self.height;
+		var ctx = temp_canvas.getContext('2d');
+		ctx.drawImage(self, 0, 0);
+		var data_url = temp_canvas.toDataURL();
+		cb(data_url);
+	};
+	img.onerror = function(e) {
+		var self = e.path[0];
+		console.error('Failed to copy image: ' + self.src);
+		cb(null);
+	};
+
+	if (! src) {
+		console.error("Can't copy img with no source: " + element.outerHTML);
+		cb(null);
+	} else {
+		img.src = src;
+	}
+}
+
 function get_screen_shot(rect, cb) {
 	var message = {
 		action: 'screen_shot',
@@ -256,37 +284,17 @@ function get_element_hash(is_printed, element, parent_element, cb) {
 		case 'img':
 			// Copy the image to a cross origin safe one
 			// then hash it
-			var img = new Image();
-			img.element = element;
-			img.crossOrigin = 'Anonymous';
-			img.onload = function(e) {
-				var self = e.path[0];
-				// Create a hash of the image
-				var temp_canvas = document.createElement('canvas');
-				temp_canvas.width = self.width;
-				temp_canvas.height = self.height;
-				var ctx = temp_canvas.getContext('2d');
-				ctx.drawImage(self, 0, 0);
-				var data_url = temp_canvas.toDataURL();
+			var src = null;
+			if (element.src && element.src.length > 0) {
+				src = element.src;
+			} else if (element.srcset && element.srcset.length > 0) {
+				src = element.srcset;
+			}
+			image_to_data_url(element, src, function(data_url) {
 				if (is_printed) {print_info(element, data_url);}
 				var hash = hex_md5(data_url);
-				cb(hash, parent_element || self.element);
-			};
-			img.onerror = function(e) {
-				var self = e.path[0];
-				// Create a hash of the image
-				console.error('Failed to hash img: ' + self.src);
-//				console.info(self.element);
-				cb(null, parent_element || self.element);
-			};
-			if (element.src && element.src.length > 0) {
-				img.src = element.src;
-			} else if (element.srcset && element.srcset.length > 0) {
-				img.src = element.srcset;
-			} else {
-				console.error("Can't hash img with no source: " + element.outerHTML);
-				cb(null, parent_element || element);
-			}
+				cb(hash, parent_element || element);
+			});
 			break;
 		case 'iframe':
 			var hash = element.getAttribute('document_hash');
@@ -311,30 +319,12 @@ function get_element_hash(is_printed, element, parent_element, cb) {
 			var hash = null;
 			var bg = window.getComputedStyle(element)['background-image'];
 			if (bg && bg !== 'none' && bg.length > 0 && bg.indexOf('url(') === 0 && bg[bg.length-1] === ')') {
-				var img = new Image();
-				img.element = element;
-				img.crossOrigin = 'Anonymous';
-				img.onload = function(e) {
-					var self = e.path[0];
-					// Create a hash of the image
-					var temp_canvas = document.createElement('canvas');
-					temp_canvas.width = self.width;
-					temp_canvas.height = self.height;
-					var ctx = temp_canvas.getContext('2d');
-					ctx.drawImage(self, 0, 0);
-					var data_url = temp_canvas.toDataURL();
+				var src = bg.substring(4, bg.length-1);
+				image_to_data_url(element, src, function(data_url) {
 					if (is_printed) {print_info(element, data_url);}
 					var hash = hex_md5(data_url);
-					cb(hash, parent_element || img.element);
-				};
-				img.onerror = function(e) {
-					var self = e.path[0];
-					// Create a hash of the image
-					console.error('Failed to hash img: ' + self.src);
-//					console.info(self.element);
-					cb(null, parent_element || img.element);
-				};
-				img.src = bg.substring(4, bg.length-1);
+					cb(hash, parent_element || element);
+				});
 			} else if (element.children.length > 0) {
 				get_element_child_hash(is_printed, element.children, element, cb);
 //				if (is_printed) {print_info(element, element.href);}
@@ -362,6 +352,7 @@ function get_element_child_hash(is_printed, children, parent_element, cb) {
 
 	while (elements.length > 0) {
 		var element = elements.pop();
+		// FIXME: It needs to check img elements if it is complte before trying to hash it
 		switch (element.tagName.toLowerCase()) {
 			case 'img':
 			case 'iframe':
@@ -377,34 +368,6 @@ function get_element_child_hash(is_printed, children, parent_element, cb) {
 				elements.push(element.children[i]);
 			}
 		}
-	}
-}
-
-function image_to_data_url(element, cb) {
-	var img = new Image();
-	img.crossOrigin = 'Anonymous';
-	img.onload = function(e) {
-		var self = e.path[0];
-		var temp_canvas = document.createElement('canvas');
-		temp_canvas.width = self.width;
-		temp_canvas.height = self.height;
-		var ctx = temp_canvas.getContext('2d');
-		ctx.drawImage(self, 0, 0);
-		var data_url = temp_canvas.toDataURL();
-		cb(data_url);
-	};
-	img.onerror = function(e) {
-		var self = e.path[0];
-		console.error('Failed to copy image: ' + self.src);
-		cb(null);
-	};
-	if (element.src && element.src.length > 0) {
-		img.src = element.src;
-	} else if (element.srcset && element.srcset.length > 0) {
-		img.src = element.srcset;
-	} else {
-		console.error("Can't copy img with no source: " + element.outerHTML);
-		cb(null);
 	}
 }
 
@@ -543,7 +506,13 @@ function create_button(element, container_element) {
 					get_screen_shot(rect, function(image, dataURI) {
 						// Send the image to the top window
 						if (DEBUG) {
-							image_to_data_url(image, function(data_url) {
+							var src = null;
+							if (image.src && image.src.length > 0) {
+								src = image.src;
+							} else if (image.srcset && image.srcset.length > 0) {
+								src = image.srcset;
+							}
+							image_to_data_url(image, src, function(data_url) {
 								var request = {
 									message: 'append_screen_shot',
 									data_url: data_url
