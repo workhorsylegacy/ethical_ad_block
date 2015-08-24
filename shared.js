@@ -12,8 +12,6 @@ TODO:
 . Many elements on http://streamtuner.me/ don't get seen as possible ads
 . Save the randomly generated user id in localStorage.
 . When an element is the only one in an iframe, or the largest, make closing it close the iframe instead.
-. When we show elements, we just force the opacity and pointerEvents to 1.0 and 'all'. 
-	This will break items that did not have them on 1.0 and 'all' to begin with.
 . News story titles on Google news do not show
 . Getting element screen shots breaks inside iframes
 . Getting screen shots gets the wrong area in Windows 8.1 tablet
@@ -122,13 +120,21 @@ function show_element(element) {
 	element.style.left = '';
 */
 
+	// opacity
 	if (element.hasAttribute('_real_opacity')) {
 		element.style.opacity = element.getAttribute('_real_opacity');
 		element.removeAttribute('_real_opacity');
 	} else {
 		element.style.opacity = 1.0;
 	}
-	element.style.pointerEvents = 'all';
+
+	// pointerEvents
+	if (element.hasAttribute('_real_pointer_events')) {
+		element.style.pointerEvents = element.getAttribute('_real_pointer_events');
+		element.removeAttribute('_real_pointer_events');
+	} else {
+		element.style.pointerEvents = 'all';
+	}
 }
 
 function set_border(element, color) {
@@ -669,14 +675,21 @@ function check_elements_that_may_be_ads() {
 				element.id = generate_random_id();
 			}
 
-			// Save the previous opacity, just incase it was not 1.0
+			// Save the style attributes that are temporarily overridden by the extension
 			if (! g_patched_opacity_elements.hasOwnProperty(element.id)) {
 				g_patched_opacity_elements[element.id] = 1;
 
+				// opacity
 				if (element.style.opacity) {
 					element.setAttribute('_real_opacity', element.style.opacity);
 				}
 				element.style.opacity = 0.2;
+
+				// pointerEvents
+				if (element.style.pointerEvents) {
+					element.setAttribute('_real_pointer_events', element.style.pointerEvents);
+				}
+				element.style.pointerEvents = 'none';
 			}
 
 			// Only look at elements that have not already been examined
