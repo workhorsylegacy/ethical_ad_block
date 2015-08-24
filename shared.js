@@ -268,14 +268,14 @@ function get_element_hash(is_printed, element, parent_element, cb) {
 			var tag = tags[i];
 			var elements = element.getElementsByTagName(tag);
 			if (elements.length > 0) {
-				get_element_hash(is_printed, elements[0], parent_element, function(hash, element) {
-					cb(hash, parent_element || element);
+				get_element_hash(is_printed, elements[0], parent_element, function(hash, element, parent_element) {
+					cb(hash, element, parent_element);
 				});
 				return;
 			}
 		}
 		console.error('Failed to hash iframe');
-		cb(null, parent_element || element);
+		cb(null, element, parent_element);
 		return;
 	}
 
@@ -293,13 +293,13 @@ function get_element_hash(is_printed, element, parent_element, cb) {
 			image_to_data_url(element, src, function(data_url) {
 				if (is_printed) {print_info(element, data_url);}
 				var hash = hex_md5(data_url);
-				cb(hash, parent_element || element);
+				cb(hash, element, parent_element);
 			});
 			break;
 		case 'iframe':
 			var hash = element.getAttribute('document_hash');
 			if (is_printed) {print_info(element, hash);}
-			cb(hash, parent_element || element);
+			cb(hash, element, parent_element);
 			break;
 		case 'embed':
 		case 'object':
@@ -308,12 +308,12 @@ function get_element_hash(is_printed, element, parent_element, cb) {
 			if (element.data) {
 				hash = hex_md5(element.data);
 			}
-			cb(hash, parent_element || element);
+			cb(hash, element, parent_element);
 			break;
 		case 'video':
 			if (is_printed) {print_info(element, element.src);}
 			var hash = hex_md5(element.src);
-			cb(hash, parent_element || element);
+			cb(hash, element, parent_element);
 			break;
 		case 'a':
 			var hash = null;
@@ -323,19 +323,19 @@ function get_element_hash(is_printed, element, parent_element, cb) {
 				image_to_data_url(element, src, function(data_url) {
 					if (is_printed) {print_info(element, data_url);}
 					var hash = hex_md5(data_url);
-					cb(hash, parent_element || element);
+					cb(hash, element, parent_element);
 				});
 			} else if (element.children.length > 0) {
-				get_element_child_hash(is_printed, element.children, element, cb);
+				get_element_child_hash(is_printed, element, element, cb);
 //				if (is_printed) {print_info(element, element.href);}
 //				hash = hex_md5(element.href);
-//				cb(hash, parent_element || element);
+//				cb(hash, element, parent_element);
 			} else if (element.href && element.href.length > 0) {
 				if (is_printed) {print_info(element, element.href);}
 				hash = hex_md5(element.href);
-				cb(hash, parent_element || element);
+				cb(hash, element, parent_element);
 			} else {
-				cb(hash, parent_element || element);
+				cb(hash, element, parent_element);
 			}
 
 			break;
@@ -344,31 +344,30 @@ function get_element_hash(is_printed, element, parent_element, cb) {
 	}
 }
 
-function get_element_child_hash(is_printed, children, parent_element, cb) {
-	var elements = [];
-	for (var i=0; i<children.length; ++i) {
-		elements.push(children[i]);
-	}
+function get_element_child_hash(is_printed, element, parent_element, cb) {
+	var elements = to_array(element.children);
 
 	while (elements.length > 0) {
-		var element = elements.pop();
+		var child = elements.pop();
 		// FIXME: It needs to check img elements if it is complte before trying to hash it
-		switch (element.tagName.toLowerCase()) {
+		switch (child.tagName.toLowerCase()) {
 			case 'img':
 			case 'iframe':
 			case 'embed':
 			case 'object':
 			case 'video':
 			case 'a':
-				get_element_hash(is_printed, element, parent_element, cb);
+				get_element_hash(is_printed, child, parent_element, cb);
 				return;
 		}
-		if (element.children) {
-			for (var i=0; i<element.children.length; ++i) {
-				elements.push(element.children[i]);
+		if (child.children) {
+			for (var i=0; i<child.children.length; ++i) {
+				elements.push(child.children[i]);
 			}
 		}
 	}
+
+	cb(null, element, parent_element);
 }
 
 function create_button(element, container_element) {
@@ -525,7 +524,7 @@ function create_button(element, container_element) {
 						node.style.display = 'none';
 
 						// Get a hash of the element
-						get_element_hash(true, node, null, function(hash, node) {
+						get_element_hash(true, node, null, function(hash, node, parent_node) {
 							console.log(hash);
 
 							// Remove the element
@@ -730,13 +729,14 @@ function check_elements_that_may_be_ads() {
 						} else if (element.src.toLowerCase() === 'about:blank' || element.src.toLowerCase().indexOf('javascript:') === 0 || ! element.getAttribute('src')) {
 							g_known_elements[element.id] = 1;
 
-							get_element_hash(false, element, null, function(hash, node) {
+							get_element_hash(false, element, null, function(hash, node, parent_node) {
 								isAd(hash, function(is_ad) {
 //									console.info('XXXXXXXXXXXXXXX');
 									if (is_ad) {
 										node.parentElement.removeChild(node);
 									} else {
 										// Show the iframe element
+										show_element(parent_node);
 										show_element(node);
 										set_border(node, 'red');
 										create_button(node, null);
@@ -756,11 +756,12 @@ function check_elements_that_may_be_ads() {
 									var node = evt.path[0];
 									node.removeEventListener('load', load_cb);
 
-									get_element_hash(false, node, null, function(hash, n) {
+									get_element_hash(false, node, null, function(hash, n, parent_n) {
 										isAd(hash, function(is_ad) {
 											if (is_ad) {
 												n.parentElement.removeChild(n);
 											} else {
+												show_element(parent_n);
 												show_element(n);
 												if (! is_too_small(n)) {
 													set_border(n, 'blue');
@@ -778,11 +779,12 @@ function check_elements_that_may_be_ads() {
 							} else {
 								var node = element;
 
-								get_element_hash(false, node, null, function(hash, n) {
+								get_element_hash(false, node, null, function(hash, n, parent_n) {
 									isAd(hash, function(is_ad) {
 										if (is_ad) {
 											n.parentElement.removeChild(n);
 										} else {
+											show_element(parent_n);
 											show_element(n);
 											if (! is_too_small(n)) {
 												set_border(n, 'blue');
@@ -804,11 +806,12 @@ function check_elements_that_may_be_ads() {
 						if (bg && bg !== 'none' && bg.length > 0) {
 //							console.log(element);
 
-							get_element_hash(false, element, null, function(hash, n) {
+							get_element_hash(false, element, null, function(hash, n, parent_n) {
 								isAd(hash, function(is_ad) {
 									if (is_ad) {
 										n.parentElement.removeChild(n);
 									} else {
+										show_element(parent_n);
 										show_element(n);
 										if (! is_too_small(n)) {
 											set_border(n, 'purple');
@@ -823,12 +826,13 @@ function check_elements_that_may_be_ads() {
 						} else if (element.children.length > 0) {
 //							console.log(element);
 
-							get_element_hash(false, element, null, function(hash, n) {
+							get_element_hash(false, element, null, function(hash, n, parent_n) {
 								isAd(hash, function(is_ad) {
 									if (is_ad) {
 										n.parentElement.removeChild(n);
 									} else {
 										// Add a button to the link
+										show_element(parent_n);
 										show_element(n);
 										if (! is_too_small(n)) {
 											set_border(n, 'purple');
@@ -863,11 +867,12 @@ function check_elements_that_may_be_ads() {
 						g_known_elements[element.id] = 1;
 //						console.log(element);
 
-						get_element_hash(false, element, null, function(hash, n) {
+						get_element_hash(false, element, null, function(hash, n, parent_n) {
 							isAd(hash, function(is_ad) {
 								if (is_ad) {
 									n.parentElement.removeChild(n);
 								} else {
+									show_element(parent_n);
 									show_element(n);
 									set_border(n, 'yellow');
 									create_button(n, null);
@@ -879,11 +884,12 @@ function check_elements_that_may_be_ads() {
 						g_known_elements[element.id] = 1;
 //						console.log(element);
 
-						get_element_hash(false, element, null, function(hash, n) {
+						get_element_hash(false, element, null, function(hash, n, parent_n) {
 							isAd(hash, function(is_ad) {
 								if (is_ad) {
 									n.parentElement.removeChild(n);
 								} else {
+									show_element(parent_n);
 									show_element(n);
 									if (! is_too_small(n)) {
 										set_border(n, 'blue');

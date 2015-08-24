@@ -93,7 +93,7 @@ if (window !== window.top) {
 
 				// Create a hash of the iframe
 //				console.info('AAAAAAAAAAA');
-				get_element_hash(true, document, null, function(hash, node) {
+				get_element_hash(true, document, null, function(hash, node, parent_node) {
 					// Save this hash inside the iframe element
 					var request = {
 						message: 'from_iframe_document_to_top_window',
