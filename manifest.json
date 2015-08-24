@@ -21,13 +21,13 @@
 			"match_about_blank": true,
 			"run_at": "document_start",
 			"all_frames": true,
-			"css": ["shared.css", "all_frames.css"],
+			"css": ["shared.css"],
 			"js": ["shared.js", "md5.js", "all_frames.js"]
 		},
 		{
 			"matches": ["<all_urls>"],
 			"run_at": "document_end",
-			"css": ["shared.css", "main_frame.css"],
+			"css": [],
 			"js": ["main_frame.js"]
 		}
 	],
