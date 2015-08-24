@@ -10,7 +10,6 @@ TODO:
 . News story titles on http://news.google.com do not show
 
 . When an element is the only one in an iframe/link, or the largest, make closing it close the iframe/link instead
-. Move screen shot pasting to top frame instead of current frame
 . Move popup menu to center of top frame
 . Make hashing work with svg
 . Save the randomly generated user id in localStorage
@@ -381,6 +380,34 @@ function get_element_child_hash(is_printed, children, parent_element, cb) {
 	}
 }
 
+function image_to_data_url(element, cb) {
+	var img = new Image();
+	img.crossOrigin = 'Anonymous';
+	img.onload = function(e) {
+		var self = e.path[0];
+		var temp_canvas = document.createElement('canvas');
+		temp_canvas.width = self.width;
+		temp_canvas.height = self.height;
+		var ctx = temp_canvas.getContext('2d');
+		ctx.drawImage(self, 0, 0);
+		var data_url = temp_canvas.toDataURL();
+		cb(data_url);
+	};
+	img.onerror = function(e) {
+		var self = e.path[0];
+		console.error('Failed to copy image: ' + self.src);
+		cb(null);
+	};
+	if (element.src && element.src.length > 0) {
+		img.src = element.src;
+	} else if (element.srcset && element.srcset.length > 0) {
+		img.src = element.srcset;
+	} else {
+		console.error("Can't copy img with no source: " + element.outerHTML);
+		cb(null);
+	}
+}
+
 function create_button(element, container_element) {
 	// Just return if this element already has a button
 	if (element.canvas) {
@@ -514,8 +541,15 @@ function create_button(element, container_element) {
 					// Get a screen shot from the background script
 					rect = get_element_rect_with_children(node);
 					get_screen_shot(rect, function(image, dataURI) {
+						// Send the image to the top window
 						if (DEBUG) {
-							document.body.appendChild(image);
+							image_to_data_url(image, function(data_url) {
+								var request = {
+									message: 'append_screen_shot',
+									data_url: data_url
+								};
+								window.top.postMessage(request, '*');
+							});
 						}
 
 						// Hide the element

@@ -61,6 +61,13 @@ window.addEventListener('message', function(event) {
 	// Make the iframe's document visible
 	} else if (event.data && event.data.message === 'from_iframe_element_to_iframe_document') {
 
+	} else if (event.data && event.data.message === 'append_screen_shot') {
+		var img = new Image();
+		img.onload = function(e) {
+			var self = e.path[0];
+			document.body.appendChild(self);
+		};
+		img.src = event.data.data_url;
 	}
 }, false);
 
