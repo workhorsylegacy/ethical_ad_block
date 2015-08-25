@@ -15,6 +15,7 @@ function setup_events() {
 		g_cursor_y = 0;
 	}, false);
 
+	// Get the user id from the background page
 	chrome.runtime.onMessage.addListener(function(msg, sender, sendResponse) {
 		if (msg.action === 'get_g_user_id') {
 			g_user_id = msg.data;
@@ -42,7 +43,6 @@ function setup_events() {
 				message: 'from_iframe_document_to_iframe_element',
 				hash: event.data.hash
 			};
-			// FIXME: This will often fail in iframes with no src, because they don't get content scripts loaded
 			window.parent.postMessage(request, '*');
 		} else if (event.data && event.data.message === 'from_iframe_document_to_iframe_element') {
 //			console.info('EEEEEEEEEE');
@@ -112,7 +112,7 @@ if (window !== window.top) {
 //			console.info('AAAAAAAAAAA');
 			get_element_hash(true, document, null, function(hash, node, parent_node) {
 //				console.info('BBBBBBBBBBB');
-				// Save this hash inside the iframe element
+				// Send the hash to the top window, so it can check if this an ad
 				var request = {
 					message: 'from_iframe_document_to_top_window',
 					hash: hash

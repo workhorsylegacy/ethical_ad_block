@@ -26,7 +26,7 @@ var DEBUG = true;
 var BUTTON_SIZE = 15;
 var BORDER_SIZE = DEBUG ? 5 : 1;
 var g_known_elements = {};
-var g_patched_opacity_elements = {};
+var g_patched_elements = {};
 var g_cursor_x = 0;
 var g_cursor_y = 0;
 var g_user_id = null;
@@ -265,11 +265,9 @@ function get_element_hash(is_printed, element, parent_element, cb) {
 		return;
 	}
 
-	// Create a hash of the image and its src
+	// Or the element is another type
 	switch (element.tagName.toLowerCase()) {
 		case 'img':
-			// Copy the image to a cross origin safe one
-			// then hash it
 			var src = null;
 			if (element.src && element.src.length > 0) {
 				src = element.src;
@@ -335,7 +333,7 @@ function get_element_child_hash(is_printed, element, parent_element, cb) {
 
 	while (elements.length > 0) {
 		var child = elements.pop();
-		// FIXME: It needs to check img elements if it is complte before trying to hash it
+		// FIXME: It needs to check img elements if it is complte, before trying to hash it
 		switch (child.tagName.toLowerCase()) {
 			case 'img':
 			case 'iframe':
@@ -383,7 +381,7 @@ function create_button(element, container_element) {
 		node.style.border = BORDER_SIZE + 'px dashed ' + node.border_color;
 		var rect = get_element_rect(node);
 
-		// Create a button over the bottom right of the element
+		// Create a button over the top left of the element
 		var canvas = document.createElement('canvas');
 		canvas.width = BUTTON_SIZE;
 		canvas.height = BUTTON_SIZE;
@@ -664,8 +662,8 @@ function check_elements_that_may_be_ads() {
 			}
 
 			// Save the style attributes that are temporarily overridden by the extension
-			if (! g_patched_opacity_elements.hasOwnProperty(element.id)) {
-				g_patched_opacity_elements[element.id] = 1;
+			if (! g_patched_elements.hasOwnProperty(element.id)) {
+				g_patched_elements[element.id] = 1;
 
 				// opacity
 				if (element.style.opacity) {
@@ -793,7 +791,7 @@ function check_elements_that_may_be_ads() {
 											set_border(n, 'purple');
 											create_button(n, null);
 										} else {
-											set_border(n, 'green');
+//											set_border(n, 'green');
 										}
 									}
 								}, [n, parent_n]);
@@ -877,7 +875,7 @@ function check_elements_that_may_be_ads() {
 										set_border(n, 'blue');
 										create_button(n, null);
 									} else {
-										set_border(n, 'green');
+//										set_border(n, 'green');
 									}
 								}
 							}, [n, parent_n]);
