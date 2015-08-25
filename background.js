@@ -18,8 +18,6 @@ var BLACKLIST = [
 BLACKLIST = [];
 
 
-var messages = [];
-var is_ready = false;
 var active_url = null;
 var g_user_id = null;
 
@@ -41,13 +39,6 @@ function generate_random_id() {
 }
 
 g_user_id = generate_random_id();
-
-function log_to_active_tab(message) {
-	chrome.tabs.query({active: true, currentWindow: true}, function(tabs) {
-//		console.log(message);
-		chrome.tabs.sendMessage(tabs[0].id, {action: 'log', data: message}, function(response) {});
-	});
-}
 
 // FIXME: When the headers are changed, it breaks some other headers
 chrome.webRequest.onHeadersReceived.addListener(function(details) {
@@ -107,12 +98,7 @@ chrome.webRequest.onBeforeRequest.addListener(function(info) {
 			// But not if the current page is the black listed site
 			if (info.url.indexOf(entry) !== -1 && active_url.indexOf(entry) === -1) {
 				var message = 'Blocked: ' + info.url + ', ' + active_url;
-
-				if (is_ready) {
-					log_to_active_tab(message);
-				} else {
-					messages.push(message);
-				}
+				console.log(message);
 
 				return {cancel: true};
 			}
@@ -155,16 +141,6 @@ chrome.tabs.onUpdated.addListener(function (tabId, changeInfo, tab) {
 			data: g_user_id
 		};
 		chrome.tabs.sendMessage(tabId, message, function(response) {});
-
-		// Log messages to the tab's console
-		is_ready = true;
-		for (var i=0; i<messages.length; ++i) {
-			var message = messages[i];
-			log_to_active_tab(message);
-		}
-		messages = [];
-	} else {
-		is_ready = false;
 	}
 });
 
