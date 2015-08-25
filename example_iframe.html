@@ -8,7 +8,6 @@
 		<title>Example iframe</title>
 	</head>
 	<body style="padding: 50px;">
-
 		<iframe id="iframe_z" src="http://slashdot.org"></iframe>
 		<br />
 
@@ -17,7 +16,7 @@
 		<script>
 			var frame = document.getElementById('iframez2').contentDocument;
 			frame.open();
-			frame.writeln("<!doctype html><html><body>Iframe with hard coded document in body.</body></html>");
+			frame.writeln("<!doctype html><html><body>Another iframe with hard coded document in body.</body></html>");
 			frame.close();
 		</script>
 		<br />
@@ -32,7 +31,6 @@
 		<br />
 
 		<img id="img_d" src="icon_128.png" />
-
 	</body>
 </html>
 

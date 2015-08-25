@@ -74,25 +74,6 @@ function ajaxGet(request, successCb, failCb) {
 	httpRequest.send(null);
 }
 
-function get_iframe_guid(win) {
-	var retval = [];
-	var child = win;
-	var parent = win.parent;
-	while (parent && child && child !== window.top) {
-		for (var i=0; i < parent.frames.length; ++i) {
-			if (parent.frames[i] === child) {
-				retval.splice(0, 0, i);
-				break;
-			}
-		}
-		child = child.parent;
-		parent = child.parent;
-	}
-
-	retval.splice(0, 0, 0);
-	return retval.join('.');
-}
-
 function generate_random_id() {
 	// Get a 20 character id
 	var code_table = "0123456789ABCDEFGHIJKLMNOPQRSTUVWXYZ";
@@ -274,8 +255,13 @@ function get_element_hash(is_printed, element, parent_element, cb) {
 				return;
 			}
 		}
-		console.error('Failed to hash iframe');
-		cb(null, element, parent_element);
+
+		// If there are none, hash the document instead
+//		console.error('Failed to hash document');
+		var serializer = new XMLSerializer();
+		var hash = serializer.serializeToString(element);
+		hash = hex_md5(hash);
+		cb(hash, element, parent_element);
 		return;
 	}
 
@@ -646,10 +632,11 @@ function to_array(obj) {
 	return retval;
 }
 
-function isAd(hash, cb) {
+function isAd(hash, cb, args) {
+	args = args || [];
 	// If the hash is null, just use false
 	if (hash == null || hash == undefined) {
-		cb(false);
+		cb({'is_ad': false, 'args': args});
 		return;
 	}
 
@@ -657,10 +644,10 @@ function isAd(hash, cb) {
 	var request = 'http://localhost:9000?is_ad=' + hash;
 	var successCb = function(responseText) {
 		var is_ad = (responseText.toLowerCase() === 'true');
-		cb(is_ad);
+		cb({'is_ad': is_ad, 'args': args});
 	};
 	var failCb = function(status) {
-		cb(false);
+		cb({'is_ad': false, 'args': args});
 	};
 	ajaxGet(request, successCb, failCb);
 }
@@ -709,40 +696,23 @@ function check_elements_that_may_be_ads() {
 				// Element image has a source
 				switch (name) {
 					case 'iframe':
+//						console.info('checking element ...');
 						// NOTE: The 'document_hash' attribute is set when the message 
 						// 'from_iframe_document_to_iframe_element' is posted to the iframe's window.			
 						var document_hash = element.getAttribute('document_hash');
 						if (document_hash && document_hash.length > 0) {
 							g_known_elements[element.id] = 1;
 							var hash = document_hash;
-							isAd(hash, function(is_ad) {
-								if (is_ad) {
+							isAd(hash, function(e) {
+								var element = e.args[0];
+								if (e.is_ad) {
 									element.parentElement.removeChild(element);
 								} else {
-//									show_element(element);
-//									set_border(element, 'orange');
-//									create_button(element, null);
+									show_element(element);
+									set_border(element, 'red');
+									create_button(element, null);
 								}
-							});
-						// NOTE: In special cases the iframe does not get the content_script loaded into it.
-						// So we will have to manually check if the iframe's document is an ad.
-						} else if (element.src.toLowerCase() === 'about:blank' || element.src.toLowerCase().indexOf('javascript:') === 0 || ! element.getAttribute('src')) {
-							g_known_elements[element.id] = 1;
-
-							get_element_hash(false, element, null, function(hash, node, parent_node) {
-								isAd(hash, function(is_ad) {
-//									console.info('XXXXXXXXXXXXXXX');
-									if (is_ad) {
-										node.parentElement.removeChild(node);
-									} else {
-										// Show the iframe element
-										show_element(parent_node);
-										show_element(node);
-										set_border(node, 'red');
-										create_button(node, null);
-									}
-								});
-							});
+							}, [element]);
 						}
 						break;
 					case 'img':
@@ -757,8 +727,10 @@ function check_elements_that_may_be_ads() {
 									node.removeEventListener('load', load_cb);
 
 									get_element_hash(false, node, null, function(hash, n, parent_n) {
-										isAd(hash, function(is_ad) {
-											if (is_ad) {
+										isAd(hash, function(e) {
+											var n = e.args[0];
+											var parent_n = e.args[1];
+											if (e.is_ad) {
 												n.parentElement.removeChild(n);
 											} else {
 												show_element(parent_n);
@@ -770,7 +742,7 @@ function check_elements_that_may_be_ads() {
 	//												set_border(n, 'green');
 												}
 											}
-										});
+										}, [n, parent_n]);
 									});
 								};
 
@@ -780,8 +752,10 @@ function check_elements_that_may_be_ads() {
 								var node = element;
 
 								get_element_hash(false, node, null, function(hash, n, parent_n) {
-									isAd(hash, function(is_ad) {
-										if (is_ad) {
+									isAd(hash, function(e) {
+										var n = e.args[0];
+										var parent_n = e.args[1];
+										if (e.is_ad) {
 											n.parentElement.removeChild(n);
 										} else {
 											show_element(parent_n);
@@ -793,7 +767,7 @@ function check_elements_that_may_be_ads() {
 	//											set_border(n, 'green');
 											}
 										}
-									});
+									}, [n, parent_n]);
 								});
 							}
 						}
@@ -807,8 +781,10 @@ function check_elements_that_may_be_ads() {
 //							console.log(element);
 
 							get_element_hash(false, element, null, function(hash, n, parent_n) {
-								isAd(hash, function(is_ad) {
-									if (is_ad) {
+								isAd(hash, function(e) {
+									var n = e.args[0];
+									var parent_n = e.args[1];
+									if (e.is_ad) {
 										n.parentElement.removeChild(n);
 									} else {
 										show_element(parent_n);
@@ -820,15 +796,17 @@ function check_elements_that_may_be_ads() {
 											set_border(n, 'green');
 										}
 									}
-								});
+								}, [n, parent_n]);
 							});
 						// Anchor has children
 						} else if (element.children.length > 0) {
 //							console.log(element);
 
 							get_element_hash(false, element, null, function(hash, n, parent_n) {
-								isAd(hash, function(is_ad) {
-									if (is_ad) {
+								isAd(hash, function(e) {
+									var n = e.args[0];
+									var parent_n = e.args[1];
+									if (e.is_ad) {
 										n.parentElement.removeChild(n);
 									} else {
 										// Add a button to the link
@@ -855,7 +833,7 @@ function check_elements_that_may_be_ads() {
 											}
 										}
 									}
-								});
+								}, [n, parent_n]);
 							});
 						// Anchor is just text
 						} else {
@@ -868,8 +846,10 @@ function check_elements_that_may_be_ads() {
 //						console.log(element);
 
 						get_element_hash(false, element, null, function(hash, n, parent_n) {
-							isAd(hash, function(is_ad) {
-								if (is_ad) {
+							isAd(hash, function(e) {
+								var n = e.args[0];
+								var parent_n = e.args[1];
+								if (e.is_ad) {
 									n.parentElement.removeChild(n);
 								} else {
 									show_element(parent_n);
@@ -877,7 +857,7 @@ function check_elements_that_may_be_ads() {
 									set_border(n, 'yellow');
 									create_button(n, null);
 								}
-							});
+							}, [n, parent_n]);
 						});
 						break;
 					case 'video':
@@ -885,8 +865,10 @@ function check_elements_that_may_be_ads() {
 //						console.log(element);
 
 						get_element_hash(false, element, null, function(hash, n, parent_n) {
-							isAd(hash, function(is_ad) {
-								if (is_ad) {
+							isAd(hash, function(e) {
+								var n = e.args[0];
+								var parent_n = e.args[1];
+								if (e.is_ad) {
 									n.parentElement.removeChild(n);
 								} else {
 									show_element(parent_n);
@@ -898,7 +880,7 @@ function check_elements_that_may_be_ads() {
 										set_border(n, 'green');
 									}
 								}
-							});
+							}, [n, parent_n]);
 						});
 						break;
 					default:
