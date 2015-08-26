@@ -23,70 +23,81 @@ function setup_events() {
 	});
 
 	window.addEventListener('message', function(event) {
-		if (event.data && event.data.message === 'from_iframe_document_to_top_window') {
-//			console.info('CCCCCCCCC');
-			var request = {
-				message: 'from_top_window_to_iframe_document',
-				hash: event.data.hash
-			};
-			event.source.postMessage(request, '*');
-		} else if (event.data && event.data.message === 'from_top_window_to_iframe_document') {
-//			console.info('DDDDDDDDD');
+		// Just return if there is no data in the event
+		if (! event.data) {
+			return;
+		}
+
+		switch (event.data.message) {
+			case 'from_iframe_document_to_top_window':
+//				console.info('CCCCCCCCC');
+				var request = {
+					message: 'from_top_window_to_iframe_document',
+					hash: event.data.hash
+				};
+				event.source.postMessage(request, '*');
+				break;
+			case 'from_top_window_to_iframe_document':
+//				console.info('DDDDDDDDD');
 /*
-			window.document.body.style.padding = '10px';
-			window.document.body.style.margin = '10px';
-			window.document.body.style.backgroundColor = 'orange';
+				window.document.body.style.padding = '10px';
+				window.document.body.style.margin = '10px';
+				window.document.body.style.backgroundColor = 'orange';
 */
 
-			// FIXME: Here we need to check if this is an ad
-			var request = {
-				message: 'from_iframe_document_to_iframe_element',
-				hash: event.data.hash
-			};
-			window.parent.postMessage(request, '*');
-		} else if (event.data && event.data.message === 'from_iframe_document_to_iframe_element') {
-//			console.info('EEEEEEEEEE');
-			// Get the hash of the document, and save it inside the parent iframe
-			var iframes = document.getElementsByTagName('iframe');
-			for (var i=0; i<iframes.length; ++i) {
-				var frame = iframes[i];
-				if (frame === event.source.frameElement) {
+				// FIXME: Here we need to check if this is an ad
+				var request = {
+					message: 'from_iframe_document_to_iframe_element',
+					hash: event.data.hash
+				};
+				window.parent.postMessage(request, '*');
+				break;
+			case 'from_iframe_document_to_iframe_element':
+//				console.info('EEEEEEEEEE');
+				// Get the hash of the document, and save it inside the parent iframe
+				var iframes = document.getElementsByTagName('iframe');
+				for (var i=0; i<iframes.length; ++i) {
+					var frame = iframes[i];
+					if (frame === event.source.frameElement) {
 /*
-					window.document.body.style.padding = '10px';
-					window.document.body.style.margin = '10px';
-					window.document.body.style.backgroundColor = 'pink';
+						window.document.body.style.padding = '10px';
+						window.document.body.style.margin = '10px';
+						window.document.body.style.backgroundColor = 'pink';
 */
 
-//					console.info('XXXXXXXXXXXXXXX');
-					frame.setAttribute('document_hash', event.data.hash);
-//					delete g_known_elements[frame.id];
+//						console.info('XXXXXXXXXXXXXXX');
+						frame.setAttribute('document_hash', event.data.hash);
+//						delete g_known_elements[frame.id];
 
-//					show_element(frame);
-//					set_border(frame, 'red');
-//					create_button(frame, null);
-					break;
+//						show_element(frame);
+//						set_border(frame, 'red');
+//						create_button(frame, null);
+						break;
+					}
 				}
-			}
 
-			var request = {
-				message: 'from_iframe_element_to_iframe_document',
-				hash: event.data.hash
-			};
-			event.source.postMessage(request, '*');
-		// Make the iframe's document visible
-		} else if (event.data && event.data.message === 'from_iframe_element_to_iframe_document') {
+				var request = {
+					message: 'from_iframe_element_to_iframe_document',
+					hash: event.data.hash
+				};
+				event.source.postMessage(request, '*');
+				break;
+			// Make the iframe's document visible
+			case 'from_iframe_element_to_iframe_document':
 /*
-			window.document.body.style.padding = '10px';
-			window.document.body.style.margin = '10px';
-			window.document.body.style.backgroundColor = 'purple';
+				window.document.body.style.padding = '10px';
+				window.document.body.style.margin = '10px';
+				window.document.body.style.backgroundColor = 'purple';
 */
-		} else if (event.data && event.data.message === 'append_screen_shot') {
-			var img = new Image();
-			img.onload = function(e) {
-				var self = e.path[0];
-				document.body.appendChild(self);
-			};
-			img.src = event.data.data_url;
+				break;
+			case 'append_screen_shot':
+				var img = new Image();
+				img.onload = function(e) {
+					var self = e.path[0];
+					document.body.appendChild(self);
+				};
+				img.src = event.data.data_url;
+				break;
 		}
 	}, false);
 }
