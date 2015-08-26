@@ -242,6 +242,17 @@ function get_screen_shot(rect, cb) {
 	chrome.runtime.sendMessage(message, function(response) {});
 }
 
+function get_element_src_or_srcset(element) {
+	var retval = null;
+	if (element.src && element.src.length > 0) {
+		retval = element.src;
+	} else if (element.srcset && element.srcset.length > 0) {
+		retval = element.srcset;
+	}
+
+	return retval;
+}
+
 function get_element_hash(is_printed, element, parent_element, cb) {
 	function print_info(element, data) {
 		console.info(element);
@@ -275,12 +286,7 @@ function get_element_hash(is_printed, element, parent_element, cb) {
 	// Or the element is another type
 	switch (element.tagName.toLowerCase()) {
 		case 'img':
-			var src = null;
-			if (element.src && element.src.length > 0) {
-				src = element.src;
-			} else if (element.srcset && element.srcset.length > 0) {
-				src = element.srcset;
-			}
+			var src = get_element_src_or_srcset(element);
 			image_to_data_url(element, src, function(data_url) {
 				if (is_printed) {print_info(element, data_url);}
 				var hash = hex_md5(data_url);
@@ -496,12 +502,7 @@ function create_button(element, container_element) {
 					get_screen_shot(rect, function(image, dataURI) {
 						// Send the image to the top window
 						if (DEBUG) {
-							var src = null;
-							if (image.src && image.src.length > 0) {
-								src = image.src;
-							} else if (image.srcset && image.srcset.length > 0) {
-								src = image.srcset;
-							}
+							var src = get_element_src_or_srcset(image);
 							image_to_data_url(image, src, function(data_url) {
 								var request = {
 									message: 'append_screen_shot',
@@ -706,7 +707,7 @@ function check_elements_that_may_be_ads() {
 						}
 						break;
 					case 'img':
-						if (element.src && element.src.length > 0 || element.srcset && element.srcset.length > 0) {
+						if (get_element_src_or_srcset(element)) {
 							g_known_elements[element.id] = 1;
 //							console.log(element);
 
