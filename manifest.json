@@ -21,8 +21,8 @@
 			"match_about_blank": true,
 			"run_at": "document_start",
 			"all_frames": true,
-			"css": ["shared.css"],
-			"js": ["helpers.js", "shared.js", "md5.js", "all_frames.js"]
+			"css": ["core.css"],
+			"js": ["helpers.js", "core.js", "md5.js", "all_frames.js"]
 		},
 		{
 			"matches": ["<all_urls>"],
