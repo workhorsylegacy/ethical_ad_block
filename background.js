@@ -21,23 +21,6 @@ BLACKLIST = [];
 var active_url = null;
 var g_user_id = null;
 
-
-
-function generate_random_id() {
-	// Get a 20 character id
-	var code_table = "0123456789ABCDEFGHIJKLMNOPQRSTUVWXYZ";
-	var id = [];
-	for (var i = 0; i < 20; ++i) {
-		// Get a random number between 0 and 35
-		var num = Math.floor((Math.random() * 36));
-
-		// Get the character that corresponds to the number
-		id.push(code_table[num]);
-	}
-
-	return id.join('');
-}
-
 g_user_id = generate_random_id();
 
 // FIXME: When the headers are changed, it breaks some other headers

@@ -22,7 +22,7 @@
 			"run_at": "document_start",
 			"all_frames": true,
 			"css": ["shared.css"],
-			"js": ["shared.js", "md5.js", "all_frames.js"]
+			"js": ["helpers.js", "shared.js", "md5.js", "all_frames.js"]
 		},
 		{
 			"matches": ["<all_urls>"],
@@ -33,7 +33,7 @@
 	],
 
 	"background": {
-		"scripts": ["background.js"],
+		"scripts": ["helpers.js", "background.js"],
 		"persistent": true
 	},
 

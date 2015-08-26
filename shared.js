@@ -77,21 +77,6 @@ function ajaxGet(request, successCb, failCb) {
 	httpRequest.send(null);
 }
 
-function generate_random_id() {
-	// Get a 20 character id
-	var code_table = "0123456789ABCDEFGHIJKLMNOPQRSTUVWXYZ";
-	var id = [];
-	for (var i = 0; i < 20; ++i) {
-		// Get a random number between 0 and 35
-		var num = Math.floor((Math.random() * 36));
-
-		// Get the character that corresponds to the number
-		id.push(code_table[num]);
-	}
-
-	return id.join('');
-}
-
 function show_element(element) {
 	// Just return if the element is null
 	if (! element) {
