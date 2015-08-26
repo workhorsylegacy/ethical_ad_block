@@ -4,6 +4,9 @@
 
 /*
 TODO:
+. fix issue with variable hoisting
+. fix issue with refering to variables outside a delegate
+
 . Check why ads on http://stackoverflow.com have different hashes, for the same ad after a reload
 . There are problems with mixed content https://news.ycombinator.com/news
 . Many elements on http://streamtuner.me don't get seen as possible ads
