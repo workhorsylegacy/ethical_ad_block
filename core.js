@@ -105,6 +105,25 @@ function show_element(element) {
 	}
 }
 
+function hide_element(element) {
+	// Save the style attributes that are temporarily overridden by the extension
+	if (! g_patched_elements.hasOwnProperty(element.id)) {
+		g_patched_elements[element.id] = 1;
+
+		// opacity
+		if (element.style.opacity) {
+			element.setAttribute('_real_opacity', element.style.opacity);
+		}
+		element.style.opacity = 0.2;
+
+		// pointerEvents
+		if (element.style.pointerEvents) {
+			element.setAttribute('_real_pointer_events', element.style.pointerEvents);
+		}
+		element.style.pointerEvents = 'none';
+	}
+}
+
 function set_border(element, color) {
 	if (! element.border_color) {
 		element.border_color = color;
@@ -649,22 +668,7 @@ function check_elements_that_may_be_ads() {
 				element.id = generate_random_id();
 			}
 
-			// Save the style attributes that are temporarily overridden by the extension
-			if (! g_patched_elements.hasOwnProperty(element.id)) {
-				g_patched_elements[element.id] = 1;
-
-				// opacity
-				if (element.style.opacity) {
-					element.setAttribute('_real_opacity', element.style.opacity);
-				}
-				element.style.opacity = 0.2;
-
-				// pointerEvents
-				if (element.style.pointerEvents) {
-					element.setAttribute('_real_pointer_events', element.style.pointerEvents);
-				}
-				element.style.pointerEvents = 'none';
-			}
+			hide_element(element);
 
 			// Only look at elements that have not already been examined
 			if (! g_known_elements.hasOwnProperty(element.id)) {
