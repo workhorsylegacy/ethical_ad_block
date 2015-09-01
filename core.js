@@ -643,7 +643,7 @@ function to_array(obj) {
 function isAd(hash, cb, args) {
 	args = args || [];
 	// If the hash is null, just use false
-	if (hash == null || hash == undefined) {
+	if (hash === null || hash === undefined) {
 		cb({'is_ad': false, 'args': args});
 		return;
 	}
