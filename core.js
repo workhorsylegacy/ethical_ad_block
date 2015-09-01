@@ -6,7 +6,6 @@
 TODO:
 . fix issue with variable hoisting
 . use promises
-. change naming convention
 . fix issue with refering to variables outside a delegate
 
 . Check why ads on http://stackoverflow.com have different hashes, for the same ad after a reload
@@ -79,7 +78,7 @@ function ajaxGet(request, success_cb, fail_cb) {
 	http_request.send(null);
 }
 
-function show_element(element) {
+function showElement(element) {
 	// Just return if the element is null
 	if (! element) {
 		return;
@@ -107,7 +106,7 @@ function show_element(element) {
 	}
 }
 
-function hide_element(element) {
+function hideElement(element) {
 	// Save the style attributes that are temporarily overridden by the extension
 	if (! g_patched_elements.hasOwnProperty(element.id)) {
 		g_patched_elements[element.id] = 1;
@@ -126,7 +125,7 @@ function hide_element(element) {
 	}
 }
 
-function set_border(element, color) {
+function setBorder(element, color) {
 	if (! element.border_color) {
 		element.border_color = color;
 	}
@@ -136,7 +135,7 @@ function set_border(element, color) {
 	}
 }
 
-function get_element_rect(element) {
+function getElementRect(element) {
 	var rect = element.getBoundingClientRect();
 	rect = {
 		bottom: rect.bottom,
@@ -151,13 +150,13 @@ function get_element_rect(element) {
 	return rect;
 }
 
-function get_element_rect_with_children(element) {
+function getElementRectWithChildren(element) {
 	// Update the rect to overlap all the child rects
-	var rect = get_element_rect(element);
+	var rect = getElementRect(element);
 	var children = [element];
 	while (children.length > 0) {
 		var child = children.pop();
-		var c_rect = get_element_rect(child);
+		var c_rect = getElementRect(child);
 
 		if (c_rect.width === 0 || c_rect.height === 0) {
 			continue;
@@ -172,12 +171,12 @@ function get_element_rect_with_children(element) {
 		rect.height = rect.bottom - rect.top;
 		rect.width = rect.right - rect.left;
 
-		children = children.concat(to_array(child.children));
+		children = children.concat(toArray(child.children));
 	}
 	return rect;
 }
 
-function image_to_data_url(element, src, cb) {
+function imageToDataUrl(element, src, cb) {
 	var img = new Image();
 	img.crossOrigin = 'Anonymous';
 	img.onload = function(e) {
@@ -204,7 +203,7 @@ function image_to_data_url(element, src, cb) {
 	}
 }
 
-function get_screen_shot(rect, cb) {
+function getScreenShot(rect, cb) {
 	var message = {
 		action: 'screen_shot',
 		rect: rect
@@ -244,7 +243,7 @@ function get_screen_shot(rect, cb) {
 	chrome.runtime.sendMessage(message, function(response) {});
 }
 
-function get_element_src_or_srcset(element) {
+function getElementSrcOrSrcSet(element) {
 	var retval = null;
 	if (element.src && element.src.length > 0) {
 		retval = element.src;
@@ -255,8 +254,8 @@ function get_element_src_or_srcset(element) {
 	return retval;
 }
 
-function get_element_hash(is_printed, element, parent_element, cb) {
-	function print_info(element, data) {
+function getElementHash(is_printed, element, parent_element, cb) {
+	function printInfo(element, data) {
 		console.info(element);
 		console.info('hash ' + element.tagName.toLowerCase() + ': ' + data);
 	}
@@ -269,7 +268,7 @@ function get_element_hash(is_printed, element, parent_element, cb) {
 			var tag = tags[i];
 			var elements = element.getElementsByTagName(tag);
 			if (elements.length > 0) {
-				get_element_hash(is_printed, elements[0], parent_element, function(hash, element, parent_element) {
+				getElementHash(is_printed, elements[0], parent_element, function(hash, element, parent_element) {
 					cb(hash, element, parent_element);
 				});
 				return;
@@ -288,21 +287,21 @@ function get_element_hash(is_printed, element, parent_element, cb) {
 	// Or the element is another type
 	switch (element.tagName.toLowerCase()) {
 		case 'img':
-			var src = get_element_src_or_srcset(element);
-			image_to_data_url(element, src, function(data_url) {
-				if (is_printed) {print_info(element, data_url);}
+			var src = getElementSrcOrSrcSet(element);
+			imageToDataUrl(element, src, function(data_url) {
+				if (is_printed) {printInfo(element, data_url);}
 				var hash = hex_md5(data_url);
 				cb(hash, element, parent_element);
 			});
 			break;
 		case 'iframe':
 			var hash = element.getAttribute('document_hash');
-			if (is_printed) {print_info(element, hash);}
+			if (is_printed) {printInfo(element, hash);}
 			cb(hash, element, parent_element);
 			break;
 		case 'embed':
 		case 'object':
-			if (is_printed) {print_info(element, element.data);}
+			if (is_printed) {printInfo(element, element.data);}
 			var hash = null;
 			if (element.data) {
 				hash = hex_md5(element.data);
@@ -310,7 +309,7 @@ function get_element_hash(is_printed, element, parent_element, cb) {
 			cb(hash, element, parent_element);
 			break;
 		case 'video':
-			if (is_printed) {print_info(element, element.src);}
+			if (is_printed) {printInfo(element, element.src);}
 			var hash = hex_md5(element.src);
 			cb(hash, element, parent_element);
 			break;
@@ -319,18 +318,18 @@ function get_element_hash(is_printed, element, parent_element, cb) {
 			var bg = window.getComputedStyle(element)['background-image'];
 			if (bg && bg !== 'none' && bg.length > 0 && bg.indexOf('url(') === 0 && bg[bg.length-1] === ')') {
 				var src = bg.substring(4, bg.length-1);
-				image_to_data_url(element, src, function(data_url) {
-					if (is_printed) {print_info(element, data_url);}
+				imageToDataUrl(element, src, function(data_url) {
+					if (is_printed) {printInfo(element, data_url);}
 					var hash = hex_md5(data_url);
 					cb(hash, element, parent_element);
 				});
 			} else if (element.children.length > 0) {
-				get_element_child_hash(is_printed, element, element, cb);
-//				if (is_printed) {print_info(element, element.href);}
+				getElementChildHash(is_printed, element, element, cb);
+//				if (is_printed) {printInfo(element, element.href);}
 //				hash = hex_md5(element.href);
 //				cb(hash, element, parent_element);
 			} else if (element.href && element.href.length > 0) {
-				if (is_printed) {print_info(element, element.href);}
+				if (is_printed) {printInfo(element, element.href);}
 				hash = hex_md5(element.href);
 				cb(hash, element, parent_element);
 			} else {
@@ -343,8 +342,8 @@ function get_element_hash(is_printed, element, parent_element, cb) {
 	}
 }
 
-function get_element_child_hash(is_printed, element, parent_element, cb) {
-	var elements = to_array(element.children);
+function getElementChildHash(is_printed, element, parent_element, cb) {
+	var elements = toArray(element.children);
 
 	while (elements.length > 0) {
 		var child = elements.pop();
@@ -356,7 +355,7 @@ function get_element_child_hash(is_printed, element, parent_element, cb) {
 			case 'object':
 			case 'video':
 			case 'a':
-				get_element_hash(is_printed, child, parent_element, cb);
+				getElementHash(is_printed, child, parent_element, cb);
 				return;
 		}
 		if (child.children) {
@@ -369,7 +368,7 @@ function get_element_child_hash(is_printed, element, parent_element, cb) {
 	cb(null, element, parent_element);
 }
 
-function create_button(element, container_element) {
+function createButton(element, container_element) {
 	// Just return if this element already has a button
 	if (element.canvas) {
 		return;
@@ -394,7 +393,7 @@ function create_button(element, container_element) {
 			color = 'purple';
 //		}
 		node.style.border = BORDER_SIZE + 'px dashed ' + node.border_color;
-		var rect = get_element_rect(node);
+		var rect = getElementRect(node);
 
 		// Create a button over the top left of the element
 		var canvas = document.createElement('canvas');
@@ -421,7 +420,7 @@ function create_button(element, container_element) {
 
 		// Keep checking the mouse position. If it moves out of the element, remove the button
 		var rect_interval = setInterval(function() {
-			var r = get_element_rect(node);
+			var r = getElementRect(node);
 			var l = r.left + window.pageXOffset;
 			var t = r.top + window.pageYOffset;
 			l = l < 0.0 ? 0.0 : l;
@@ -453,7 +452,7 @@ function create_button(element, container_element) {
 			}
 
 			// Button menu
-			var rect = get_element_rect_with_children(node);
+			var rect = getElementRectWithChildren(node);
 			var menu = document.createElement('div');
 			menu.className = 'nostyle';
 			menu.style.padding = '10px';
@@ -473,14 +472,14 @@ function create_button(element, container_element) {
 
 			// Keep moving the button menu to cover the element
 			var div_interval = setInterval(function() {
-				var rect = get_element_rect_with_children(node);
+				var rect = getElementRectWithChildren(node);
 				menu.style.width = rect.width + 'px';
 				menu.style.height = rect.height + 'px';
 				menu.style.left = rect.left + window.pageXOffset + 'px';
 				menu.style.top = rect.top + window.pageYOffset + 'px';
 			}, 100);
 
-			function button_click(e) {
+			function buttonClick(e) {
 				var element = e.path[0];
 
 				// Stop checking button and button menu positions
@@ -500,12 +499,12 @@ function create_button(element, container_element) {
 				// Wait for the next set of DOM events, so the element's border will be removed
 				setTimeout(function() {
 					// Get a screen shot from the background script
-					rect = get_element_rect_with_children(node);
-					get_screen_shot(rect, function(image, data_uri) {
+					rect = getElementRectWithChildren(node);
+					getScreenShot(rect, function(image, data_uri) {
 						// Send the image to the top window
 						if (DEBUG) {
-							var src = get_element_src_or_srcset(image);
-							image_to_data_url(image, src, function(data_url) {
+							var src = getElementSrcOrSrcSet(image);
+							imageToDataUrl(image, src, function(data_url) {
 								var request = {
 									message: 'append_screen_shot',
 									data_url: data_url
@@ -518,7 +517,7 @@ function create_button(element, container_element) {
 						node.style.display = 'none';
 
 						// Get a hash of the element
-						get_element_hash(true, node, null, function(hash, node, parent_node) {
+						getElementHash(true, node, null, function(hash, node, parent_node) {
 							console.log(hash);
 
 							// Remove the element
@@ -552,7 +551,7 @@ function create_button(element, container_element) {
 			button_good.rect_interval = rect_interval;
 			menu.appendChild(button_good);
 			menu.appendChild(document.createElement('br'));
-			button_good.addEventListener('click', button_click);
+			button_good.addEventListener('click', buttonClick);
 
 			// Fraudulent button
 			var button_fraud = document.createElement('button');
@@ -563,7 +562,7 @@ function create_button(element, container_element) {
 			button_fraud.rect_interval = rect_interval;
 			menu.appendChild(button_fraud);
 			menu.appendChild(document.createElement('br'));
-			button_fraud.addEventListener('click', button_click);
+			button_fraud.addEventListener('click', buttonClick);
 
 			// Resource taxing button
 			var button_resource = document.createElement('button');
@@ -574,7 +573,7 @@ function create_button(element, container_element) {
 			button_resource.rect_interval = rect_interval;
 			menu.appendChild(button_resource);
 			menu.appendChild(document.createElement('br'));
-			button_resource.addEventListener('click', button_click);
+			button_resource.addEventListener('click', buttonClick);
 
 			// Malicious button
 			var button_malicious = document.createElement('button');
@@ -585,7 +584,7 @@ function create_button(element, container_element) {
 			button_malicious.rect_interval = rect_interval;
 			menu.appendChild(button_malicious);
 			menu.appendChild(document.createElement('br'));
-			button_malicious.addEventListener('click', button_click);
+			button_malicious.addEventListener('click', buttonClick);
 
 			// Cancel button
 			var button_cancel = document.createElement('button');
@@ -616,7 +615,7 @@ function create_button(element, container_element) {
 	element.addEventListener('mouseenter', mouse_enter, false);
 }
 
-function is_inside_link_element(element) {
+function isInsideLinkElement(element) {
 	var parent = element.parentElement;
 	while (parent) {
 		if (parent.tagName.toLowerCase() === 'a') {
@@ -627,12 +626,12 @@ function is_inside_link_element(element) {
 	return false;
 }
 
-function is_too_small(element) {
-	var rect = get_element_rect(element);
+function isTooSmall(element) {
+	var rect = getElementRect(element);
 	return (rect.width < 20 || rect.height < 20);
 }
 
-function to_array(obj) {
+function toArray(obj) {
 	var retval = [];
 	for (var i=0; i<obj.length; ++i) {
 		retval.push(obj[i]);
@@ -660,7 +659,7 @@ function isAd(hash, cb, args) {
 	ajaxGet(request, success_cb, fail_cb);
 }
 
-function check_elements_that_may_be_ads() {
+function checkElementsThatMayBeAds() {
 	for (var tag in TAGS1) {
 		var elements = document.getElementsByTagName(tag);
 		for (var i=0; i<elements.length; ++i) {
@@ -668,10 +667,10 @@ function check_elements_that_may_be_ads() {
 
 			// If the element does not have an id, generate a random one
 			if (element.id === '' || element.id === null || element.id === undefined) {
-				element.id = generate_random_id();
+				element.id = generateRandomId();
 			}
 
-			hide_element(element);
+			hideElement(element);
 
 			// Only look at elements that have not already been examined
 			if (! g_known_elements.hasOwnProperty(element.id)) {
@@ -679,9 +678,9 @@ function check_elements_that_may_be_ads() {
 
 				// Skip the element if it is inside a link
 				if (TAGS3.hasOwnProperty(name)) {
-					if (is_inside_link_element(element)) {
+					if (isInsideLinkElement(element)) {
 						g_known_elements[element.id] = 1;
-						show_element(element);
+						showElement(element);
 						continue;
 					}
 				}
@@ -701,15 +700,15 @@ function check_elements_that_may_be_ads() {
 								if (e.is_ad) {
 									element.parentElement.removeChild(element);
 								} else {
-									show_element(element);
-									set_border(element, 'red');
-									create_button(element, null);
+									showElement(element);
+									setBorder(element, 'red');
+									createButton(element, null);
 								}
 							}, [element]);
 						}
 						break;
 					case 'img':
-						if (get_element_src_or_srcset(element)) {
+						if (getElementSrcOrSrcSet(element)) {
 							g_known_elements[element.id] = 1;
 //							console.log(element);
 
@@ -719,20 +718,20 @@ function check_elements_that_may_be_ads() {
 									var node = evt.path[0];
 									node.removeEventListener('load', load_cb);
 
-									get_element_hash(false, node, null, function(hash, n, parent_n) {
+									getElementHash(false, node, null, function(hash, n, parent_n) {
 										isAd(hash, function(e) {
 											var n = e.args[0];
 											var parent_n = e.args[1];
 											if (e.is_ad) {
 												n.parentElement.removeChild(n);
 											} else {
-												show_element(parent_n);
-												show_element(n);
-												if (! is_too_small(n)) {
-													set_border(n, 'blue');
-													create_button(n, null);
+												showElement(parent_n);
+												showElement(n);
+												if (! isTooSmall(n)) {
+													setBorder(n, 'blue');
+													createButton(n, null);
 												} else {
-	//												set_border(n, 'green');
+	//												setBorder(n, 'green');
 												}
 											}
 										}, [n, parent_n]);
@@ -744,20 +743,20 @@ function check_elements_that_may_be_ads() {
 							} else {
 								var node = element;
 
-								get_element_hash(false, node, null, function(hash, n, parent_n) {
+								getElementHash(false, node, null, function(hash, n, parent_n) {
 									isAd(hash, function(e) {
 										var n = e.args[0];
 										var parent_n = e.args[1];
 										if (e.is_ad) {
 											n.parentElement.removeChild(n);
 										} else {
-											show_element(parent_n);
-											show_element(n);
-											if (! is_too_small(n)) {
-												set_border(n, 'blue');
-												create_button(n, null);
+											showElement(parent_n);
+											showElement(n);
+											if (! isTooSmall(n)) {
+												setBorder(n, 'blue');
+												createButton(n, null);
 											} else {
-	//											set_border(n, 'green');
+	//											setBorder(n, 'green');
 											}
 										}
 									}, [n, parent_n]);
@@ -773,20 +772,20 @@ function check_elements_that_may_be_ads() {
 						if (bg && bg !== 'none' && bg.length > 0) {
 //							console.log(element);
 
-							get_element_hash(false, element, null, function(hash, n, parent_n) {
+							getElementHash(false, element, null, function(hash, n, parent_n) {
 								isAd(hash, function(e) {
 									var n = e.args[0];
 									var parent_n = e.args[1];
 									if (e.is_ad) {
 										n.parentElement.removeChild(n);
 									} else {
-										show_element(parent_n);
-										show_element(n);
-										if (! is_too_small(n)) {
-											set_border(n, 'purple');
-											create_button(n, null);
+										showElement(parent_n);
+										showElement(n);
+										if (! isTooSmall(n)) {
+											setBorder(n, 'purple');
+											createButton(n, null);
 										} else {
-//											set_border(n, 'green');
+//											setBorder(n, 'green');
 										}
 									}
 								}, [n, parent_n]);
@@ -795,7 +794,7 @@ function check_elements_that_may_be_ads() {
 						} else if (element.children.length > 0) {
 //							console.log(element);
 
-							get_element_hash(false, element, null, function(hash, n, parent_n) {
+							getElementHash(false, element, null, function(hash, n, parent_n) {
 								isAd(hash, function(e) {
 									var n = e.args[0];
 									var parent_n = e.args[1];
@@ -803,25 +802,25 @@ function check_elements_that_may_be_ads() {
 										n.parentElement.removeChild(n);
 									} else {
 										// Add a button to the link
-										show_element(parent_n);
-										show_element(n);
-										if (! is_too_small(n)) {
-											set_border(n, 'purple');
-											create_button(n, null);
+										showElement(parent_n);
+										showElement(n);
+										if (! isTooSmall(n)) {
+											setBorder(n, 'purple');
+											createButton(n, null);
 										}
 
 										// Add buttons to any children that are big enough
-										var cs = to_array(n.children);
+										var cs = toArray(n.children);
 										while (cs.length > 0) {
 											var c = cs.pop();
-											cs = cs.concat(to_array(c.children));
+											cs = cs.concat(toArray(c.children));
 											// If the child is a tag we care about, or it has a background image
 											var bg = window.getComputedStyle(c)['background-image'];
 											if (c.tagName.toLowerCase() in TAGS2 || bg && bg !== 'none' && bg.length > 0) {
-												show_element(c);
-												if (! is_too_small(c)) {
-													set_border(c, 'purple');
-													create_button(c, n);
+												showElement(c);
+												if (! isTooSmall(c)) {
+													setBorder(c, 'purple');
+													createButton(c, n);
 												}
 											}
 										}
@@ -830,7 +829,7 @@ function check_elements_that_may_be_ads() {
 							});
 						// Anchor is just text
 						} else {
-							show_element(element);
+							showElement(element);
 						}
 						break;
 					case 'object':
@@ -838,17 +837,17 @@ function check_elements_that_may_be_ads() {
 						g_known_elements[element.id] = 1;
 //						console.log(element);
 
-						get_element_hash(false, element, null, function(hash, n, parent_n) {
+						getElementHash(false, element, null, function(hash, n, parent_n) {
 							isAd(hash, function(e) {
 								var n = e.args[0];
 								var parent_n = e.args[1];
 								if (e.is_ad) {
 									n.parentElement.removeChild(n);
 								} else {
-									show_element(parent_n);
-									show_element(n);
-									set_border(n, 'yellow');
-									create_button(n, null);
+									showElement(parent_n);
+									showElement(n);
+									setBorder(n, 'yellow');
+									createButton(n, null);
 								}
 							}, [n, parent_n]);
 						});
@@ -857,20 +856,20 @@ function check_elements_that_may_be_ads() {
 						g_known_elements[element.id] = 1;
 //						console.log(element);
 
-						get_element_hash(false, element, null, function(hash, n, parent_n) {
+						getElementHash(false, element, null, function(hash, n, parent_n) {
 							isAd(hash, function(e) {
 								var n = e.args[0];
 								var parent_n = e.args[1];
 								if (e.is_ad) {
 									n.parentElement.removeChild(n);
 								} else {
-									show_element(parent_n);
-									show_element(n);
-									if (! is_too_small(n)) {
-										set_border(n, 'blue');
-										create_button(n, null);
+									showElement(parent_n);
+									showElement(n);
+									if (! isTooSmall(n)) {
+										setBorder(n, 'blue');
+										createButton(n, null);
 									} else {
-//										set_border(n, 'green');
+//										setBorder(n, 'green');
 									}
 								}
 							}, [n, parent_n]);
@@ -885,11 +884,11 @@ function check_elements_that_may_be_ads() {
 }
 
 // Keep looking at page elements, and add buttons to ones that loaded
-function check_elements_loop() {
-//	console.log('called check_elements_loop ...');
+function checkElementsLoop() {
+//	console.log('called checkElementsLoop ...');
 
-	check_elements_that_may_be_ads();
+	checkElementsThatMayBeAds();
 
-	setTimeout(check_elements_loop, 500);
+	setTimeout(checkElementsLoop, 500);
 }
 

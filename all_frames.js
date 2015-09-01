@@ -2,7 +2,7 @@
 // This software is licensed under GPL v3 or later
 
 
-function setup_events() {
+function setupEvents() {
 	// Save the mouse position when it moves
 	document.addEventListener('mousemove', function(e) {
 		g_cursor_x = e.pageX;
@@ -69,9 +69,9 @@ function setup_events() {
 						frame.setAttribute('document_hash', event.data.hash);
 //						delete g_known_elements[frame.id];
 
-//						show_element(frame);
-//						set_border(frame, 'red');
-//						create_button(frame, null);
+//						showElement(frame);
+//						setBorder(frame, 'red');
+//						createButton(frame, null);
 						break;
 					}
 				}
@@ -113,7 +113,7 @@ if (window !== window.top) {
 		if (window.document.readyState === 'complete' && ! document.body.hasAttribute('_is_loaded')) {
 			document.body.setAttribute('_is_loaded', 'true');
 //			console.info('document loaded ...');
-			setup_events();
+			setupEvents();
 /*
 			window.document.body.style.padding = '10px';
 			window.document.body.style.margin = '10px';
@@ -121,7 +121,7 @@ if (window !== window.top) {
 */
 			// Create a hash of the iframe
 //			console.info('AAAAAAAAAAA');
-			get_element_hash(true, document, null, function(hash, node, parent_node) {
+			getElementHash(true, document, null, function(hash, node, parent_node) {
 //				console.info('BBBBBBBBBBB');
 				// Send the hash to the top window, so it can check if this an ad
 				var request = {
@@ -133,9 +133,9 @@ if (window !== window.top) {
 		}
 	}, 333);
 } else {
-	setup_events();
+	setupEvents();
 }
 
-check_elements_loop();
+checkElementsLoop();
 
 

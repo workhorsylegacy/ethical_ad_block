@@ -21,7 +21,7 @@ BLACKLIST = [];
 var active_url = null;
 var g_user_id = null;
 
-g_user_id = generate_random_id();
+g_user_id = generateRandomId();
 
 // FIXME: When the headers are changed, it breaks some other headers
 chrome.webRequest.onHeadersReceived.addListener(function(details) {

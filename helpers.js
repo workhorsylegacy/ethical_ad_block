@@ -2,7 +2,7 @@
 // This software is licensed under GPL v3 or later
 
 
-function generate_random_id() {
+function generateRandomId() {
 	// Get a 20 character id
 	var code_table = "0123456789ABCDEFGHIJKLMNOPQRSTUVWXYZ";
 	var id = [];
