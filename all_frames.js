@@ -16,7 +16,7 @@ function setup_events() {
 	}, false);
 
 	// Get the user id from the background page
-	chrome.runtime.onMessage.addListener(function(msg, sender, sendResponse) {
+	chrome.runtime.onMessage.addListener(function(msg, sender, send_response) {
 		if (msg.action === 'get_g_user_id') {
 			g_user_id = msg.data;
 		}

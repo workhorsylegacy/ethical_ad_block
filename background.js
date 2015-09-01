@@ -92,7 +92,7 @@ chrome.webRequest.onBeforeRequest.addListener(function(info) {
 }, { urls: ['<all_urls>'] }, ['blocking']);
 
 
-chrome.runtime.onMessage.addListener(function(msg, sender, sendResponse) {
+chrome.runtime.onMessage.addListener(function(msg, sender, send_response) {
 	if (msg.action === 'screen_shot') {
 		var rect = msg.rect;
 
@@ -100,30 +100,30 @@ chrome.runtime.onMessage.addListener(function(msg, sender, sendResponse) {
 		chrome.tabs.captureVisibleTab(
 			null,
 			{},
-			function(dataUrl) {
+			function(data_url) {
 				var message = {
 					action: 'screen_shot',
-					data: dataUrl
+					data: data_url
 				};
 				chrome.tabs.sendMessage(sender.tab.id, message, function(response) {});
 			}
 		);
-		return false; // FIXME: Update this to use sendResponse instead of sending another message
+		return false; // FIXME: Update this to use send_response instead of sending another message
 	}
 });
 
 
 // When the tab is ready
-chrome.tabs.onUpdated.addListener(function (tabId, changeInfo, tab) {
+chrome.tabs.onUpdated.addListener(function(tab_id, change_info, tab) {
 	active_url = tab.url;
 
-	if (changeInfo.status === 'complete') {
+	if (change_info.status === 'complete') {
 		// Send the user id to each new tab
 		var message = {
 			action: 'get_g_user_id',
 			data: g_user_id
 		};
-		chrome.tabs.sendMessage(tabId, message, function(response) {});
+		chrome.tabs.sendMessage(tab_id, message, function(response) {});
 	}
 });
 

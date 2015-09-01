@@ -5,6 +5,8 @@
 /*
 TODO:
 . fix issue with variable hoisting
+. use promises
+. change naming convention
 . fix issue with refering to variables outside a delegate
 
 . Check why ads on http://stackoverflow.com have different hashes, for the same ad after a reload
@@ -56,25 +58,25 @@ var TAGS3 = {
 	'video' : 'blue'
 };
 
-function ajaxGet(request, successCb, failCb) {
-	var httpRequest = new XMLHttpRequest();
-	httpRequest.onreadystatechange = function() {
-		if (httpRequest.readyState === 4) {
-			if (httpRequest.status === 200) {
-				successCb(httpRequest.responseText);
+function ajaxGet(request, success_cb, fail_cb) {
+	var http_request = new XMLHttpRequest();
+	http_request.onreadystatechange = function() {
+		if (http_request.readyState === 4) {
+			if (http_request.status === 200) {
+				success_cb(http_request.responseText);
 			} else {
-				failCb(httpRequest.status);
+				fail_cb(http_request.status);
 			}
-		} else if (httpRequest.readyState === 0) {
-			failCb(0);
+		} else if (http_request.readyState === 0) {
+			fail_cb(0);
 		}
 	};
-	httpRequest.onerror = function() {
-		failCb(0);
+	http_request.onerror = function() {
+		fail_cb(0);
 	};
-	httpRequest.timeout = 3000;
-	httpRequest.open('GET', request, true);
-	httpRequest.send(null);
+	http_request.timeout = 3000;
+	http_request.open('GET', request, true);
+	http_request.send(null);
 }
 
 function show_element(element) {
@@ -209,12 +211,12 @@ function get_screen_shot(rect, cb) {
 	};
 
 	// Get a screen shot from the background script
-	var screen_shot = function(msg, sender, sendResponse) {
+	var screen_shot = function(msg, sender, send_response) {
 		if (msg.action === 'screen_shot') {
 			// Remove the handler for this callback
 			chrome.runtime.onMessage.removeListener(screen_shot);
 
-			var dataURI = msg.data;
+			var data_uri = msg.data;
 			var canvas = document.createElement('canvas');
 			canvas.width = rect.width;
 			canvas.height = rect.height;
@@ -233,9 +235,9 @@ function get_screen_shot(rect, cb) {
 				);
 				image.onload = null;
 				image.src = canvas.toDataURL();
-				cb(image, dataURI);
+				cb(image, data_uri);
 			};
-			image.src = dataURI;
+			image.src = data_uri;
 		}
 	};
 	chrome.runtime.onMessage.addListener(screen_shot);
@@ -499,7 +501,7 @@ function create_button(element, container_element) {
 				setTimeout(function() {
 					// Get a screen shot from the background script
 					rect = get_element_rect_with_children(node);
-					get_screen_shot(rect, function(image, dataURI) {
+					get_screen_shot(rect, function(image, data_uri) {
 						// Send the image to the top window
 						if (DEBUG) {
 							var src = get_element_src_or_srcset(image);
@@ -528,13 +530,13 @@ function create_button(element, container_element) {
 									'?user_id=' + g_user_id +
 									'&vote_ad=' + hash +
 									'&ad_type=' + element.ad_type;
-								var successCb = function(responseText) {
-									console.log(responseText);
+								var success_cb = function(response_text) {
+									console.log(response_text);
 								};
-								var failCb = function(status) {
+								var fail_cb = function(status) {
 									console.log('Failed to connect to server.');
 								};
-								ajaxGet(request, successCb, failCb);
+								ajaxGet(request, success_cb, fail_cb);
 							}
 						});
 					});
@@ -648,14 +650,14 @@ function isAd(hash, cb, args) {
 
 	// Check the web server to see if this hash is for an ad
 	var request = 'http://localhost:9000?is_ad=' + hash;
-	var successCb = function(responseText) {
-		var is_ad = (responseText.toLowerCase() === 'true');
+	var success_cb = function(response_text) {
+		var is_ad = (response_text.toLowerCase() === 'true');
 		cb({'is_ad': is_ad, 'args': args});
 	};
-	var failCb = function(status) {
+	var fail_cb = function(status) {
 		cb({'is_ad': false, 'args': args});
 	};
-	ajaxGet(request, successCb, failCb);
+	ajaxGet(request, success_cb, fail_cb);
 }
 
 function check_elements_that_may_be_ads() {
