@@ -57,6 +57,14 @@ var TAGS3 = {
 	'video' : 'blue'
 };
 
+function hexMD5(value) {
+	if (value) {
+		return hex_md5(value);
+	} else {
+		return null;
+	}
+}
+
 function ajaxGet(request, success_cb, fail_cb) {
 	var http_request = new XMLHttpRequest();
 	http_request.onreadystatechange = function() {
@@ -279,7 +287,7 @@ function getElementHash(is_printed, element, parent_element, cb) {
 //		console.error('Failed to hash document');
 		var serializer = new XMLSerializer();
 		var hash = serializer.serializeToString(element);
-		hash = hex_md5(hash);
+		hash = hexMD5(hash);
 		cb(hash, element, parent_element);
 		return;
 	}
@@ -290,7 +298,7 @@ function getElementHash(is_printed, element, parent_element, cb) {
 			var src = getElementSrcOrSrcSet(element);
 			imageToDataUrl(element, src, function(data_url) {
 				if (is_printed) {printInfo(element, data_url);}
-				var hash = hex_md5(data_url);
+				var hash = hexMD5(data_url);
 				cb(hash, element, parent_element);
 			});
 			break;
@@ -304,13 +312,13 @@ function getElementHash(is_printed, element, parent_element, cb) {
 			if (is_printed) {printInfo(element, element.data);}
 			var hash = null;
 			if (element.data) {
-				hash = hex_md5(element.data);
+				hash = hexMD5(element.data);
 			}
 			cb(hash, element, parent_element);
 			break;
 		case 'video':
 			if (is_printed) {printInfo(element, element.src);}
-			var hash = hex_md5(element.src);
+			var hash = hexMD5(element.src);
 			cb(hash, element, parent_element);
 			break;
 		case 'a':
@@ -320,17 +328,17 @@ function getElementHash(is_printed, element, parent_element, cb) {
 				var src = bg.substring(4, bg.length-1);
 				imageToDataUrl(element, src, function(data_url) {
 					if (is_printed) {printInfo(element, data_url);}
-					var hash = hex_md5(data_url);
+					var hash = hexMD5(data_url);
 					cb(hash, element, parent_element);
 				});
 			} else if (element.children.length > 0) {
 				getElementChildHash(is_printed, element, element, cb);
 //				if (is_printed) {printInfo(element, element.href);}
-//				hash = hex_md5(element.href);
+//				hash = hexMD5(element.href);
 //				cb(hash, element, parent_element);
 			} else if (element.href && element.href.length > 0) {
 				if (is_printed) {printInfo(element, element.href);}
-				hash = hex_md5(element.href);
+				hash = hexMD5(element.href);
 				cb(hash, element, parent_element);
 			} else {
 				cb(hash, element, parent_element);
