@@ -16,6 +16,8 @@ if ! type go >/dev/null 2>&1; then
 	exit 1
 fi
 
+# FIXME: Make sure we are using at least go version 1.4
+
 # Remove the exes
 rm -f ethical_ad_block_server.exe
 
@@ -24,7 +26,7 @@ echo "Building ethical_ad_block_server.exe ..."
 go build ethical_ad_block_server.go
 
 # Run the server
-echo "Running ethical_ad_block_server.exe at http://127.0.0.1:9000 ..."
+echo "Running ethical_ad_block_server.exe at http://127.0.0.1:$1 ..."
 ethical_ad_block_server.exe $1 &
 
 # Run the example

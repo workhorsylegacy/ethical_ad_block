@@ -15,6 +15,7 @@ var BLACKLIST = [
 	'exponential.com',
 	'cpmstar.com'
 ];
+// NOTE: Ignore the black list for now
 BLACKLIST = [];
 
 
