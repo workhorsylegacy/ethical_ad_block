@@ -21,7 +21,7 @@
 			"match_about_blank": true,
 			"run_at": "document_start",
 			"all_frames": true,
-			"css": ["core.css"],
+			"css": ["core.css", "debug.css"],
 			"js": ["helpers.js", "core.js", "md5.js", "all_frames.js"]
 		},
 		{

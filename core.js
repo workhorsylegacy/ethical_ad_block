@@ -90,11 +90,16 @@ function showElement(element) {
 	if (! element) {
 		return;
 	}
-/*
-	element.style.position = '';
-	element.style.top = '';
-	element.style.left = '';
-*/
+
+	// position
+	if (! DEBUG) {
+		if (element.hasAttribute('_real_position')) {
+			element.style.position = element.getAttribute('_real_position');
+			element.removeAttribute('_real_position');
+		} else {
+			element.style.position = 'static';
+		}
+	}
 
 	// opacity
 	if (element.hasAttribute('_real_opacity')) {
@@ -118,11 +123,19 @@ function hideElement(element) {
 	if (! g_patched_elements.hasOwnProperty(element.id)) {
 		g_patched_elements[element.id] = 1;
 
+		// position
+		if (! DEBUG) {
+			if (element.style.position) {
+				element.setAttribute('_real_position', element.style.position);
+			}
+			element.style.position = 'fixed';
+		}
+
 		// opacity
 		if (element.style.opacity) {
 			element.setAttribute('_real_opacity', element.style.opacity);
 		}
-		element.style.opacity = 0.2;
+		element.style.opacity = DEBUG ? 0.2 : 0.0;
 
 		// pointerEvents
 		if (element.style.pointerEvents) {

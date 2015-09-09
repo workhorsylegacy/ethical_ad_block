@@ -1,11 +1,4 @@
 
-a, img, video, iframe, object, embed {
-	opacity: 0.2;
-	pointer-events: none;
-	/*position: fixed;
-	top: 0;
-	left: 0;*/
-}
 
 .btnRed {
   background: #e30831 !important;

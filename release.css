@@ -1,0 +1,8 @@
+
+a, img, video, iframe, object, embed {
+	opacity: 0.0;
+	pointer-events: none;
+	position: fixed;
+}
+
+
