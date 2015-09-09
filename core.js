@@ -696,24 +696,9 @@ function checkElementsThatMayBeAds() {
 				// Element image has a source
 				switch (name) {
 					case 'iframe':
-//						console.info('checking element ...');
-						// NOTE: The 'document_hash' attribute is set when the message 
-						// 'from_iframe_document_to_iframe_element' is posted to the iframe's window.			
-						var document_hash = element.getAttribute('document_hash');
-						if (document_hash && document_hash.length > 0) {
-							g_known_elements[element.id] = 1;
-							var hash = document_hash;
-							isAd(hash, function(e) {
-								var element = e.args[0];
-								if (e.is_ad) {
-									element.parentElement.removeChild(element);
-								} else {
-									showElement(element);
-									setBorder(element, 'red');
-									createButton(element, null);
-								}
-							}, [element]);
-						}
+						g_known_elements[element.id] = 1;
+						showElement(element);
+						setBorder(element, 'red');
 						break;
 					case 'img':
 						if (getElementSrcOrSrcSet(element)) {
