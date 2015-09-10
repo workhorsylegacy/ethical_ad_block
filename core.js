@@ -11,6 +11,8 @@ TODO:
 . Check why ads on http://stackoverflow.com have different hashes, for the same ad after a reload
 . News story titles on http://news.google.com do not show
 
+. Some videos have a transparent div on top of them with an onclick event. This makes it hard to click the video.
+	Fix this by making it detect elements with onclick events.
 . Hashing animated images won't work
 . When an element is the only one in an iframe/link, or the largest, make closing it close the iframe/link instead
 . Move popup menu to center of top frame
@@ -758,6 +760,29 @@ function isAd(hash, cb) {
 	ajaxGet(request, success_cb, fail_cb);
 }
 
+function removeElementIfAd(element, color, cb_after_not_ad) {
+	getElementHash(false, element, null, function(hash, node, parent_node) {
+		isAd(hash, function(is_ad) {
+			if (is_ad) {
+				node.parentElement.removeChild(node);
+			} else {
+				showElement(parent_node);
+				showElement(node);
+				if (! isTooSmall(node)) {
+					setBorder(node, color);
+					createButton(node, null);
+				} else {
+//					setBorder(node, 'green');
+				}
+
+				if (cb_after_not_ad) {
+					cb_after_not_ad(node);
+				}
+			}
+		});
+	});
+}
+
 function checkElementsThatMayBeAds() {
 	for (var tag in TAGS1) {
 		var elements = document.getElementsByTagName(tag);
@@ -796,22 +821,7 @@ function checkElementsThatMayBeAds() {
 							g_known_elements[element.id] = 1;
 //							console.log(element);
 
-							getElementHash(false, element, null, function(hash, n, parent_n) {
-								isAd(hash, function(is_ad) {
-									if (is_ad) {
-										n.parentElement.removeChild(n);
-									} else {
-										showElement(parent_n);
-										showElement(n);
-										if (! isTooSmall(n)) {
-											setBorder(n, 'blue');
-											createButton(n, null);
-										} else {
-//											setBorder(n, 'green');
-										}
-									}
-								});
-							});
+							removeElementIfAd(element, 'blue');
 						}
 						break;
 					case 'div':
@@ -820,22 +830,7 @@ function checkElementsThatMayBeAds() {
 						// Element has a background image
 						var bg = window.getComputedStyle(element)['background-image'];
 						if (isValidCSSImagePath(bg)) {
-							getElementHash(false, element, null, function(hash, n, parent_n) {
-								isAd(hash, function(is_ad) {
-									if (is_ad) {
-										n.parentElement.removeChild(n);
-									} else {
-										showElement(parent_n);
-										showElement(n);
-										if (! isTooSmall(n)) {
-											setBorder(n, 'orange');
-											createButton(n, null);
-										} else {
-//											setBorder(n, 'green');
-										}
-									}
-								});
-							});
+							removeElementIfAd(element, 'orange');
 						} else {
 							showElement(element);
 						}
@@ -848,56 +843,27 @@ function checkElementsThatMayBeAds() {
 						if (isValidCSSImagePath(bg)) {
 //							console.log(element);
 
-							getElementHash(false, element, null, function(hash, n, parent_n) {
-								isAd(hash, function(is_ad) {
-									if (is_ad) {
-										n.parentElement.removeChild(n);
-									} else {
-										showElement(parent_n);
-										showElement(n);
-										if (! isTooSmall(n)) {
-											setBorder(n, 'purple');
-											createButton(n, null);
-										} else {
-//											setBorder(n, 'green');
-										}
-									}
-								});
-							});
+							removeElementIfAd(element, 'purple');
 						// Anchor has children
 						} else if (element.children.length > 0) {
 //							console.log(element);
 
-							getElementHash(false, element, null, function(hash, n, parent_n) {
-								isAd(hash, function(is_ad) {
-									if (is_ad) {
-										n.parentElement.removeChild(n);
-									} else {
-										// Add a button to the link
-										showElement(parent_n);
-										showElement(n);
-										if (! isTooSmall(n)) {
-											setBorder(n, 'purple');
-											createButton(n, null);
-										}
-
-										// Add buttons to any children that are big enough
-										var cs = toArray(n.children);
-										while (cs.length > 0) {
-											var c = cs.pop();
-											cs = cs.concat(toArray(c.children));
-											// If the child is a tag we care about, or it has a background image
-											var bg = window.getComputedStyle(c)['background-image'];
-											if (c.tagName.toLowerCase() in TAGS2 || isValidCSSImagePath(bg)) {
-												showElement(c);
-												if (! isTooSmall(c)) {
-													setBorder(c, 'purple');
-													createButton(c, n);
-												}
-											}
+							removeElementIfAd(element, 'purple', function(node) {
+								// Add buttons to any children that are big enough
+								var children = toArray(node.children);
+								while (children.length > 0) {
+									var child = children.pop();
+									children = children.concat(toArray(child.children));
+									// If the child is a tag we care about, or it has a background image
+									var bg = window.getComputedStyle(child)['background-image'];
+									if (child.tagName.toLowerCase() in TAGS2 || isValidCSSImagePath(bg)) {
+										showElement(child);
+										if (! isTooSmall(child)) {
+											setBorder(child, 'purple');
+											createButton(child, node);
 										}
 									}
-								});
+								}
 							});
 						// Anchor is just text
 						} else {
@@ -909,39 +875,13 @@ function checkElementsThatMayBeAds() {
 						g_known_elements[element.id] = 1;
 //						console.log(element);
 
-						getElementHash(false, element, null, function(hash, n, parent_n) {
-							isAd(hash, function(is_ad) {
-								if (is_ad) {
-									n.parentElement.removeChild(n);
-								} else {
-									showElement(parent_n);
-									showElement(n);
-									setBorder(n, 'yellow');
-									createButton(n, null);
-								}
-							});
-						});
+						removeElementIfAd(element, 'yellow');
 						break;
 					case 'video':
 						g_known_elements[element.id] = 1;
 //						console.log(element);
 
-						getElementHash(false, element, null, function(hash, n, parent_n) {
-							isAd(hash, function(is_ad) {
-								if (is_ad) {
-									n.parentElement.removeChild(n);
-								} else {
-									showElement(parent_n);
-									showElement(n);
-									if (! isTooSmall(n)) {
-										setBorder(n, 'blue');
-										createButton(n, null);
-									} else {
-//											setBorder(n, 'green');
-									}
-								}
-							});
-						});
+						removeElementIfAd(element, 'blue');
 						break;
 					default:
 						throw "Unexpected element '" + element.tagName.toLowerCase() + "' to check for ads.";
