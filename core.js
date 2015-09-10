@@ -263,15 +263,21 @@ function getScreenShot(rect, cb) {
 	chrome.runtime.sendMessage(message, function(response) {});
 }
 
-function getElementSrcOrSrcSet(element) {
-	var retval = null;
-	if (element.src && element.src.length > 0) {
-		retval = element.src;
-	} else if (element.srcset && element.srcset.length > 0) {
-		retval = element.srcset;
+function getElementSrcOrSrcSetOrImgSrc(element) {
+	var sources = [
+		element.src,
+		element.getAttribute('srcset'),
+		element.getAttribute('imgsrc')
+	];
+
+	for (var i=0; i<sources.length; ++i) {
+		var source = sources[i];
+		if (source && source.length > 0) {
+			return source;
+		}
 	}
 
-	return retval;
+	return null;
 }
 
 function getVideoSrc(element) {
@@ -333,7 +339,7 @@ function getElementHash(is_printed, element, parent_element, cb) {
 					var node = evt.path[0];
 					node.removeEventListener('load', load_cb);
 
-					var src = getElementSrcOrSrcSet(node);
+					var src = getElementSrcOrSrcSetOrImgSrc(node);
 					imageToDataUrl(node, src, function(data_url) {
 						if (is_printed) {printInfo(node, data_url);}
 						var hash = hexMD5(data_url);
@@ -344,7 +350,7 @@ function getElementHash(is_printed, element, parent_element, cb) {
 				element.addEventListener('load', load_cb, false);
 			// The src is already loaded
 			} else {
-				var src = getElementSrcOrSrcSet(element);
+				var src = getElementSrcOrSrcSetOrImgSrc(element);
 				imageToDataUrl(element, src, function(data_url) {
 					if (is_printed) {printInfo(element, data_url);}
 					var hash = hexMD5(data_url);
@@ -579,7 +585,7 @@ function createButton(element, container_element) {
 					getScreenShot(rect, function(image, data_uri) {
 						// Send the image to the top window
 						if (DEBUG) {
-							var src = getElementSrcOrSrcSet(image);
+							var src = getElementSrcOrSrcSetOrImgSrc(image);
 							imageToDataUrl(image, src, function(data_url) {
 								var request = {
 									message: 'append_screen_shot',
@@ -769,7 +775,7 @@ function checkElementsThatMayBeAds() {
 						setBorder(element, 'red');
 						break;
 					case 'img':
-						if (getElementSrcOrSrcSet(element)) {
+						if (getElementSrcOrSrcSetOrImgSrc(element)) {
 							g_known_elements[element.id] = 1;
 //							console.log(element);
 							var node = element;
