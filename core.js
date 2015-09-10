@@ -274,6 +274,26 @@ function getElementSrcOrSrcSet(element) {
 	return retval;
 }
 
+function getVideoSrc(element) {
+	// Video has src attribute
+	if (element.src && element.src.length > 0) {
+		return element.src;
+	// Video has source children
+	} else {
+		var sources = element.getElementsByTagName('source');
+		if (sources) {
+			for (var i=0; i<sources.length; ++i) {
+				var source = sources[0];
+				if (source && source.src && source.src.length > 0) {
+					return source.src;
+				}
+			}
+		}
+	}
+
+	return null;
+}
+
 function getElementHash(is_printed, element, parent_element, cb) {
 	function printInfo(element, data) {
 		console.info(element);
@@ -329,8 +349,9 @@ function getElementHash(is_printed, element, parent_element, cb) {
 			cb(hash, element, parent_element);
 			break;
 		case 'video':
-			if (is_printed) {printInfo(element, element.src);}
-			var hash = hexMD5(element.src);
+			var src = getVideoSrc(element);
+			if (is_printed && src) {printInfo(element, src);}
+			var hash = src ? hexMD5(src) : null;
 			cb(hash, element, parent_element);
 			break;
 		case 'a':
@@ -799,6 +820,8 @@ function checkElementsThatMayBeAds() {
 						} else if (element.children.length > 0) {
 //							console.log(element);
 
+							// FIXME: If the child is an element that is not ready, like a 
+							// video or img tag, it could fail.
 							getElementHash(false, element, null, function(hash, n, parent_n) {
 								isAd(hash, function(e) {
 									var n = e.args[0];
@@ -861,24 +884,54 @@ function checkElementsThatMayBeAds() {
 						g_known_elements[element.id] = 1;
 //						console.log(element);
 
-						getElementHash(false, element, null, function(hash, n, parent_n) {
-							isAd(hash, function(e) {
-								var n = e.args[0];
-								var parent_n = e.args[1];
-								if (e.is_ad) {
-									n.parentElement.removeChild(n);
-								} else {
-									showElement(parent_n);
-									showElement(n);
-									if (! isTooSmall(n)) {
-										setBorder(n, 'blue');
-										createButton(n, null);
+						// Video is already loaded
+						if (element.readyState === 4) {
+							getElementHash(false, element, null, function(hash, n, parent_n) {
+								isAd(hash, function(e) {
+									var n = e.args[0];
+									var parent_n = e.args[1];
+									if (e.is_ad) {
+										n.parentElement.removeChild(n);
 									} else {
-//										setBorder(n, 'green');
+										showElement(parent_n);
+										showElement(n);
+										if (! isTooSmall(n)) {
+											setBorder(n, 'blue');
+											createButton(n, null);
+										} else {
+//											setBorder(n, 'green');
+										}
 									}
+								}, [n, parent_n]);
+							});
+						// Video has not loaded
+						} else {
+							var node = element;
+							var load_cb = setInterval(function() {
+								if (node.readyState === 4) {
+									clearInterval(load_cb);
+
+									getElementHash(false, node, null, function(hash, n, parent_n) {
+										isAd(hash, function(e) {
+											var n = e.args[0];
+											var parent_n = e.args[1];
+											if (e.is_ad) {
+												n.parentElement.removeChild(n);
+											} else {
+												showElement(parent_n);
+												showElement(n);
+												if (! isTooSmall(n)) {
+													setBorder(n, 'blue');
+													createButton(n, null);
+												} else {
+	//												setBorder(n, 'green');
+												}
+											}
+										}, [n, parent_n]);
+									});
 								}
-							}, [n, parent_n]);
-						});
+							}, 333);
+						}
 						break;
 					default:
 						throw "Unexpected element '" + element.tagName.toLowerCase() + "' to check for ads.";
