@@ -11,6 +11,7 @@ TODO:
 . Check why ads on http://stackoverflow.com have different hashes, for the same ad after a reload
 . News story titles on http://news.google.com do not show
 
+. Hashing animated images won't work
 . Make it work with css background images on other element types, like div
 . When an element is the only one in an iframe/link, or the largest, make closing it close the iframe/link instead
 . Move popup menu to center of top frame
