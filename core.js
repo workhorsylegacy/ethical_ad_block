@@ -6,7 +6,6 @@
 TODO:
 . fix issue with variable hoisting
 . use promises
-. fix issue with refering to variables outside a delegate
 
 . Videos from http://youtube.com load very slowly, or error out from header changes
 . Check why ads on http://stackoverflow.com have different hashes, for the same ad after a reload
@@ -18,6 +17,7 @@ TODO:
 . Make hashing work with svg
 . Save the randomly generated user id in localStorage
 
+. Update so things can be marked as "social". Then users can block all socal media buttons and crap.
 . Add a moderator mode that shows all ads, including counts below them, and lets users vote on them
 . Show users a warning if another Ad Blocker is running
 . Ad element screen shot to ad voting
@@ -203,18 +203,16 @@ function imageToDataUrl(element, src, cb) {
 	var img = new Image();
 	img.crossOrigin = 'Anonymous';
 	img.onload = function(e) {
-		var self = e.path[0];
 		var temp_canvas = document.createElement('canvas');
-		temp_canvas.width = self.width;
-		temp_canvas.height = self.height;
+		temp_canvas.width = img.width;
+		temp_canvas.height = img.height;
 		var ctx = temp_canvas.getContext('2d');
-		ctx.drawImage(self, 0, 0);
+		ctx.drawImage(img, 0, 0);
 		var data_url = temp_canvas.toDataURL();
 		cb(data_url);
 	};
 	img.onerror = function(e) {
-		var self = e.path[0];
-		console.error('Failed to copy image: ' + self.src);
+		console.error('Failed to copy image: ' + img.src);
 		cb(null);
 	};
 
@@ -256,7 +254,7 @@ function getScreenShot(rect, cb) {
                     rect.width, rect.height
 				);
 				image.onload = null;
-				image.src = canvas.toDataURL();
+				image.src = canvas.toDataURL(); // FIXME: Why is this setting the src again?
 				cb(image, data_uri);
 			};
 			image.src = data_uri;
@@ -344,15 +342,14 @@ function getElementHash(is_printed, element, parent_element, cb) {
 		case 'img':
 			// If the src has not loaded, wait for it to load
 			if (! element.complete) {
-				var load_cb = function(evt) {
-					var node = evt.path[0];
-					node.removeEventListener('load', load_cb);
+				var load_cb = function(e) {
+					element.removeEventListener('load', load_cb);
 
-					var src = getElementSrcOrSrcSetOrImgSrc(node);
-					imageToDataUrl(node, src, function(data_url) {
-						if (is_printed) {printInfo(node, data_url);}
+					var src = getElementSrcOrSrcSetOrImgSrc(element);
+					imageToDataUrl(element, src, function(data_url) {
+						if (is_printed) {printInfo(element, data_url);}
 						var hash = hexMD5(data_url);
-						cb(hash, node, parent_element);
+						cb(hash, element, parent_element);
 					});
 				};
 
@@ -382,24 +379,22 @@ function getElementHash(is_printed, element, parent_element, cb) {
 			cb(hash, element, parent_element);
 			break;
 		case 'video':
-			var node = element;
-
 			// The src is already loaded
-			if (node.readyState === 4) {
-				var src = getVideoSrc(node);
-				if (is_printed && src) {printInfo(node, src);}
+			if (element.readyState === 4) {
+				var src = getVideoSrc(element);
+				if (is_printed && src) {printInfo(element, src);}
 				var hash = src ? hexMD5(src) : null;
-				cb(hash, node, parent_element);
+				cb(hash, element, parent_element);
 			// If the src has not loaded, wait for it to load
 			} else {
 				var load_cb = setInterval(function() {
-					if (node.readyState === 4) {
+					if (element.readyState === 4) {
 						clearInterval(load_cb);
 
-						var src = getVideoSrc(node);
-						if (is_printed && src) {printInfo(node, src);}
+						var src = getVideoSrc(element);
+						if (is_printed && src) {printInfo(element, src);}
 						var hash = src ? hexMD5(src) : null;
-						cb(hash, node, parent_element);
+						cb(hash, element, parent_element);
 					}
 				}, 333);
 			}
@@ -453,7 +448,6 @@ function getElementChildHash(is_printed, element, parent_element, cb) {
 
 	while (elements.length > 0) {
 		var child = elements.pop();
-		// FIXME: It needs to check img elements if it is complte, before trying to hash it
 		switch (child.tagName.toLowerCase()) {
 			case 'img':
 			case 'iframe':
@@ -745,11 +739,10 @@ function toArray(obj) {
 	return retval;
 }
 
-function isAd(hash, cb, args) {
-	args = args || [];
+function isAd(hash, cb) {
 	// If the hash is null, just use false
 	if (hash === null || hash === undefined) {
-		cb({'is_ad': false, 'args': args});
+		cb(false);
 		return;
 	}
 
@@ -757,10 +750,10 @@ function isAd(hash, cb, args) {
 	var request = 'http://localhost:9000?is_ad=' + hash;
 	var success_cb = function(response_text) {
 		var is_ad = (response_text.toLowerCase() === 'true');
-		cb({'is_ad': is_ad, 'args': args});
+		cb(is_ad);
 	};
 	var fail_cb = function(status) {
-		cb({'is_ad': false, 'args': args});
+		cb(false);
 	};
 	ajaxGet(request, success_cb, fail_cb);
 }
@@ -802,13 +795,10 @@ function checkElementsThatMayBeAds() {
 						if (getElementSrcOrSrcSetOrImgSrc(element)) {
 							g_known_elements[element.id] = 1;
 //							console.log(element);
-							var node = element;
 
-							getElementHash(false, node, null, function(hash, n, parent_n) {
-								isAd(hash, function(e) {
-									var n = e.args[0];
-									var parent_n = e.args[1];
-									if (e.is_ad) {
+							getElementHash(false, element, null, function(hash, n, parent_n) {
+								isAd(hash, function(is_ad) {
+									if (is_ad) {
 										n.parentElement.removeChild(n);
 									} else {
 										showElement(parent_n);
@@ -820,7 +810,7 @@ function checkElementsThatMayBeAds() {
 //											setBorder(n, 'green');
 										}
 									}
-								}, [n, parent_n]);
+								});
 							});
 						}
 						break;
@@ -831,10 +821,8 @@ function checkElementsThatMayBeAds() {
 						var bg = window.getComputedStyle(element)['background-image'];
 						if (isValidCSSImagePath(bg)) {
 							getElementHash(false, element, null, function(hash, n, parent_n) {
-								isAd(hash, function(e) {
-									var n = e.args[0];
-									var parent_n = e.args[1];
-									if (e.is_ad) {
+								isAd(hash, function(is_ad) {
+									if (is_ad) {
 										n.parentElement.removeChild(n);
 									} else {
 										showElement(parent_n);
@@ -846,7 +834,7 @@ function checkElementsThatMayBeAds() {
 //											setBorder(n, 'green');
 										}
 									}
-								}, [n, parent_n]);
+								});
 							});
 						} else {
 							showElement(element);
@@ -861,10 +849,8 @@ function checkElementsThatMayBeAds() {
 //							console.log(element);
 
 							getElementHash(false, element, null, function(hash, n, parent_n) {
-								isAd(hash, function(e) {
-									var n = e.args[0];
-									var parent_n = e.args[1];
-									if (e.is_ad) {
+								isAd(hash, function(is_ad) {
+									if (is_ad) {
 										n.parentElement.removeChild(n);
 									} else {
 										showElement(parent_n);
@@ -876,19 +862,15 @@ function checkElementsThatMayBeAds() {
 //											setBorder(n, 'green');
 										}
 									}
-								}, [n, parent_n]);
+								});
 							});
 						// Anchor has children
 						} else if (element.children.length > 0) {
 //							console.log(element);
 
-							// FIXME: If the child is an element that is not ready, like a 
-							// video or img tag, it could fail.
 							getElementHash(false, element, null, function(hash, n, parent_n) {
-								isAd(hash, function(e) {
-									var n = e.args[0];
-									var parent_n = e.args[1];
-									if (e.is_ad) {
+								isAd(hash, function(is_ad) {
+									if (is_ad) {
 										n.parentElement.removeChild(n);
 									} else {
 										// Add a button to the link
@@ -915,7 +897,7 @@ function checkElementsThatMayBeAds() {
 											}
 										}
 									}
-								}, [n, parent_n]);
+								});
 							});
 						// Anchor is just text
 						} else {
@@ -928,10 +910,8 @@ function checkElementsThatMayBeAds() {
 //						console.log(element);
 
 						getElementHash(false, element, null, function(hash, n, parent_n) {
-							isAd(hash, function(e) {
-								var n = e.args[0];
-								var parent_n = e.args[1];
-								if (e.is_ad) {
+							isAd(hash, function(is_ad) {
+								if (is_ad) {
 									n.parentElement.removeChild(n);
 								} else {
 									showElement(parent_n);
@@ -939,7 +919,7 @@ function checkElementsThatMayBeAds() {
 									setBorder(n, 'yellow');
 									createButton(n, null);
 								}
-							}, [n, parent_n]);
+							});
 						});
 						break;
 					case 'video':
@@ -947,10 +927,8 @@ function checkElementsThatMayBeAds() {
 //						console.log(element);
 
 						getElementHash(false, element, null, function(hash, n, parent_n) {
-							isAd(hash, function(e) {
-								var n = e.args[0];
-								var parent_n = e.args[1];
-								if (e.is_ad) {
+							isAd(hash, function(is_ad) {
+								if (is_ad) {
 									n.parentElement.removeChild(n);
 								} else {
 									showElement(parent_n);
@@ -962,7 +940,7 @@ function checkElementsThatMayBeAds() {
 //											setBorder(n, 'green');
 									}
 								}
-							}, [n, parent_n]);
+							});
 						});
 						break;
 					default:
