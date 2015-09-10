@@ -327,12 +327,30 @@ function getElementHash(is_printed, element, parent_element, cb) {
 	// Or the element is another type
 	switch (element.tagName.toLowerCase()) {
 		case 'img':
-			var src = getElementSrcOrSrcSet(element);
-			imageToDataUrl(element, src, function(data_url) {
-				if (is_printed) {printInfo(element, data_url);}
-				var hash = hexMD5(data_url);
-				cb(hash, element, parent_element);
-			});
+			// If the src has not loaded, wait for it to load
+			if (! element.complete) {
+				var load_cb = function(evt) {
+					var node = evt.path[0];
+					node.removeEventListener('load', load_cb);
+
+					var src = getElementSrcOrSrcSet(node);
+					imageToDataUrl(node, src, function(data_url) {
+						if (is_printed) {printInfo(node, data_url);}
+						var hash = hexMD5(data_url);
+						cb(hash, node, parent_element);
+					});
+				};
+
+				element.addEventListener('load', load_cb, false);
+			// The src is already loaded
+			} else {
+				var src = getElementSrcOrSrcSet(element);
+				imageToDataUrl(element, src, function(data_url) {
+					if (is_printed) {printInfo(element, data_url);}
+					var hash = hexMD5(data_url);
+					cb(hash, element, parent_element);
+				});
+			}
 			break;
 		case 'iframe':
 			var hash = element.getAttribute('document_hash');
@@ -349,10 +367,27 @@ function getElementHash(is_printed, element, parent_element, cb) {
 			cb(hash, element, parent_element);
 			break;
 		case 'video':
-			var src = getVideoSrc(element);
-			if (is_printed && src) {printInfo(element, src);}
-			var hash = src ? hexMD5(src) : null;
-			cb(hash, element, parent_element);
+			var node = element;
+
+			// The src is already loaded
+			if (node.readyState === 4) {
+				var src = getVideoSrc(node);
+				if (is_printed && src) {printInfo(node, src);}
+				var hash = src ? hexMD5(src) : null;
+				cb(hash, node, parent_element);
+			// If the src has not loaded, wait for it to load
+			} else {
+				var load_cb = setInterval(function() {
+					if (node.readyState === 4) {
+						clearInterval(load_cb);
+
+						var src = getVideoSrc(node);
+						if (is_printed && src) {printInfo(node, src);}
+						var hash = src ? hexMD5(src) : null;
+						cb(hash, node, parent_element);
+					}
+				}, 333);
+			}
 			break;
 		case 'a':
 			var hash = null;
@@ -737,57 +772,26 @@ function checkElementsThatMayBeAds() {
 						if (getElementSrcOrSrcSet(element)) {
 							g_known_elements[element.id] = 1;
 //							console.log(element);
+							var node = element;
 
-							// Element's image has not loaded yet
-							if (! element.complete) {
-								var load_cb = function(evt) {
-									var node = evt.path[0];
-									node.removeEventListener('load', load_cb);
-
-									getElementHash(false, node, null, function(hash, n, parent_n) {
-										isAd(hash, function(e) {
-											var n = e.args[0];
-											var parent_n = e.args[1];
-											if (e.is_ad) {
-												n.parentElement.removeChild(n);
-											} else {
-												showElement(parent_n);
-												showElement(n);
-												if (! isTooSmall(n)) {
-													setBorder(n, 'blue');
-													createButton(n, null);
-												} else {
-	//												setBorder(n, 'green');
-												}
-											}
-										}, [n, parent_n]);
-									});
-								};
-
-								element.addEventListener('load', load_cb, false);
-							// Element's image has already loaded
-							} else {
-								var node = element;
-
-								getElementHash(false, node, null, function(hash, n, parent_n) {
-									isAd(hash, function(e) {
-										var n = e.args[0];
-										var parent_n = e.args[1];
-										if (e.is_ad) {
-											n.parentElement.removeChild(n);
+							getElementHash(false, node, null, function(hash, n, parent_n) {
+								isAd(hash, function(e) {
+									var n = e.args[0];
+									var parent_n = e.args[1];
+									if (e.is_ad) {
+										n.parentElement.removeChild(n);
+									} else {
+										showElement(parent_n);
+										showElement(n);
+										if (! isTooSmall(n)) {
+											setBorder(n, 'blue');
+											createButton(n, null);
 										} else {
-											showElement(parent_n);
-											showElement(n);
-											if (! isTooSmall(n)) {
-												setBorder(n, 'blue');
-												createButton(n, null);
-											} else {
-	//											setBorder(n, 'green');
-											}
+//											setBorder(n, 'green');
 										}
-									}, [n, parent_n]);
-								});
-							}
+									}
+								}, [n, parent_n]);
+							});
 						}
 						break;
 					case 'a':
@@ -884,54 +888,24 @@ function checkElementsThatMayBeAds() {
 						g_known_elements[element.id] = 1;
 //						console.log(element);
 
-						// Video is already loaded
-						if (element.readyState === 4) {
-							getElementHash(false, element, null, function(hash, n, parent_n) {
-								isAd(hash, function(e) {
-									var n = e.args[0];
-									var parent_n = e.args[1];
-									if (e.is_ad) {
-										n.parentElement.removeChild(n);
+						getElementHash(false, element, null, function(hash, n, parent_n) {
+							isAd(hash, function(e) {
+								var n = e.args[0];
+								var parent_n = e.args[1];
+								if (e.is_ad) {
+									n.parentElement.removeChild(n);
+								} else {
+									showElement(parent_n);
+									showElement(n);
+									if (! isTooSmall(n)) {
+										setBorder(n, 'blue');
+										createButton(n, null);
 									} else {
-										showElement(parent_n);
-										showElement(n);
-										if (! isTooSmall(n)) {
-											setBorder(n, 'blue');
-											createButton(n, null);
-										} else {
 //											setBorder(n, 'green');
-										}
 									}
-								}, [n, parent_n]);
-							});
-						// Video has not loaded
-						} else {
-							var node = element;
-							var load_cb = setInterval(function() {
-								if (node.readyState === 4) {
-									clearInterval(load_cb);
-
-									getElementHash(false, node, null, function(hash, n, parent_n) {
-										isAd(hash, function(e) {
-											var n = e.args[0];
-											var parent_n = e.args[1];
-											if (e.is_ad) {
-												n.parentElement.removeChild(n);
-											} else {
-												showElement(parent_n);
-												showElement(n);
-												if (! isTooSmall(n)) {
-													setBorder(n, 'blue');
-													createButton(n, null);
-												} else {
-	//												setBorder(n, 'green');
-												}
-											}
-										}, [n, parent_n]);
-									});
 								}
-							}, 333);
-						}
+							}, [n, parent_n]);
+						});
 						break;
 					default:
 						throw "Unexpected element '" + element.tagName.toLowerCase() + "' to check for ads.";
