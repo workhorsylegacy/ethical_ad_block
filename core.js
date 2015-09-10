@@ -8,11 +8,11 @@ TODO:
 . use promises
 . fix issue with refering to variables outside a delegate
 
+. Videos from http://youtube.com load very slowly, or error out from header changes
 . Check why ads on http://stackoverflow.com have different hashes, for the same ad after a reload
 . News story titles on http://news.google.com do not show
 
 . Hashing animated images won't work
-. Make it work with css background images on other element types, like div
 . When an element is the only one in an iframe/link, or the largest, make closing it close the iframe/link instead
 . Move popup menu to center of top frame
 . Make hashing work with svg
@@ -29,6 +29,7 @@ TODO:
 var DEBUG = true;
 var BUTTON_SIZE = 15;
 var BORDER_SIZE = DEBUG ? 5 : 1;
+// FIXME: Change these to use bools as keys instead of ints
 var g_known_elements = {};
 var g_patched_elements = {};
 var g_cursor_x = 0;
@@ -41,7 +42,8 @@ var TAGS1 = {
 	'video' : 'blue',
 	'object' : 'yellow',
 	'embed' : 'yellow',
-	'iframe' : 'red'
+	'iframe' : 'red',
+	'div' : 'orange'
 };
 
 var TAGS2 = {
@@ -401,6 +403,21 @@ function getElementHash(is_printed, element, parent_element, cb) {
 					}
 				}, 333);
 			}
+			break;
+		case 'div':
+			var hash = null;
+			var bg = window.getComputedStyle(element)['background-image'];
+			if (isValidCSSImagePath(bg)) {
+				var src = bg.substring(4, bg.length-1);
+				imageToDataUrl(element, src, function(data_url) {
+					if (is_printed) {printInfo(element, data_url);}
+					var hash = hexMD5(data_url);
+					cb(hash, element, parent_element);
+				});
+			} else {
+				cb(hash, element, parent_element);
+			}
+
 			break;
 		case 'a':
 			var hash = null;
@@ -805,6 +822,34 @@ function checkElementsThatMayBeAds() {
 									}
 								}, [n, parent_n]);
 							});
+						}
+						break;
+					case 'div':
+						g_known_elements[element.id] = 1;
+
+						// Element has a background image
+						var bg = window.getComputedStyle(element)['background-image'];
+						if (isValidCSSImagePath(bg)) {
+							getElementHash(false, element, null, function(hash, n, parent_n) {
+								isAd(hash, function(e) {
+									var n = e.args[0];
+									var parent_n = e.args[1];
+									if (e.is_ad) {
+										n.parentElement.removeChild(n);
+									} else {
+										showElement(parent_n);
+										showElement(n);
+										if (! isTooSmall(n)) {
+											setBorder(n, 'orange');
+											createButton(n, null);
+										} else {
+//											setBorder(n, 'green');
+										}
+									}
+								}, [n, parent_n]);
+							});
+						} else {
+							showElement(element);
 						}
 						break;
 					case 'a':
