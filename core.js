@@ -300,12 +300,18 @@ function getVideoSrc(element) {
 	return null;
 }
 
+// Return true if value is a valid CSS image path, such as "url(blah.png)"
+function isValidCSSImagePath(value) {
+	value = value.toLowerCase();
+	return value && value.length > 0 && value.indexOf('url(') === 0 && value[value.length-1] === ')';
+}
+
 function getElementHash(is_printed, element, parent_element, cb) {
 	function printInfo(element, data) {
 		console.info(element);
 		console.info('hash ' + element.tagName.toLowerCase() + ': ' + data);
 	}
-
+/*
 	// If the element is a document, create a hash of its children
 	if (element.nodeType === 9) {
 		// Hash the first found meaningful element
@@ -329,7 +335,7 @@ function getElementHash(is_printed, element, parent_element, cb) {
 		cb(hash, element, parent_element);
 		return;
 	}
-
+*/
 	// Or the element is another type
 	switch (element.tagName.toLowerCase()) {
 		case 'img':
@@ -398,7 +404,7 @@ function getElementHash(is_printed, element, parent_element, cb) {
 		case 'a':
 			var hash = null;
 			var bg = window.getComputedStyle(element)['background-image'];
-			if (bg && bg !== 'none' && bg.length > 0 && bg.indexOf('url(') === 0 && bg[bg.length-1] === ')') {
+			if (isValidCSSImagePath(bg)) {
 				var src = bg.substring(4, bg.length-1);
 				imageToDataUrl(element, src, function(data_url) {
 					if (is_printed) {printInfo(element, data_url);}
@@ -805,7 +811,7 @@ function checkElementsThatMayBeAds() {
 
 						// Anchor has a background image
 						var bg = window.getComputedStyle(element)['background-image'];
-						if (bg && bg !== 'none' && bg.length > 0) {
+						if (isValidCSSImagePath(bg)) {
 //							console.log(element);
 
 							getElementHash(false, element, null, function(hash, n, parent_n) {
@@ -854,7 +860,7 @@ function checkElementsThatMayBeAds() {
 											cs = cs.concat(toArray(c.children));
 											// If the child is a tag we care about, or it has a background image
 											var bg = window.getComputedStyle(c)['background-image'];
-											if (c.tagName.toLowerCase() in TAGS2 || bg && bg !== 'none' && bg.length > 0) {
+											if (c.tagName.toLowerCase() in TAGS2 || isValidCSSImagePath(bg)) {
 												showElement(c);
 												if (! isTooSmall(c)) {
 													setBorder(c, 'purple');
