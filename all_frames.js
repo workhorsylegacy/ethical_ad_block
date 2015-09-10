@@ -21,7 +21,7 @@ function setupEvents() {
 			g_user_id = msg.data;
 		}
 	});
-
+/*
 	window.addEventListener('message', function(event) {
 		// Just return if there is no data in the event
 		if (! event.data) {
@@ -39,11 +39,9 @@ function setupEvents() {
 				break;
 			case 'from_top_window_to_iframe_document':
 //				console.info('DDDDDDDDD');
-/*
-				window.document.body.style.padding = '10px';
-				window.document.body.style.margin = '10px';
-				window.document.body.style.backgroundColor = 'orange';
-*/
+//				window.document.body.style.padding = '10px';
+//				window.document.body.style.margin = '10px';
+//				window.document.body.style.backgroundColor = 'orange';
 
 				// FIXME: Here we need to check if this is an ad
 				var request = {
@@ -59,11 +57,9 @@ function setupEvents() {
 				for (var i=0; i<iframes.length; ++i) {
 					var frame = iframes[i];
 					if (frame === event.source.frameElement) {
-/*
-						window.document.body.style.padding = '10px';
-						window.document.body.style.margin = '10px';
-						window.document.body.style.backgroundColor = 'pink';
-*/
+//						window.document.body.style.padding = '10px';
+//						window.document.body.style.margin = '10px';
+//						window.document.body.style.backgroundColor = 'pink';
 
 //						console.info('XXXXXXXXXXXXXXX');
 						frame.setAttribute('document_hash', event.data.hash);
@@ -84,11 +80,9 @@ function setupEvents() {
 				break;
 			// Make the iframe's document visible
 			case 'from_iframe_element_to_iframe_document':
-/*
-				window.document.body.style.padding = '10px';
-				window.document.body.style.margin = '10px';
-				window.document.body.style.backgroundColor = 'purple';
-*/
+//				window.document.body.style.padding = '10px';
+//				window.document.body.style.margin = '10px';
+//				window.document.body.style.backgroundColor = 'purple';
 				break;
 			case 'append_screen_shot':
 				var img = new Image();
@@ -100,6 +94,7 @@ function setupEvents() {
 				break;
 		}
 	}, false);
+*/
 }
 
 
@@ -119,6 +114,7 @@ if (window !== window.top) {
 			window.document.body.style.margin = '10px';
 			window.document.body.style.backgroundColor = 'yellow';
 */
+/*
 			// Create a hash of the iframe
 //			console.info('AAAAAAAAAAA');
 			getElementHash(true, document, null, function(hash, node, parent_node) {
@@ -130,6 +126,7 @@ if (window !== window.top) {
 				};
 				window.top.postMessage(request, '*');
 			});
+*/
 		}
 	}, 333);
 } else {
