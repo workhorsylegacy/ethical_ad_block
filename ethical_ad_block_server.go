@@ -41,6 +41,9 @@ func hasKey(self map[string][]string, key string) bool {
 func httpCB(w http.ResponseWriter, r *http.Request) {
 	values := r.URL.Query()
 
+	// Set the server name
+	w.Header().Set("Server", "Ethical Ad Block Server 0.1")
+
 	// Vote for ad
 	if hasKey(values, "vote_ad") && hasKey(values, "ad_type") && hasKey(values, "user_id") {
 		responseVoteForAd(w, values)
@@ -55,7 +58,7 @@ func httpCB(w http.ResponseWriter, r *http.Request) {
 		responseClear(w, values)
 	// Unexpected request
 	} else {
-		fmt.Fprintf(w, "Unexpected request\n")
+		http.Error(w, "Unexpected request", http.StatusBadRequest)
 	}
 }
 
@@ -64,7 +67,7 @@ func responseClear(w http.ResponseWriter, values map[string][]string) {
 	all_ads = NewAdData()
 	user_ids = make(map[string]time.Time)
 
-	fmt.Fprintf(w, "ok")
+	fmt.Fprintf(w, "All data cleared\n")
 }
 
 func responseIsAd(w http.ResponseWriter, values map[string][]string) {
@@ -88,7 +91,7 @@ func responseIsAd(w http.ResponseWriter, values map[string][]string) {
 	// Figure out if this is an ad
 	is_ad = bad_count > good_count
 
-	fmt.Fprintf(w, "%t", is_ad)
+	fmt.Fprintf(w, "%t\n", is_ad)
 }
 
 func responseVoteForAd(w http.ResponseWriter, values map[string][]string) {
@@ -134,7 +137,7 @@ func responseVoteForAd(w http.ResponseWriter, values map[string][]string) {
 			ad_map = &all_ads.malicious
 			ad_map_user = &(user_ads[user_id].malicious)
 		default:
-			fmt.Fprintf(w, "Invalid ad_type\n")
+			http.Error(w, "Invalid ad_type", http.StatusBadRequest)
 			return
 	}
 
