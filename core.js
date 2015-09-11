@@ -18,6 +18,7 @@ TODO:
 . Move popup menu to center of top frame
 . Make hashing work with svg
 . Save the randomly generated user id in localStorage
+. Save and load server data from file
 
 . Update so things can be marked as "social". Then users can block all socal media buttons and crap.
 . Add a moderator mode that shows all ads, including counts below them, and lets users vote on them
