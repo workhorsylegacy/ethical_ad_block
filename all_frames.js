@@ -107,7 +107,7 @@ if (window !== window.top) {
 	setInterval(function() {
 		if (window.document.readyState === 'complete' && ! document.body.hasAttribute('_is_loaded')) {
 			document.body.setAttribute('_is_loaded', 'true');
-//			console.info('document loaded ...');
+
 			setupEvents();
 /*
 			window.document.body.style.padding = '10px';
@@ -133,6 +133,8 @@ if (window !== window.top) {
 	setupEvents();
 }
 
+console.log('patch loading ...');
+applyMonkeyPatch();
 checkElementsLoop();
 
 

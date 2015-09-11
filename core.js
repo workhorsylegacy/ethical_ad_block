@@ -826,11 +826,24 @@ function checkElementsThatMayBeAds() {
 						break;
 					case 'div':
 						g_known_elements[element.id] = 1;
+//						console.info(element.getEventListeners());
 
 						// Element has a background image
 						var bg = window.getComputedStyle(element)['background-image'];
 						if (isValidCSSImagePath(bg)) {
 							removeElementIfAd(element, 'orange');
+						// Element has an onclick event
+						} else if (element.getAttribute('onclick')) {
+							console.info(element.getAttribute('onclick'));
+							removeElementIfAd(element, 'orange');
+/*
+						// Element has an addEventListener('click') event
+						// FIXME: This method is only available in the page script.
+						// Use postMessage to ask the page if this element has event listeners
+						} else if (element.getEventListeners('click')) {
+							console.info(element.getEventListeners('click'));
+							removeElementIfAd(element, 'orange');
+*/
 						} else {
 							showElement(element);
 						}
@@ -900,3 +913,94 @@ function checkElementsLoop() {
 	setTimeout(checkElementsLoop, 500);
 }
 
+// Monkey patch the addEventListener and removeEventListener methods to
+// keep a list of events for lookup via the getEventListeners method.
+function monkeyPatch() {
+	// Don't patch the methods if already patched
+	if (Element.prototype._has_monkey_patched_event_listeners) {
+		return;
+	}
+	Element.prototype._has_monkey_patched_event_listeners = true;
+
+	// addEventListener
+	Element.prototype._addEventListener = Element.prototype.addEventListener;
+	Element.prototype.addEventListener = function(a, b, c) {
+		console.info('called addEventListener ...');
+		// Init everything
+		c = c || false;
+		this._event_listeners = this._event_listeners || {};
+		this._event_listeners[a] = this._event_listeners[a] || [];
+
+		// Add the event
+		this._event_listeners[a].push({listener: b, useCapture: c});
+
+		// Call the real method
+		this._addEventListener(a, b, c);
+	};
+
+	// removeEventListener
+	Element.prototype._removeEventListener = Element.prototype.removeEventListener;
+	Element.prototype.removeEventListener = function(a, b, c) {
+		// Init everything
+		c = c || false;
+		this._event_listeners = this._event_listeners || {};
+		this._event_listeners[a] = this._event_listeners[a] || [];
+
+		// Remove the event
+		for (var i=0; i<this._event_listeners[a].length; ++i) {
+			if (this._event_listeners[a][i] === {listener: b, useCapture: c}) {
+				this._event_listeners[a].splice(i, 1);
+				break;
+			}
+		}
+		if (this._event_listeners[a].length === 0)
+			delete this._event_listeners[a];
+
+		// Call the real method
+		this._removeEventListener(a, b, c);
+	};
+
+	// getEventListeners
+	Element.prototype.getEventListeners = function(a) {
+		// Init everything
+		this._event_listeners = this._event_listeners || {};
+		console.log(this._event_listeners);
+
+		// Return only the events for this type
+		if (a) {
+			return this._event_listeners[a];
+		// Return all events
+		} else {
+			return this._event_listeners;
+		}
+	};
+
+	// clearEventListeners
+	Element.prototype.clearEventListeners = function(a) {
+		// Init everything
+		this._event_listeners = this._event_listeners || {};
+
+		// Remove only the events for this type
+		if (a) {
+			var type_events = this.getEventListeners(a);
+			if (type_events) {
+				for (var i=type_events.length-1; i>=0; --i) {
+					var event = type_events[i];
+					this.removeEventListener(a, event.listener, event.useCapture);
+				}
+			}
+		// Remove all events
+		} else {
+			for (var n in this.getEventListeners()) {
+				this.clearEventListeners(n);
+			}
+		}
+	};
+	console.info('monkeyPatch called ...');
+}
+
+function applyMonkeyPatch() {
+	var script = document.createElement('script');
+	script.textContent = '(' + monkeyPatch + ')();';
+	(document.head || document.documentElement).appendChild(script);
+}
