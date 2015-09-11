@@ -401,6 +401,7 @@ function getElementHash(is_printed, element, parent_element, cb) {
 				}, 333);
 			}
 			break;
+		// FIXME: Update to hash divs that have click events
 		case 'div':
 			var hash = null;
 			var bg = window.getComputedStyle(element)['background-image'];
@@ -834,16 +835,12 @@ function checkElementsThatMayBeAds() {
 							removeElementIfAd(element, 'orange');
 						// Element has an onclick event
 						} else if (element.getAttribute('onclick')) {
-							console.info(element.getAttribute('onclick'));
+//							console.info(element.getAttribute('onclick'));
 							removeElementIfAd(element, 'orange');
-/*
 						// Element has an addEventListener('click') event
-						// FIXME: This method is only available in the page script.
-						// Use postMessage to ask the page if this element has event listeners
-						} else if (element.getEventListeners('click')) {
-							console.info(element.getEventListeners('click'));
+						} else if (element.getAttribute('_has_event_listener_click')) {
+//							console.info(element.getAttribute('_has_event_listener_click'));
 							removeElementIfAd(element, 'orange');
-*/
 						} else {
 							showElement(element);
 						}
@@ -925,14 +922,15 @@ function monkeyPatch() {
 	// addEventListener
 	Element.prototype._addEventListener = Element.prototype.addEventListener;
 	Element.prototype.addEventListener = function(a, b, c) {
-		console.info('called addEventListener ...');
 		// Init everything
 		c = c || false;
 		this._event_listeners = this._event_listeners || {};
 		this._event_listeners[a] = this._event_listeners[a] || [];
 
 		// Add the event
+		// FIXME: Remove the previous listner is at already is in the list
 		this._event_listeners[a].push({listener: b, useCapture: c});
+		this.setAttribute('_has_event_listener_' + a.toLowerCase(), 'true');
 
 		// Call the real method
 		this._addEventListener(a, b, c);
@@ -953,8 +951,10 @@ function monkeyPatch() {
 				break;
 			}
 		}
-		if (this._event_listeners[a].length === 0)
+		if (this._event_listeners[a].length === 0) {
 			delete this._event_listeners[a];
+			this.removeAttribute('_has_event_listener_' + a.toLowerCase());
+		}
 
 		// Call the real method
 		this._removeEventListener(a, b, c);
@@ -964,7 +964,6 @@ function monkeyPatch() {
 	Element.prototype.getEventListeners = function(a) {
 		// Init everything
 		this._event_listeners = this._event_listeners || {};
-		console.log(this._event_listeners);
 
 		// Return only the events for this type
 		if (a) {
@@ -996,7 +995,6 @@ function monkeyPatch() {
 			}
 		}
 	};
-	console.info('monkeyPatch called ...');
 }
 
 function applyMonkeyPatch() {

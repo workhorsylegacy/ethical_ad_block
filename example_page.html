@@ -8,11 +8,6 @@
 		<title>Example page</title>
 	</head>
 	<body>
-		<script>
-			console.info('page loaded ...');
-			console.info(Element.prototype._has_monkey_patched_event_listeners);
-		</script>
-<!--
 		<h1>To run from a web server:<br />python -m http.server 8000</h1>
 		<h1>Run Chrome to allow extension server to work in non HTTPS mode:<br />start chrome --allow-running-insecure-content</h1>
 
@@ -82,7 +77,7 @@
 			<img src="icon_128.png" />
 			<img src="icon_128.png" />
 		</a>
--->
+
 		<h2>Div with onclick event</h2>
 		<div onclick="console.log('clicked div ...')" style="display: block; width: 64px; height: 64px; padding: 20px; background-color: red; border: 5px solid black;">
 			click me
@@ -94,14 +89,11 @@
 		</div>
 		<script>
 			var element = document.getElementById('click_div_2');
-			console.info('adding click event ...');
-			console.info(element);
 			element.addEventListener('click', function() {
 				console.log('clicked div ...');
 			});
-//			console.info(element.getEventListeners());
 		</script>
-<!--
+
 		<div  style="padding: 100px;">
 		</div>
 
@@ -114,7 +106,6 @@
 				document.getElementById('iframe_b').src = 'http://wikipedia.org';
 			}, false);
 		</script>
--->
 	</body>
 </html>
 

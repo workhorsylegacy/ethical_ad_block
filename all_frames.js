@@ -133,7 +133,6 @@ if (window !== window.top) {
 	setupEvents();
 }
 
-console.log('patch loading ...');
 applyMonkeyPatch();
 checkElementsLoop();
 
