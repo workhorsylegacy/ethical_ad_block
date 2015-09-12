@@ -211,7 +211,7 @@ function imageToDataUrl(element, src, cb) {
 		temp_canvas.height = img.height;
 		var ctx = temp_canvas.getContext('2d');
 		ctx.drawImage(img, 0, 0);
-		var data_url = temp_canvas.toDataURL();
+		var data_url = temp_canvas.toDataURL('image/png', 1.0);
 		cb(data_url);
 	};
 	img.onerror = function(e) {
@@ -259,7 +259,7 @@ function getScreenShot(rect, cb) {
 
 				// Copy the screen shot segment to a new image
 				var segment_image = new Image();
-				var segment_data_uri = canvas.toDataURL();
+				var segment_data_uri = canvas.toDataURL('image/png', 1.0);
 				segment_image.src = segment_data_uri;
 				cb(segment_image, segment_data_uri);
 			};

@@ -100,7 +100,7 @@ chrome.runtime.onMessage.addListener(function(msg, sender, send_response) {
 		// Screen capture the tab and send it to the tab's console
 		chrome.tabs.captureVisibleTab(
 			null,
-			{},
+			{'format': 'png'},
 			function(data_url) {
 				var message = {
 					action: 'screen_shot',
