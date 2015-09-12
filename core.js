@@ -239,16 +239,16 @@ function getScreenShot(rect, cb) {
 			// Remove the handler for this callback
 			chrome.runtime.onMessage.removeListener(screen_shot);
 
-			var data_uri = msg.data;
-			var canvas = document.createElement('canvas');
-			canvas.width = rect.width;
-			canvas.height = rect.height;
-			var ctx = canvas.getContext('2d');
-
+			// Copy the full page screen shot into an image
 			var image = new Image();
-			image.width = rect.width;
-			image.height = rect.height;
 			image.onload = function() {
+				// Create a blank canvas to copy the screen shot segment to
+				var canvas = document.createElement('canvas');
+				canvas.width = rect.width;
+				canvas.height = rect.height;
+
+				// Copy a segment of the full screen shot to the canvas
+				var ctx = canvas.getContext('2d');
 				ctx.drawImage(
 					image,
                     rect.left, rect.top,
@@ -256,10 +256,14 @@ function getScreenShot(rect, cb) {
                     0, 0,
                     rect.width, rect.height
 				);
-				image.onload = null;
-				image.src = canvas.toDataURL(); // FIXME: Why is this setting the src again?
-				cb(image, data_uri);
+
+				// Copy the screen shot segment to a new image
+				var segment_image = new Image();
+				var segment_data_uri = canvas.toDataURL();
+				segment_image.src = segment_data_uri;
+				cb(segment_image, segment_data_uri);
 			};
+			var data_uri = msg.data;
 			image.src = data_uri;
 		}
 	};
