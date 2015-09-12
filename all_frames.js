@@ -21,7 +21,7 @@ function setupEvents() {
 			g_user_id = msg.data;
 		}
 	});
-/*
+
 	window.addEventListener('message', function(event) {
 		// Just return if there is no data in the event
 		if (! event.data) {
@@ -29,6 +29,7 @@ function setupEvents() {
 		}
 
 		switch (event.data.message) {
+/*
 			case 'from_iframe_document_to_top_window':
 //				console.info('CCCCCCCCC');
 				var request = {
@@ -84,6 +85,7 @@ function setupEvents() {
 //				window.document.body.style.margin = '10px';
 //				window.document.body.style.backgroundColor = 'purple';
 				break;
+*/
 			case 'append_screen_shot':
 				var img = new Image();
 				img.onload = function(e) {
@@ -94,7 +96,6 @@ function setupEvents() {
 				break;
 		}
 	}, false);
-*/
 }
 
 
