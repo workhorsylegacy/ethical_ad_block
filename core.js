@@ -512,10 +512,10 @@ function createButton(element, container_element) {
 		document.body.appendChild(canvas);
 
 		// Make the button a color
-		var context = canvas.getContext('2d');
-		context.rect(0, 0, BUTTON_SIZE, BUTTON_SIZE);
-		context.fillStyle = color;
-		context.fill();
+		var ctx = canvas.getContext('2d');
+		ctx.rect(0, 0, BUTTON_SIZE, BUTTON_SIZE);
+		ctx.fillStyle = color;
+		ctx.fill();
 
 		// Connect the canvas to the element
 		node.canvas = canvas;
