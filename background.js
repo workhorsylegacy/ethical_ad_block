@@ -26,10 +26,26 @@ g_user_id = generateRandomId();
 
 // FIXME: When the headers are changed, it breaks some other headers
 chrome.webRequest.onHeadersReceived.addListener(function(details) {
+	// Check if the request has credentials
+	var has_credentials = false;
+	for (var i=0; i<details.responseHeaders.length; ++i) {
+		var header = details.responseHeaders[i];
+		if (header.name.toLowerCase() === 'access-control-allow-credentials') {
+			has_credentials = true;
+		}
+	}
+
+
+	// Get the host
+	var protocol = details.url.split('//')[0];
+	var site = details.url.split('//')[1].split('/')[0];
+	var host = has_credentials ? protocol + '//' + site : '*';
+	console.log(host);
+
 	// New headers
 	var new_headers = [
-		{name: 'Access-Control-Allow-Origin', value: '*'},
-		{name: 'Access-Control-Allow-Headers', value: '*'},
+		{name: 'Access-Control-Allow-Origin', value: host},
+		{name: 'Access-Control-Allow-Headers', value: host},
 		{name: 'Access-Control-Allow-Methods', value: 'POST, GET, OPTIONS, DELETE, PUT'}
 	];
 
@@ -51,11 +67,13 @@ chrome.webRequest.onHeadersReceived.addListener(function(details) {
 		}
 	}
 
-	// Remove any X-Frame-Options headers
+	// Remove any headers we don't want
 	for (var i=0; i<details.responseHeaders.length; ++i) {
 		var header = details.responseHeaders[i];
-		if (header.name.toLowerCase() === 'x-frame-options') {
-			details.responseHeaders.splice(i, 1);
+		switch (header.name.toLowerCase()) {
+			case 'x-frame-options':
+				details.responseHeaders.splice(i, 1);
+				break;
 		}
 	}
 
