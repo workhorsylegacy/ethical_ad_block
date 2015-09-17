@@ -348,28 +348,27 @@ function getElementHash(is_printed, element, parent_element, cb) {
 	// Or the element is another type
 	switch (element.tagName.toLowerCase()) {
 		case 'img':
-			// If the src has not loaded, wait for it to load
-			if (! element.complete) {
-				var load_cb = function(e) {
-					element.removeEventListener('load', load_cb);
-
-					var src = getElementSrcOrSrcSetOrImgSrc(element);
-					imageToDataUrl(element, src, function(data_url) {
-						if (is_printed) {printInfo(element, data_url);}
-						var hash = hexMD5(data_url);
-						cb(hash, element, parent_element);
-					});
-				};
-
-				element.addEventListener('load', load_cb, false);
-			// The src is already loaded
-			} else {
+			function handle_img() {
 				var src = getElementSrcOrSrcSetOrImgSrc(element);
 				imageToDataUrl(element, src, function(data_url) {
 					if (is_printed) {printInfo(element, data_url);}
 					var hash = hexMD5(data_url);
 					cb(hash, element, parent_element);
 				});
+			}
+
+			// If the src has not loaded, wait for it to load
+			if (! element.complete) {
+				var load_cb = function(e) {
+					element.removeEventListener('load', load_cb);
+
+					handle_img();
+				};
+
+				element.addEventListener('load', load_cb, false);
+			// The src is already loaded
+			} else {
+				handle_img();
 			}
 			break;
 		case 'iframe':
@@ -387,22 +386,23 @@ function getElementHash(is_printed, element, parent_element, cb) {
 			cb(hash, element, parent_element);
 			break;
 		case 'video':
-			// The src is already loaded
-			if (element.readyState === 4) {
+			function handle_video() {
 				var src = getVideoSrc(element);
 				if (is_printed && src) {printInfo(element, src);}
 				var hash = src ? hexMD5(src) : null;
 				cb(hash, element, parent_element);
+			}
+
+			// The src is already loaded
+			if (element.readyState === 4) {
+				handle_video();
 			// If the src has not loaded, wait for it to load
 			} else {
-				var load_cb = setInterval(function() {
+				var load_interval = setInterval(function() {
 					if (element.readyState === 4) {
-						clearInterval(load_cb);
+						clearInterval(load_interval);
 
-						var src = getVideoSrc(element);
-						if (is_printed && src) {printInfo(element, src);}
-						var hash = src ? hexMD5(src) : null;
-						cb(hash, element, parent_element);
+						handle_video();
 					}
 				}, 333);
 			}
