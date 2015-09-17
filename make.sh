@@ -5,8 +5,8 @@
 # If there are no arguments, print the correct usage and exit
 if [ "$#" -ne 1 ]; then
 	echo "Build and run ethical_ad_block_server.exe" >&2
-	echo "Usage: make.sh port" >&2
-	echo "Example: make.sh 9000" >&2
+	echo "Usage: ./make.sh port" >&2
+	echo "Example: ./make.sh 9000" >&2
 	exit 1
 fi
 
@@ -27,7 +27,7 @@ go build ethical_ad_block_server.go
 
 # Run the server
 echo "Running ethical_ad_block_server.exe at http://127.0.0.1:$1 ..."
-ethical_ad_block_server.exe $1 &
+./ethical_ad_block_server.exe $1 &
 
 # Run the example
 echo "Running examples at http://127.0.0.1:8000 ..."
