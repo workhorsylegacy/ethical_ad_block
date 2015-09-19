@@ -203,28 +203,20 @@ function getElementRectWithChildren(element) {
 	return rect;
 }
 
-function imageToDataUrl(element, src, cb) {
-	var img = new Image();
-	img.crossOrigin = 'Anonymous';
-	img.onload = function(e) {
-		var temp_canvas = document.createElement('canvas');
-		temp_canvas.width = img.width;
-		temp_canvas.height = img.height;
-		var ctx = temp_canvas.getContext('2d');
-		ctx.drawImage(img, 0, 0);
-		var data_url = temp_canvas.toDataURL('image/png', 1.0);
-		cb(data_url);
-	};
-	img.onerror = function(e) {
-		console.error('Failed to copy image: ' + img.src);
-		cb(null);
-	};
-
+function getImageBinary(element, src, cb) {
 	if (! src) {
 		console.error("Can't copy img with no source: " + element.outerHTML);
 		cb(null);
 	} else {
-		img.src = src;
+		var request = src;
+		var success_cb = function(response_text) {
+//			console.info(response_text);
+			cb(response_text);
+		};
+		var fail_cb = function(status) {
+			cb(null);
+		};
+		ajaxGet(request, success_cb, fail_cb);
 	}
 }
 
@@ -345,12 +337,17 @@ function getElementHash(is_printed, element, parent_element, cb) {
 		return;
 	}
 */
+
+	if (! element.id) {
+		throw "Element is missing id!";
+	}
+
 	// Or the element is another type
 	switch (element.tagName.toLowerCase()) {
 		case 'img':
 			function handle_img() {
 				var src = getElementSrcOrSrcSetOrImgSrc(element);
-				imageToDataUrl(element, src, function(data_url) {
+				getImageBinary(element, src, function(data_url) {
 					if (is_printed) {printInfo(element, data_url);}
 					var hash = hexMD5(data_url);
 					cb(hash, element, parent_element);
@@ -413,7 +410,7 @@ function getElementHash(is_printed, element, parent_element, cb) {
 			var bg = window.getComputedStyle(element)['background-image'];
 			if (isValidCSSImagePath(bg)) {
 				var src = bg.substring(4, bg.length-1);
-				imageToDataUrl(element, src, function(data_url) {
+				getImageBinary(element, src, function(data_url) {
 					if (is_printed) {printInfo(element, data_url);}
 					var hash = hexMD5(data_url);
 					cb(hash, element, parent_element);
@@ -428,7 +425,7 @@ function getElementHash(is_printed, element, parent_element, cb) {
 			var bg = window.getComputedStyle(element)['background-image'];
 			if (isValidCSSImagePath(bg)) {
 				var src = bg.substring(4, bg.length-1);
-				imageToDataUrl(element, src, function(data_url) {
+				getImageBinary(element, src, function(data_url) {
 					if (is_printed) {printInfo(element, data_url);}
 					var hash = hexMD5(data_url);
 					cb(hash, element, parent_element);
@@ -464,6 +461,9 @@ function getElementChildHash(is_printed, element, parent_element, cb) {
 			case 'object':
 			case 'video':
 			case 'a':
+				if (child.id === '' || child.id === null || child.id === undefined) {
+					child.id = generateRandomId();
+				}
 				getElementHash(is_printed, child, parent_element, cb);
 				return;
 		}
@@ -613,7 +613,7 @@ function createButton(element, container_element) {
 						// Send the image to the top window
 						if (DEBUG) {
 							var src = getElementSrcOrSrcSetOrImgSrc(image);
-							imageToDataUrl(image, src, function(data_url) {
+							getImageBinary(image, src, function(data_url) {
 								var request = {
 									message: 'append_screen_shot',
 									data_url: data_url
@@ -928,6 +928,8 @@ function monkeyPatch() {
 	// addEventListener
 	Element.prototype._addEventListener = Element.prototype.addEventListener;
 	Element.prototype.addEventListener = function(a, b, c) {
+		if (!a || !b) return;
+
 		// Init everything
 		c = c || false;
 		this._event_listeners = this._event_listeners || {};
@@ -945,6 +947,8 @@ function monkeyPatch() {
 	// removeEventListener
 	Element.prototype._removeEventListener = Element.prototype.removeEventListener;
 	Element.prototype.removeEventListener = function(a, b, c) {
+		if (!a || !b) return;
+
 		// Init everything
 		c = c || false;
 		this._event_listeners = this._event_listeners || {};
