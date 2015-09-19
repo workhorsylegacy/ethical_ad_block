@@ -31,7 +31,6 @@ TODO:
 var DEBUG = true;
 var BUTTON_SIZE = 15;
 var BORDER_SIZE = DEBUG ? 5 : 1;
-// FIXME: Change these to use bools as keys instead of ints
 var g_known_elements = {};
 var g_patched_elements = {};
 var g_cursor_x = 0;
@@ -126,7 +125,7 @@ function showElement(element) {
 function hideElement(element) {
 	// Save the style attributes that are temporarily overridden by the extension
 	if (! g_patched_elements.hasOwnProperty(element.id)) {
-		g_patched_elements[element.id] = 1;
+		g_patched_elements[element.id] = true;
 
 		// position
 		if (! DEBUG) {
@@ -808,7 +807,7 @@ function checkElementsThatMayBeAds() {
 				// Skip the element if it is inside a link
 				if (TAGS3.hasOwnProperty(name)) {
 					if (isInsideLinkElement(element)) {
-						g_known_elements[element.id] = 1;
+						g_known_elements[element.id] = true;
 						showElement(element);
 						continue;
 					}
@@ -817,20 +816,20 @@ function checkElementsThatMayBeAds() {
 				// Element image has a source
 				switch (name) {
 					case 'iframe':
-						g_known_elements[element.id] = 1;
+						g_known_elements[element.id] = true;
 						showElement(element);
 						setBorder(element, 'red');
 						break;
 					case 'img':
 						if (getElementSrcOrSrcSetOrImgSrc(element)) {
-							g_known_elements[element.id] = 1;
+							g_known_elements[element.id] = true;
 //							console.log(element);
 
 							removeElementIfAd(element, 'blue');
 						}
 						break;
 					case 'div':
-						g_known_elements[element.id] = 1;
+						g_known_elements[element.id] = true;
 //						console.info(element.getEventListeners());
 
 						// Element has a background image
@@ -850,7 +849,7 @@ function checkElementsThatMayBeAds() {
 						}
 						break;
 					case 'a':
-						g_known_elements[element.id] = 1;
+						g_known_elements[element.id] = true;
 
 						// Anchor has a background image
 						var bg = window.getComputedStyle(element)['background-image'];
@@ -886,13 +885,13 @@ function checkElementsThatMayBeAds() {
 						break;
 					case 'object':
 					case 'embed':
-						g_known_elements[element.id] = 1;
+						g_known_elements[element.id] = true;
 //						console.log(element);
 
 						removeElementIfAd(element, 'yellow');
 						break;
 					case 'video':
-						g_known_elements[element.id] = 1;
+						g_known_elements[element.id] = true;
 //						console.log(element);
 
 						removeElementIfAd(element, 'blue');
