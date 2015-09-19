@@ -7,13 +7,11 @@ TODO:
 . fix issue with variable hoisting
 . use promises
 
-. Videos from http://youtube.com load very slowly, or error out from header changes
 . Check why ads on http://stackoverflow.com have different hashes, for the same ad after a reload
 . News story titles on http://news.google.com do not show
 
 . Some videos have a transparent div on top of them with an onclick event. This makes it hard to click the video.
 	Fix this by making it detect elements with onclick events.
-. Hashing animated images won't work
 . When an element is the only one in an iframe/link, or the largest, make closing it close the iframe/link instead
 . Move popup menu to center of top frame
 . Make hashing work with svg
