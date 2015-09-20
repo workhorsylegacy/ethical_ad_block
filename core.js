@@ -87,27 +87,26 @@ function getResponseHeaderContentLength(xhr) {
 	return content_length;
 }
 
-// FIXME: Rename http_request to xhr
 function ajaxGet(request, success_cb, fail_cb) {
-	var http_request = new XMLHttpRequest();
-	http_request.onreadystatechange = function() {
-		if (http_request.readyState === 4) {
-			if (http_request.status === 200) {
-				var content_length = getResponseHeaderContentLength(http_request);
-				success_cb(http_request.responseText, content_length);
+	var xhr = new XMLHttpRequest();
+	xhr.onreadystatechange = function() {
+		if (xhr.readyState === 4) {
+			if (xhr.status === 200) {
+				var content_length = getResponseHeaderContentLength(xhr);
+				success_cb(xhr.responseText, content_length);
 			} else {
-				fail_cb(http_request.status);
+				fail_cb(xhr.status);
 			}
-		} else if (http_request.readyState === 0) {
+		} else if (xhr.readyState === 0) {
 			fail_cb(0);
 		}
 	};
-	http_request.onerror = function() {
+	xhr.onerror = function() {
 		fail_cb(0);
 	};
-	http_request.timeout = 3000;
-	http_request.open('GET', request, true);
-	http_request.send(null);
+	xhr.timeout = 3000;
+	xhr.open('GET', request, true);
+	xhr.send(null);
 }
 
 function ajaxGetChunk(request, success_cb, fail_cb, max_len) {
@@ -265,8 +264,7 @@ function getElementRectWithChildren(element) {
 	return rect;
 }
 
-// FIXME: Rename to getFileBinary
-function getImageBinary(element, src, cb, max_len) {
+function getFileBinary(element, src, cb, max_len) {
 	if (! src) {
 		console.error("Can't copy img with no source: " + element.outerHTML);
 		cb(null, 0);
@@ -356,8 +354,7 @@ function getScreenShot(rect, cb) {
 	chrome.runtime.sendMessage(message, function(response) {});
 }
 
-// FIXME: Rename to getImageSrc
-function getElementSrcOrSrcSetOrImgSrc(element) {
+function getImageSrc(element) {
 	var sources = [
 		element.src,
 		element.getAttribute('srcset'),
@@ -439,8 +436,8 @@ function getElementHash(is_printed, element, parent_element, cb) {
 	switch (element.tagName.toLowerCase()) {
 		case 'img':
 			function handle_img() {
-				var src = getElementSrcOrSrcSetOrImgSrc(element);
-				getImageBinary(element, src, function(data, total_size) {
+				var src = getImageSrc(element);
+				getFileBinary(element, src, function(data, total_size) {
 					if (is_printed) {printInfo(element, data);}
 					var hash = hexMD5(data);
 					cb(hash, element, parent_element);
@@ -479,7 +476,7 @@ function getElementHash(is_printed, element, parent_element, cb) {
 			function handle_video() {
 				var src = getVideoSrc(element);
 				// Get only the first 50KB and length of the video
-				getImageBinary(element, src, function(data, total_size) {
+				getFileBinary(element, src, function(data, total_size) {
 					console.info(data.length);
 					if (is_printed && src) {printInfo(element, src);}
 					var hash = data && total_size ? hexMD5(total_size + ':' + data) : null;
@@ -507,7 +504,7 @@ function getElementHash(is_printed, element, parent_element, cb) {
 			var bg = window.getComputedStyle(element)['background-image'];
 			if (isValidCSSImagePath(bg)) {
 				var src = bg.substring(4, bg.length-1);
-				getImageBinary(element, src, function(data, total_size) {
+				getFileBinary(element, src, function(data, total_size) {
 					if (is_printed) {printInfo(element, data);}
 					var hash = hexMD5(data);
 					cb(hash, element, parent_element);
@@ -522,7 +519,7 @@ function getElementHash(is_printed, element, parent_element, cb) {
 			var bg = window.getComputedStyle(element)['background-image'];
 			if (isValidCSSImagePath(bg)) {
 				var src = bg.substring(4, bg.length-1);
-				getImageBinary(element, src, function(data, total_size) {
+				getFileBinary(element, src, function(data, total_size) {
 					if (is_printed) {printInfo(element, data);}
 					var hash = hexMD5(data);
 					cb(hash, element, parent_element);
@@ -709,7 +706,7 @@ function createButton(element, container_element) {
 					getScreenShot(rect, function(image, data_uri) {
 						// Send the image to the top window
 						if (DEBUG) {
-							var src = getElementSrcOrSrcSetOrImgSrc(image);
+							var src = getImageSrc(image);
 							getImageDataUrl(image, src, function(data_url) {
 								var request = {
 									message: 'append_screen_shot',
@@ -921,7 +918,7 @@ function checkElementsThatMayBeAds() {
 						setBorder(element, 'red');
 						break;
 					case 'img':
-						if (getElementSrcOrSrcSetOrImgSrc(element)) {
+						if (getImageSrc(element)) {
 							g_known_elements[element.id] = true;
 //							console.log(element);
 
