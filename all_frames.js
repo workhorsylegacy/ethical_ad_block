@@ -28,6 +28,7 @@ function setupEvents() {
 			return;
 		}
 
+		// FIXME: Remove all this dead code
 		switch (event.data.message) {
 /*
 			case 'from_iframe_document_to_top_window':

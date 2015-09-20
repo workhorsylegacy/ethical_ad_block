@@ -68,12 +68,33 @@ function hexMD5(value) {
 	}
 }
 
+// NOTE: CORS stops us from accessing the Content-Length header field. But
+// we can access it by manually parsing the raw headers
+function getResponseHeaderContentLength(xhr) {
+	// Get the headers as a raw string
+	var raw = xhr.getAllResponseHeaders().toLowerCase();
+
+	// If there is no Content-Length, just return 0
+	if (raw.indexOf('content-length: ') === -1) {
+		return 0;
+	}
+
+	// Get the value
+	var content_length = 0;
+	content_length = raw.split('content-length: ')[1];
+	content_length = content_length.split('\r\n')[0];
+	content_length = parseInt(content_length);
+	return content_length;
+}
+
+// FIXME: Rename http_request to xhr
 function ajaxGet(request, success_cb, fail_cb) {
 	var http_request = new XMLHttpRequest();
 	http_request.onreadystatechange = function() {
 		if (http_request.readyState === 4) {
 			if (http_request.status === 200) {
-				success_cb(http_request.responseText);
+				var content_length = getResponseHeaderContentLength(http_request);
+				success_cb(http_request.responseText, content_length);
 			} else {
 				fail_cb(http_request.status);
 			}
@@ -87,6 +108,50 @@ function ajaxGet(request, success_cb, fail_cb) {
 	http_request.timeout = 3000;
 	http_request.open('GET', request, true);
 	http_request.send(null);
+}
+
+function ajaxGetChunk(request, success_cb, fail_cb, max_len) {
+	console.info('request: ' + request);
+	var total_len = 0;
+	var data = '';
+	var xhr = new XMLHttpRequest();
+	xhr.onprogress = function(e) {
+		console.info('    status: ' + xhr.status);
+		console.info('    readyState: ' + xhr.readyState);
+		if (xhr.status !== 200) {
+			console.info('        total: ' + total_len);
+			if (fail_cb) fail_cb(0);
+			success_cb = null;
+			fail_cb = null;
+			xhr.abort();
+		} else {
+			var cur_len = xhr.responseText.length;
+			console.info('        cur: ' + cur_len);
+			total_len += cur_len;
+			data += xhr.responseText;
+			if (total_len >= max_len) {
+				data = data.slice(0, max_len);
+			}
+			if (xhr.readyState === 4 || total_len >= max_len) {
+				var content_length = getResponseHeaderContentLength(xhr);
+				console.info('        total: ' + total_len);
+				console.info('        content_length: ' + content_length);
+				if (success_cb) success_cb(data, content_length);
+				success_cb = null;
+				fail_cb = null;
+				xhr.abort();
+			}
+		}
+	};
+	xhr.onerror = function() {
+		console.info('        total: ' + total_len);
+		if (fail_cb) fail_cb(0);
+		success_cb = null;
+		fail_cb = null;
+	};
+	xhr.timeout = 3000;
+	xhr.open('GET', request, true);
+	xhr.send(null);
 }
 
 function showElement(element) {
@@ -200,20 +265,50 @@ function getElementRectWithChildren(element) {
 	return rect;
 }
 
-function getImageBinary(element, src, cb) {
+// FIXME: Rename to getFileBinary
+function getImageBinary(element, src, cb, max_len) {
+	if (! src) {
+		console.error("Can't copy img with no source: " + element.outerHTML);
+		cb(null, 0);
+	} else {
+		var request = src;
+		var success_cb = function(response_text, total_size) {
+//			console.info(response_text);
+			cb(response_text, total_size);
+		};
+		var fail_cb = function(status) {
+			cb(null, 0);
+		};
+		if (max_len) {
+			ajaxGetChunk(request, success_cb, fail_cb, max_len);
+		} else {
+			ajaxGet(request, success_cb, fail_cb);
+		}
+	}
+}
+
+function getImageDataUrl(element, src, cb) {
+	var img = new Image();
+	img.crossOrigin = 'Anonymous';
+	img.onload = function(e) {
+		var temp_canvas = document.createElement('canvas');
+		temp_canvas.width = img.width;
+		temp_canvas.height = img.height;
+		var ctx = temp_canvas.getContext('2d');
+		ctx.drawImage(img, 0, 0);
+		var data_url = temp_canvas.toDataURL('image/png', 1.0);
+		cb(data_url);
+	};
+	img.onerror = function(e) {
+		console.error('Failed to copy image: ' + img.src);
+		cb(null);
+	};
+
 	if (! src) {
 		console.error("Can't copy img with no source: " + element.outerHTML);
 		cb(null);
 	} else {
-		var request = src;
-		var success_cb = function(response_text) {
-//			console.info(response_text);
-			cb(response_text);
-		};
-		var fail_cb = function(status) {
-			cb(null);
-		};
-		ajaxGet(request, success_cb, fail_cb);
+		img.src = src;
 	}
 }
 
@@ -261,6 +356,7 @@ function getScreenShot(rect, cb) {
 	chrome.runtime.sendMessage(message, function(response) {});
 }
 
+// FIXME: Rename to getImageSrc
 function getElementSrcOrSrcSetOrImgSrc(element) {
 	var sources = [
 		element.src,
@@ -344,9 +440,9 @@ function getElementHash(is_printed, element, parent_element, cb) {
 		case 'img':
 			function handle_img() {
 				var src = getElementSrcOrSrcSetOrImgSrc(element);
-				getImageBinary(element, src, function(data_url) {
-					if (is_printed) {printInfo(element, data_url);}
-					var hash = hexMD5(data_url);
+				getImageBinary(element, src, function(data, total_size) {
+					if (is_printed) {printInfo(element, data);}
+					var hash = hexMD5(data);
 					cb(hash, element, parent_element);
 				});
 			}
@@ -382,9 +478,13 @@ function getElementHash(is_printed, element, parent_element, cb) {
 		case 'video':
 			function handle_video() {
 				var src = getVideoSrc(element);
-				if (is_printed && src) {printInfo(element, src);}
-				var hash = src ? hexMD5(src) : null;
-				cb(hash, element, parent_element);
+				// Get only the first 50KB and length of the video
+				getImageBinary(element, src, function(data, total_size) {
+					console.info(data.length);
+					if (is_printed && src) {printInfo(element, src);}
+					var hash = data && total_size ? hexMD5(total_size + ':' + data) : null;
+					cb(hash, element, parent_element);
+				}, 50000);
 			}
 
 			// The src is already loaded
@@ -407,9 +507,9 @@ function getElementHash(is_printed, element, parent_element, cb) {
 			var bg = window.getComputedStyle(element)['background-image'];
 			if (isValidCSSImagePath(bg)) {
 				var src = bg.substring(4, bg.length-1);
-				getImageBinary(element, src, function(data_url) {
-					if (is_printed) {printInfo(element, data_url);}
-					var hash = hexMD5(data_url);
+				getImageBinary(element, src, function(data, total_size) {
+					if (is_printed) {printInfo(element, data);}
+					var hash = hexMD5(data);
 					cb(hash, element, parent_element);
 				});
 			} else {
@@ -422,9 +522,9 @@ function getElementHash(is_printed, element, parent_element, cb) {
 			var bg = window.getComputedStyle(element)['background-image'];
 			if (isValidCSSImagePath(bg)) {
 				var src = bg.substring(4, bg.length-1);
-				getImageBinary(element, src, function(data_url) {
-					if (is_printed) {printInfo(element, data_url);}
-					var hash = hexMD5(data_url);
+				getImageBinary(element, src, function(data, total_size) {
+					if (is_printed) {printInfo(element, data);}
+					var hash = hexMD5(data);
 					cb(hash, element, parent_element);
 				});
 			} else if (element.children.length > 0) {
@@ -610,7 +710,7 @@ function createButton(element, container_element) {
 						// Send the image to the top window
 						if (DEBUG) {
 							var src = getElementSrcOrSrcSetOrImgSrc(image);
-							getImageBinary(image, src, function(data_url) {
+							getImageDataUrl(image, src, function(data_url) {
 								var request = {
 									message: 'append_screen_shot',
 									data_url: data_url
