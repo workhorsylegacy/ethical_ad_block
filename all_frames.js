@@ -28,65 +28,7 @@ function setupEvents() {
 			return;
 		}
 
-		// FIXME: Remove all this dead code
 		switch (event.data.message) {
-/*
-			case 'from_iframe_document_to_top_window':
-//				console.info('CCCCCCCCC');
-				var request = {
-					message: 'from_top_window_to_iframe_document',
-					hash: event.data.hash
-				};
-				event.source.postMessage(request, '*');
-				break;
-			case 'from_top_window_to_iframe_document':
-//				console.info('DDDDDDDDD');
-//				window.document.body.style.padding = '10px';
-//				window.document.body.style.margin = '10px';
-//				window.document.body.style.backgroundColor = 'orange';
-
-				// FIXME: Here we need to check if this is an ad
-				var request = {
-					message: 'from_iframe_document_to_iframe_element',
-					hash: event.data.hash
-				};
-				window.parent.postMessage(request, '*');
-				break;
-			case 'from_iframe_document_to_iframe_element':
-//				console.info('EEEEEEEEEE');
-				// Get the hash of the document, and save it inside the parent iframe
-				var iframes = document.getElementsByTagName('iframe');
-				for (var i=0; i<iframes.length; ++i) {
-					var frame = iframes[i];
-					if (frame === event.source.frameElement) {
-//						window.document.body.style.padding = '10px';
-//						window.document.body.style.margin = '10px';
-//						window.document.body.style.backgroundColor = 'pink';
-
-//						console.info('XXXXXXXXXXXXXXX');
-						frame.setAttribute('document_hash', event.data.hash);
-//						delete g_known_elements[frame.id];
-
-//						showElement(frame);
-//						setBorder(frame, 'red');
-//						createButton(frame, null);
-						break;
-					}
-				}
-
-				var request = {
-					message: 'from_iframe_element_to_iframe_document',
-					hash: event.data.hash
-				};
-				event.source.postMessage(request, '*');
-				break;
-			// Make the iframe's document visible
-			case 'from_iframe_element_to_iframe_document':
-//				window.document.body.style.padding = '10px';
-//				window.document.body.style.margin = '10px';
-//				window.document.body.style.backgroundColor = 'purple';
-				break;
-*/
 			case 'append_screen_shot':
 				var img = new Image();
 				img.onload = function(e) {
@@ -111,24 +53,6 @@ if (window !== window.top) {
 			document.body.setAttribute('_is_loaded', 'true');
 
 			setupEvents();
-/*
-			window.document.body.style.padding = '10px';
-			window.document.body.style.margin = '10px';
-			window.document.body.style.backgroundColor = 'yellow';
-*/
-/*
-			// Create a hash of the iframe
-//			console.info('AAAAAAAAAAA');
-			getElementHash(true, document, null, function(hash, node, parent_node) {
-//				console.info('BBBBBBBBBBB');
-				// Send the hash to the top window, so it can check if this an ad
-				var request = {
-					message: 'from_iframe_document_to_top_window',
-					hash: hash
-				};
-				window.top.postMessage(request, '*');
-			});
-*/
 		}
 	}, 333);
 } else {
