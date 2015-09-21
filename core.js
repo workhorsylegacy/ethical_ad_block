@@ -8,7 +8,6 @@ TODO:
 . use promises
 
 . Check why ads on http://stackoverflow.com have different hashes, for the same ad after a reload
-. News story titles on http://news.google.com do not show
 
 . Some videos have a transparent div on top of them with an onclick event. This makes it hard to click the video.
 	Fix this by making it detect elements with onclick events.
@@ -30,6 +29,7 @@ TODO:
 
 var DEBUG = true;
 var BUTTON_SIZE = 15;
+var OPACITY = DEBUG ? 0.2 : 0.0;
 var BORDER_SIZE = DEBUG ? 5 : 1;
 var g_known_elements = {};
 var g_patched_elements = {};
@@ -309,26 +309,28 @@ function showElement(element) {
 
 function hideElement(element) {
 	// Save the style attributes that are temporarily overridden by the extension
-	if (! g_patched_elements.hasOwnProperty(element.id)) {
-		g_patched_elements[element.id] = true;
+	if (! g_patched_elements.hasOwnProperty(element.getAttribute('uid'))) {
+		g_patched_elements[element.getAttribute('uid')] = true;
+
+		var computed_style = window.getComputedStyle(element);
 
 		// position
 		if (! DEBUG) {
-			if (element.style.position) {
-				element.setAttribute('_real_position', element.style.position);
+			if (computed_style.position !== 'fixed') {
+				element.setAttribute('_real_position', computed_style.position);
 			}
 			element.style.position = 'fixed';
 		}
 
 		// opacity
-		if (element.style.opacity) {
-			element.setAttribute('_real_opacity', element.style.opacity);
+		if (computed_style.opacity != OPACITY) {
+			element.setAttribute('_real_opacity', computed_style.opacity);
 		}
-		element.style.opacity = DEBUG ? 0.2 : 0.0;
+		element.style.opacity = OPACITY;
 
 		// pointerEvents
-		if (element.style.pointerEvents) {
-			element.setAttribute('_real_pointer_events', element.style.pointerEvents);
+		if (computed_style.pointerEvents !== 'none') {
+			element.setAttribute('_real_pointer_events', computed_style.pointerEvents);
 		}
 		element.style.pointerEvents = 'none';
 	}
@@ -428,8 +430,8 @@ function getElementHash(is_printed, element, parent_element, cb) {
 		console.info('hash ' + element.tagName.toLowerCase() + ': ' + data);
 	}
 
-	if (! element.id) {
-		throw "Element is missing id!";
+	if (! element.getAttribute('uid')) {
+		throw "Element is missing uid!";
 	}
 
 	// Hash the element based on its type
@@ -558,8 +560,8 @@ function getElementChildHash(is_printed, element, parent_element, cb) {
 			case 'object':
 			case 'video':
 			case 'a':
-				if (child.id === '' || child.id === null || child.id === undefined) {
-					child.id = generateRandomId();
+				if (! child.getAttribute('uid')) {
+					child.setAttribute('uid', generateRandomId());
 				}
 				getElementHash(is_printed, child, parent_element, cb);
 				return;
@@ -869,21 +871,21 @@ function checkElementsThatMayBeAds() {
 		for (var i=0; i<elements.length; ++i) {
 			var element = elements[i];
 
-			// If the element does not have an id, generate a random one
-			if (element.id === '' || element.id === null || element.id === undefined) {
-				element.id = generateRandomId();
+			// If the element does not have an uid, generate a random one
+			if (! element.getAttribute('uid')) {
+				element.setAttribute('uid', generateRandomId());
 			}
 
-			hideElement(element);
-
 			// Only look at elements that have not already been examined
-			if (! g_known_elements.hasOwnProperty(element.id)) {
+			if (! g_known_elements.hasOwnProperty(element.getAttribute('uid'))) {
 				var name = element.tagName.toLowerCase();
+
+				hideElement(element);
 
 				// Skip the element if it is inside a link
 				if (TAGS3.hasOwnProperty(name)) {
 					if (isElementInsideLink(element)) {
-						g_known_elements[element.id] = true;
+						g_known_elements[element.getAttribute('uid')] = true;
 						showElement(element);
 						continue;
 					}
@@ -891,20 +893,20 @@ function checkElementsThatMayBeAds() {
 
 				switch (name) {
 					case 'iframe':
-						g_known_elements[element.id] = true;
+						g_known_elements[element.getAttribute('uid')] = true;
 						showElement(element);
 						setElementBorder(element, 'red');
 						break;
 					case 'img':
 						if (getImageSrc(element)) {
-							g_known_elements[element.id] = true;
+							g_known_elements[element.getAttribute('uid')] = true;
 //							console.log(element);
 
 							removeElementIfAd(element, 'blue');
 						}
 						break;
 					case 'div':
-						g_known_elements[element.id] = true;
+						g_known_elements[element.getAttribute('uid')] = true;
 //						console.info(element.getEventListeners());
 
 						// Element has a background image
@@ -924,7 +926,7 @@ function checkElementsThatMayBeAds() {
 						}
 						break;
 					case 'a':
-						g_known_elements[element.id] = true;
+						g_known_elements[element.getAttribute('uid')] = true;
 
 						// Anchor has a background image
 						var bg = window.getComputedStyle(element)['background-image'];
@@ -960,13 +962,13 @@ function checkElementsThatMayBeAds() {
 						break;
 					case 'object':
 					case 'embed':
-						g_known_elements[element.id] = true;
+						g_known_elements[element.getAttribute('uid')] = true;
 //						console.log(element);
 
 						removeElementIfAd(element, 'yellow');
 						break;
 					case 'video':
-						g_known_elements[element.id] = true;
+						g_known_elements[element.getAttribute('uid')] = true;
 //						console.log(element);
 
 						removeElementIfAd(element, 'blue');
