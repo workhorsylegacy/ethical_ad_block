@@ -60,6 +60,14 @@ var TAGS3 = {
 	'video' : 'blue'
 };
 
+function toArray(obj) {
+	var retval = [];
+	for (var i=0; i<obj.length; ++i) {
+		retval.push(obj[i]);
+	}
+	return retval;
+}
+
 function hexMD5(value) {
 	if (value) {
 		return hex_md5(value);
@@ -127,6 +135,7 @@ function httpGetTextChunk(request, success_cb, fail_cb, max_len) {
 			var cur_len = xhr.responseText.length;
 //			console.info('        cur: ' + cur_len);
 			total_len += cur_len;
+			// FIXME: Appending to a string is bad for GC, as it creates a new string each time. Replace with array.
 			data += xhr.responseText;
 			if (total_len >= max_len) {
 				data = data.slice(0, max_len);
@@ -151,6 +160,118 @@ function httpGetTextChunk(request, success_cb, fail_cb, max_len) {
 	xhr.timeout = 3000;
 	xhr.open('GET', request, true);
 	xhr.send(null);
+}
+
+function getFileBinary(element, src, cb, max_len) {
+	if (! src) {
+		console.error("Element src is missing: " + element.outerHTML);
+		cb(null, 0);
+	} else {
+		var request = src;
+		var success_cb = function(response_text, total_size) {
+//			console.info(response_text);
+			cb(response_text, total_size);
+		};
+		var fail_cb = function(status) {
+			cb(null, 0);
+		};
+		if (max_len) {
+			httpGetTextChunk(request, success_cb, fail_cb, max_len);
+		} else {
+			httpGetText(request, success_cb, fail_cb);
+		}
+	}
+}
+
+function getImageDataUrl(element, src, cb) {
+	var img = new Image();
+	img.crossOrigin = 'Anonymous';
+	img.onload = function(e) {
+		var temp_canvas = document.createElement('canvas');
+		temp_canvas.width = img.width;
+		temp_canvas.height = img.height;
+		var ctx = temp_canvas.getContext('2d');
+		ctx.drawImage(img, 0, 0);
+		var data_url = temp_canvas.toDataURL('image/png', 1.0);
+		cb(data_url);
+	};
+	img.onerror = function(e) {
+		console.error('Failed to copy image: ' + img.src);
+		cb(null);
+	};
+
+	if (! src) {
+		console.error("Can't copy img with no source: " + element.outerHTML);
+		cb(null);
+	} else {
+		img.src = src;
+	}
+}
+
+function getScreenShot(rect, cb) {
+	var message = {
+		action: 'screen_shot',
+		rect: rect
+	};
+
+	// Get a screen shot from the background script
+	var screen_shot = function(msg, sender, send_response) {
+		if (msg.action === 'screen_shot') {
+			// Remove the handler for this callback
+			chrome.runtime.onMessage.removeListener(screen_shot);
+
+			// Copy the full page screen shot into an image
+			var image = new Image();
+			image.onload = function() {
+				// Create a blank canvas to copy the screen shot segment to
+				var canvas = document.createElement('canvas');
+				canvas.width = rect.width;
+				canvas.height = rect.height;
+
+				// Copy a segment of the full screen shot to the canvas
+				var ctx = canvas.getContext('2d');
+				ctx.drawImage(
+					image,
+                    rect.left, rect.top,
+                    rect.width, rect.height,
+                    0, 0,
+                    rect.width, rect.height
+				);
+
+				// Copy the screen shot segment to a new image
+				var segment_image = new Image();
+				var segment_data_uri = canvas.toDataURL('image/png', 1.0);
+				segment_image.src = segment_data_uri;
+				cb(segment_image, segment_data_uri);
+			};
+			var data_uri = msg.data;
+			image.src = data_uri;
+		}
+	};
+	chrome.runtime.onMessage.addListener(screen_shot);
+	chrome.runtime.sendMessage(message, function(response) {});
+}
+
+// Return true if value is a valid CSS image path, such as "url(blah.png)"
+function isValidCSSImagePath(value) {
+	value = value.toLowerCase();
+	return value && value.length > 0 && value.indexOf('url(') === 0 && value[value.length-1] === ')';
+}
+
+function isElementInsideLink(element) {
+	var parent = element.parentElement;
+	while (parent) {
+		if (parent.tagName.toLowerCase() === 'a') {
+			return true;
+		}
+		parent = parent.parentElement;
+	}
+	return false;
+}
+
+function isElementTooSmall(element) {
+	var rect = getElementRect(element);
+	return (rect.width < 20 || rect.height < 20);
 }
 
 function showElement(element) {
@@ -264,96 +385,6 @@ function getElementRectWithChildren(element) {
 	return rect;
 }
 
-function getFileBinary(element, src, cb, max_len) {
-	if (! src) {
-		console.error("Element src is missing: " + element.outerHTML);
-		cb(null, 0);
-	} else {
-		var request = src;
-		var success_cb = function(response_text, total_size) {
-//			console.info(response_text);
-			cb(response_text, total_size);
-		};
-		var fail_cb = function(status) {
-			cb(null, 0);
-		};
-		if (max_len) {
-			httpGetTextChunk(request, success_cb, fail_cb, max_len);
-		} else {
-			httpGetText(request, success_cb, fail_cb);
-		}
-	}
-}
-
-function getImageDataUrl(element, src, cb) {
-	var img = new Image();
-	img.crossOrigin = 'Anonymous';
-	img.onload = function(e) {
-		var temp_canvas = document.createElement('canvas');
-		temp_canvas.width = img.width;
-		temp_canvas.height = img.height;
-		var ctx = temp_canvas.getContext('2d');
-		ctx.drawImage(img, 0, 0);
-		var data_url = temp_canvas.toDataURL('image/png', 1.0);
-		cb(data_url);
-	};
-	img.onerror = function(e) {
-		console.error('Failed to copy image: ' + img.src);
-		cb(null);
-	};
-
-	if (! src) {
-		console.error("Can't copy img with no source: " + element.outerHTML);
-		cb(null);
-	} else {
-		img.src = src;
-	}
-}
-
-function getScreenShot(rect, cb) {
-	var message = {
-		action: 'screen_shot',
-		rect: rect
-	};
-
-	// Get a screen shot from the background script
-	var screen_shot = function(msg, sender, send_response) {
-		if (msg.action === 'screen_shot') {
-			// Remove the handler for this callback
-			chrome.runtime.onMessage.removeListener(screen_shot);
-
-			// Copy the full page screen shot into an image
-			var image = new Image();
-			image.onload = function() {
-				// Create a blank canvas to copy the screen shot segment to
-				var canvas = document.createElement('canvas');
-				canvas.width = rect.width;
-				canvas.height = rect.height;
-
-				// Copy a segment of the full screen shot to the canvas
-				var ctx = canvas.getContext('2d');
-				ctx.drawImage(
-					image,
-                    rect.left, rect.top,
-                    rect.width, rect.height,
-                    0, 0,
-                    rect.width, rect.height
-				);
-
-				// Copy the screen shot segment to a new image
-				var segment_image = new Image();
-				var segment_data_uri = canvas.toDataURL('image/png', 1.0);
-				segment_image.src = segment_data_uri;
-				cb(segment_image, segment_data_uri);
-			};
-			var data_uri = msg.data;
-			image.src = data_uri;
-		}
-	};
-	chrome.runtime.onMessage.addListener(screen_shot);
-	chrome.runtime.sendMessage(message, function(response) {});
-}
-
 function getImageSrc(element) {
 	var sources = [
 		element.src,
@@ -389,12 +420,6 @@ function getVideoSrc(element) {
 	}
 
 	return null;
-}
-
-// Return true if value is a valid CSS image path, such as "url(blah.png)"
-function isValidCSSImagePath(value) {
-	value = value.toLowerCase();
-	return value && value.length > 0 && value.indexOf('url(') === 0 && value[value.length-1] === ')';
 }
 
 function getElementHash(is_printed, element, parent_element, cb) {
@@ -544,6 +569,48 @@ function getElementChildHash(is_printed, element, parent_element, cb) {
 	}
 
 	cb(null, element, parent_element);
+}
+
+function isElementAd(hash, cb) {
+	// If the hash is null, just use false
+	if (hash === null || hash === undefined) {
+		cb(false);
+		return;
+	}
+
+	// Check the web server to see if this hash is for an ad
+	var request = 'http://localhost:9000?is_ad=' + hash;
+	var success_cb = function(response_text) {
+		var is_ad = (response_text.toLowerCase() === 'true\n');
+		cb(is_ad);
+	};
+	var fail_cb = function(status) {
+		cb(false);
+	};
+	httpGetText(request, success_cb, fail_cb);
+}
+
+function removeElementIfAd(element, color, cb_after_not_ad) {
+	getElementHash(false, element, null, function(hash, node, parent_node) {
+		isElementAd(hash, function(is_ad) {
+			if (is_ad) {
+				node.parentElement.removeChild(node);
+			} else {
+				showElement(parent_node);
+				showElement(node);
+				if (! isElementTooSmall(node)) {
+					setElementBorder(node, color);
+					createButton(node, null);
+				} else {
+//					setElementBorder(node, 'green');
+				}
+
+				if (cb_after_not_ad) {
+					cb_after_not_ad(node);
+				}
+			}
+		});
+	});
 }
 
 function createButton(element, container_element) {
@@ -791,72 +858,6 @@ function createButton(element, container_element) {
 	};
 
 	element.addEventListener('mouseenter', mouse_enter, false);
-}
-
-function isElementInsideLink(element) {
-	var parent = element.parentElement;
-	while (parent) {
-		if (parent.tagName.toLowerCase() === 'a') {
-			return true;
-		}
-		parent = parent.parentElement;
-	}
-	return false;
-}
-
-function isElementTooSmall(element) {
-	var rect = getElementRect(element);
-	return (rect.width < 20 || rect.height < 20);
-}
-
-function toArray(obj) {
-	var retval = [];
-	for (var i=0; i<obj.length; ++i) {
-		retval.push(obj[i]);
-	}
-	return retval;
-}
-
-function isElementAd(hash, cb) {
-	// If the hash is null, just use false
-	if (hash === null || hash === undefined) {
-		cb(false);
-		return;
-	}
-
-	// Check the web server to see if this hash is for an ad
-	var request = 'http://localhost:9000?is_ad=' + hash;
-	var success_cb = function(response_text) {
-		var is_ad = (response_text.toLowerCase() === 'true\n');
-		cb(is_ad);
-	};
-	var fail_cb = function(status) {
-		cb(false);
-	};
-	httpGetText(request, success_cb, fail_cb);
-}
-
-function removeElementIfAd(element, color, cb_after_not_ad) {
-	getElementHash(false, element, null, function(hash, node, parent_node) {
-		isElementAd(hash, function(is_ad) {
-			if (is_ad) {
-				node.parentElement.removeChild(node);
-			} else {
-				showElement(parent_node);
-				showElement(node);
-				if (! isElementTooSmall(node)) {
-					setElementBorder(node, color);
-					createButton(node, null);
-				} else {
-//					setElementBorder(node, 'green');
-				}
-
-				if (cb_after_not_ad) {
-					cb_after_not_ad(node);
-				}
-			}
-		});
-	});
 }
 
 function checkElementsThatMayBeAds() {
