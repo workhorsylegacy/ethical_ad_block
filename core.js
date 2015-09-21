@@ -402,37 +402,12 @@ function getElementHash(is_printed, element, parent_element, cb) {
 		console.info(element);
 		console.info('hash ' + element.tagName.toLowerCase() + ': ' + data);
 	}
-/*
-	// If the element is a document, create a hash of its children
-	if (element.nodeType === 9) {
-		// Hash the first found meaningful element
-		var tags = ['img', 'video', 'embed', 'object', 'iframe', 'a'];
-		for (var i=0; i<tags.length; ++i) {
-			var tag = tags[i];
-			var elements = element.getElementsByTagName(tag);
-			if (elements.length > 0) {
-				getElementHash(is_printed, elements[0], parent_element, function(hash, element, parent_element) {
-					cb(hash, element, parent_element);
-				});
-				return;
-			}
-		}
-
-		// If there are none, hash the document instead
-//		console.error('Failed to hash document');
-		var serializer = new XMLSerializer();
-		var hash = serializer.serializeToString(element);
-		hash = hexMD5(hash);
-		cb(hash, element, parent_element);
-		return;
-	}
-*/
 
 	if (! element.id) {
 		throw "Element is missing id!";
 	}
 
-	// Or the element is another type
+	// Hash the element based on its type
 	switch (element.tagName.toLowerCase()) {
 		case 'img':
 			function handleImg() {
