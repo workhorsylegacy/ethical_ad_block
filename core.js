@@ -110,22 +110,22 @@ function ajaxGet(request, success_cb, fail_cb) {
 }
 
 function ajaxGetChunk(request, success_cb, fail_cb, max_len) {
-	console.info('request: ' + request);
+//	console.info('request: ' + request);
 	var total_len = 0;
 	var data = '';
 	var xhr = new XMLHttpRequest();
 	xhr.onprogress = function(e) {
-		console.info('    status: ' + xhr.status);
-		console.info('    readyState: ' + xhr.readyState);
+//		console.info('    status: ' + xhr.status);
+//		console.info('    readyState: ' + xhr.readyState);
 		if (xhr.status !== 200) {
-			console.info('        total: ' + total_len);
+//			console.info('        total: ' + total_len);
 			if (fail_cb) fail_cb(0);
 			success_cb = null;
 			fail_cb = null;
 			xhr.abort();
 		} else {
 			var cur_len = xhr.responseText.length;
-			console.info('        cur: ' + cur_len);
+//			console.info('        cur: ' + cur_len);
 			total_len += cur_len;
 			data += xhr.responseText;
 			if (total_len >= max_len) {
@@ -133,8 +133,8 @@ function ajaxGetChunk(request, success_cb, fail_cb, max_len) {
 			}
 			if (xhr.readyState === 4 || total_len >= max_len) {
 				var content_length = getResponseHeaderContentLength(xhr);
-				console.info('        total: ' + total_len);
-				console.info('        content_length: ' + content_length);
+//				console.info('        total: ' + total_len);
+//				console.info('        content_length: ' + content_length);
 				if (success_cb) success_cb(data, content_length);
 				success_cb = null;
 				fail_cb = null;
@@ -143,7 +143,7 @@ function ajaxGetChunk(request, success_cb, fail_cb, max_len) {
 		}
 	};
 	xhr.onerror = function() {
-		console.info('        total: ' + total_len);
+//		console.info('        total: ' + total_len);
 		if (fail_cb) fail_cb(0);
 		success_cb = null;
 		fail_cb = null;
@@ -477,7 +477,7 @@ function getElementHash(is_printed, element, parent_element, cb) {
 				var src = getVideoSrc(element);
 				// Get only the first 50KB and length of the video
 				getFileBinary(element, src, function(data, total_size) {
-					console.info(data.length);
+//					console.info(data.length);
 					if (is_printed && src) {printInfo(element, src);}
 					var hash = data && total_size ? hexMD5(total_size + ':' + data) : null;
 					cb(hash, element, parent_element);
