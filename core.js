@@ -87,7 +87,7 @@ function getResponseHeaderContentLength(xhr) {
 	return content_length;
 }
 
-function ajaxGet(request, success_cb, fail_cb) {
+function httpGetText(request, success_cb, fail_cb) {
 	var xhr = new XMLHttpRequest();
 	xhr.onreadystatechange = function() {
 		if (xhr.readyState === 4) {
@@ -109,7 +109,7 @@ function ajaxGet(request, success_cb, fail_cb) {
 	xhr.send(null);
 }
 
-function ajaxGetChunk(request, success_cb, fail_cb, max_len) {
+function httpGetTextChunk(request, success_cb, fail_cb, max_len) {
 //	console.info('request: ' + request);
 	var total_len = 0;
 	var data = '';
@@ -278,9 +278,9 @@ function getFileBinary(element, src, cb, max_len) {
 			cb(null, 0);
 		};
 		if (max_len) {
-			ajaxGetChunk(request, success_cb, fail_cb, max_len);
+			httpGetTextChunk(request, success_cb, fail_cb, max_len);
 		} else {
-			ajaxGet(request, success_cb, fail_cb);
+			httpGetText(request, success_cb, fail_cb);
 		}
 	}
 }
@@ -713,7 +713,7 @@ function createButton(element, container_element) {
 								var fail_cb = function(status) {
 									console.error('Failed to connect to server.');
 								};
-								ajaxGet(request, success_cb, fail_cb);
+								httpGetText(request, success_cb, fail_cb);
 							}
 						});
 					});
@@ -833,7 +833,7 @@ function isAd(hash, cb) {
 	var fail_cb = function(status) {
 		cb(false);
 	};
-	ajaxGet(request, success_cb, fail_cb);
+	httpGetText(request, success_cb, fail_cb);
 }
 
 function removeElementIfAd(element, color, cb_after_not_ad) {
