@@ -266,7 +266,7 @@ function getElementRectWithChildren(element) {
 
 function getFileBinary(element, src, cb, max_len) {
 	if (! src) {
-		console.error("Can't copy img with no source: " + element.outerHTML);
+		console.error("Element src is missing: " + element.outerHTML);
 		cb(null, 0);
 	} else {
 		var request = src;
@@ -435,7 +435,7 @@ function getElementHash(is_printed, element, parent_element, cb) {
 	// Or the element is another type
 	switch (element.tagName.toLowerCase()) {
 		case 'img':
-			function handle_img() {
+			function handleImg() {
 				var src = getImageSrc(element);
 				getFileBinary(element, src, function(data, total_size) {
 					if (is_printed) {printInfo(element, data);}
@@ -449,13 +449,13 @@ function getElementHash(is_printed, element, parent_element, cb) {
 				var load_cb = function(e) {
 					element.removeEventListener('load', load_cb);
 
-					handle_img();
+					handleImg();
 				};
 
 				element.addEventListener('load', load_cb, false);
 			// The src is already loaded
 			} else {
-				handle_img();
+				handleImg();
 			}
 			break;
 		case 'iframe':
@@ -473,7 +473,7 @@ function getElementHash(is_printed, element, parent_element, cb) {
 			cb(hash, element, parent_element);
 			break;
 		case 'video':
-			function handle_video() {
+			function handleVideo() {
 				var src = getVideoSrc(element);
 				// Get only the first 50KB and length of the video
 				getFileBinary(element, src, function(data, total_size) {
@@ -486,14 +486,14 @@ function getElementHash(is_printed, element, parent_element, cb) {
 
 			// The src is already loaded
 			if (element.readyState === 4) {
-				handle_video();
+				handleVideo();
 			// If the src has not loaded, wait for it to load
 			} else {
 				var load_interval = setInterval(function() {
 					if (element.readyState === 4) {
 						clearInterval(load_interval);
 
-						handle_video();
+						handleVideo();
 					}
 				}, 333);
 			}
@@ -1030,7 +1030,7 @@ function monkeyPatch() {
 		this._event_listeners[a] = this._event_listeners[a] || [];
 
 		// Add the event
-		// FIXME: Remove the previous listner is at already is in the list
+		// FIXME: Remove the previous listener if it is already in the list
 		this._event_listeners[a].push({listener: b, useCapture: c});
 		this.setAttribute('_has_event_listener_' + a.toLowerCase(), 'true');
 
