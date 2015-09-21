@@ -736,7 +736,7 @@ function createButton(element, container_element) {
 									console.log(response_text);
 								};
 								var fail_cb = function(status) {
-									console.log('Failed to connect to server.');
+									console.error('Failed to connect to server.');
 								};
 								ajaxGet(request, success_cb, fail_cb);
 							}
