@@ -213,7 +213,7 @@ function hideElement(element) {
 	}
 }
 
-function setBorder(element, color) {
+function setElementBorder(element, color) {
 	if (! element.border_color) {
 		element.border_color = color;
 	}
@@ -793,7 +793,7 @@ function createButton(element, container_element) {
 	element.addEventListener('mouseenter', mouse_enter, false);
 }
 
-function isInsideLinkElement(element) {
+function isElementInsideLink(element) {
 	var parent = element.parentElement;
 	while (parent) {
 		if (parent.tagName.toLowerCase() === 'a') {
@@ -804,7 +804,7 @@ function isInsideLinkElement(element) {
 	return false;
 }
 
-function isTooSmall(element) {
+function isElementTooSmall(element) {
 	var rect = getElementRect(element);
 	return (rect.width < 20 || rect.height < 20);
 }
@@ -817,7 +817,7 @@ function toArray(obj) {
 	return retval;
 }
 
-function isAd(hash, cb) {
+function isElementAd(hash, cb) {
 	// If the hash is null, just use false
 	if (hash === null || hash === undefined) {
 		cb(false);
@@ -838,17 +838,17 @@ function isAd(hash, cb) {
 
 function removeElementIfAd(element, color, cb_after_not_ad) {
 	getElementHash(false, element, null, function(hash, node, parent_node) {
-		isAd(hash, function(is_ad) {
+		isElementAd(hash, function(is_ad) {
 			if (is_ad) {
 				node.parentElement.removeChild(node);
 			} else {
 				showElement(parent_node);
 				showElement(node);
-				if (! isTooSmall(node)) {
-					setBorder(node, color);
+				if (! isElementTooSmall(node)) {
+					setElementBorder(node, color);
 					createButton(node, null);
 				} else {
-//					setBorder(node, 'green');
+//					setElementBorder(node, 'green');
 				}
 
 				if (cb_after_not_ad) {
@@ -878,7 +878,7 @@ function checkElementsThatMayBeAds() {
 
 				// Skip the element if it is inside a link
 				if (TAGS3.hasOwnProperty(name)) {
-					if (isInsideLinkElement(element)) {
+					if (isElementInsideLink(element)) {
 						g_known_elements[element.id] = true;
 						showElement(element);
 						continue;
@@ -890,7 +890,7 @@ function checkElementsThatMayBeAds() {
 					case 'iframe':
 						g_known_elements[element.id] = true;
 						showElement(element);
-						setBorder(element, 'red');
+						setElementBorder(element, 'red');
 						break;
 					case 'img':
 						if (getImageSrc(element)) {
@@ -943,8 +943,8 @@ function checkElementsThatMayBeAds() {
 									var bg = window.getComputedStyle(child)['background-image'];
 									if (child.tagName.toLowerCase() in TAGS2 || isValidCSSImagePath(bg)) {
 										showElement(child);
-										if (! isTooSmall(child)) {
-											setBorder(child, 'purple');
+										if (! isElementTooSmall(child)) {
+											setElementBorder(child, 'purple');
 											createButton(child, node);
 										}
 									}
