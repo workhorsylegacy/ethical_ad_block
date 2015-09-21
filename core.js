@@ -4,21 +4,18 @@
 
 /*
 TODO:
-. fix issue with variable hoisting
-. use promises
 
-. Check why ads on http://stackoverflow.com have different hashes, for the same ad after a reload
-
+. give our css file high priority to prevent blinking ads
+. dont look through link children. if the child is removed, look to see of it was the only thing in the link, and remove if so.
+. do the same with iframes
 . Some videos have a transparent div on top of them with an onclick event. This makes it hard to click the video.
-	Fix this by making it detect elements with onclick events.
-. When an element is the only one in an iframe/link, or the largest, make closing it close the iframe/link instead
 . Move popup menu to center of top frame
 . Make hashing work with svg
 . Save the randomly generated user id in localStorage
 . Save and load server data from file
 
 . Add a Selenium test suite to stop regressions
-. Update so things can be marked as "social". Then users can block all socal media buttons and crap.
+. Update so things can be marked as "social". Then users can block all social media buttons and crap.
 . Add a moderator mode that shows all ads, including counts below them, and lets users vote on them
 . Show users a warning if another Ad Blocker is running
 . Ad element screen shot to ad voting
