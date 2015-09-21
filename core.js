@@ -435,27 +435,30 @@ function getElementHash(is_printed, element, parent_element, cb) {
 	// Hash the element based on its type
 	switch (element.tagName.toLowerCase()) {
 		case 'img':
-			function handleImg() {
-				var src = getImageSrc(element);
-				getFileBinary(element, src, function(data, total_size) {
-					if (is_printed) {printInfo(element, data);}
-					var hash = hexMD5(data);
-					cb(hash, element, parent_element);
-				});
-			}
+			// Only check if it has a src
+			if (element.src && element.src.length > 0) {
+				function handleImg() {
+					var src = getImageSrc(element);
+					getFileBinary(element, src, function(data, total_size) {
+						if (is_printed) {printInfo(element, data);}
+						var hash = hexMD5(data);
+						cb(hash, element, parent_element);
+					});
+				}
 
-			// If the src has not loaded, wait for it to load
-			if (! element.complete) {
-				var load_cb = function(e) {
-					element.removeEventListener('load', load_cb);
+				// If the src has not loaded, wait for it to load
+				if (! element.complete) {
+					var load_cb = function(e) {
+						element.removeEventListener('load', load_cb);
 
+						handleImg();
+					};
+
+					element.addEventListener('load', load_cb, false);
+				// The src is already loaded
+				} else {
 					handleImg();
-				};
-
-				element.addEventListener('load', load_cb, false);
-			// The src is already loaded
-			} else {
-				handleImg();
+				}
 			}
 			break;
 		case 'iframe':
@@ -886,7 +889,6 @@ function checkElementsThatMayBeAds() {
 					}
 				}
 
-				// Element image has a source
 				switch (name) {
 					case 'iframe':
 						g_known_elements[element.id] = true;
