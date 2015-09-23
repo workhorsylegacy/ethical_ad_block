@@ -5,9 +5,7 @@
 /*
 TODO:
 
-. give our css file high priority to prevent blinking ads
-. dont look through link children. if the child is removed, look to see of it was the only thing in the link, and remove if so.
-. do the same with iframes
+. Dont look through iframe children. if the child is removed, look to see of it was the only thing in the iframe, and remove if so.
 . Some videos have a transparent div on top of them with an onclick event. This makes it hard to click the video.
 . Move popup menu to center of top frame
 . Make hashing work with svg
