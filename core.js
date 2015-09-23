@@ -51,19 +51,6 @@ var TAGS1 = {
 	'div' : ORANGE
 };
 
-var TAGS2 = {
-	'a' : PURPLE,
-	'img' : BLUE,
-	'video' : BLUE,
-	'object' : YELLOW,
-	'embed' : YELLOW
-};
-
-var TAGS3 = {
-	'img' : BLUE,
-	'video' : BLUE
-};
-
 function toArray(obj) {
 	var retval = [];
 	for (var i=0; i<obj.length; ++i) {
