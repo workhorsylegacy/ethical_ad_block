@@ -449,9 +449,9 @@ function isElementHashable(element) {
 			var bg = window.getComputedStyle(element)['background-image'];
 			return isValidCSSImagePath(bg) || element.getAttribute('onclick') || element.getAttribute('_has_event_listener_click');
 		case 'a':
-			// Element has a background image
+			// Element has a background image or href
 			var bg = window.getComputedStyle(element)['background-image'];
-			return isValidCSSImagePath(bg);
+			return isValidCSSImagePath(bg) || element.href && element.href.length > 0;
 		case 'iframe':
 			return true;
 		case 'img':
