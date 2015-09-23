@@ -27,7 +27,7 @@ TODO:
 var DEBUG = true;
 var BUTTON_SIZE = 15;
 var OPACITY = DEBUG ? 0.2 : 0.0;
-var BORDER_SIZE = DEBUG ? 5 : 1;
+var OUTLINE_SIZE = DEBUG ? 6 : 2;
 var g_known_elements = {};
 var g_patched_elements = {};
 var g_cursor_x = 0;
@@ -333,13 +333,14 @@ function hideElement(element) {
 	}
 }
 
-function setElementBorder(element, color) {
-	if (! element.border_color) {
-		element.border_color = color;
+function setElementOutline(element, color) {
+	if (! element.outline_color) {
+		element.outline_color = color;
 	}
 
 	if (DEBUG) {
-		element.style.border = BORDER_SIZE + 'px solid ' + color;
+		element.style.outline = OUTLINE_SIZE + 'px solid ' + color;
+		element.style.outlineOffset = - (OUTLINE_SIZE / 2) + 'px';
 	}
 }
 
@@ -601,10 +602,10 @@ function removeElementIfAd(element, color, cb_after_not_ad) {
 				showElement(parent_node);
 				showElement(node);
 				if (! isElementTooSmall(node)) {
-					setElementBorder(node, color);
+					setElementOutline(node, color);
 					createButton(node, null);
 				} else {
-//					setElementBorder(node, 'green');
+//					setElementOutline(node, 'green');
 				}
 
 				if (cb_after_not_ad) {
@@ -621,8 +622,8 @@ function createButton(element, container_element) {
 		return;
 	}
 
-	if (! element.prev_border) {
-		element.prev_border = element.style.border;
+	if (! element.prev_outline) {
+		element.prev_outline = element.style.outline;
 	}
 
 	// Add a button when the mouse is over the element
@@ -639,7 +640,7 @@ function createButton(element, container_element) {
 //		if (! DEBUG) {
 			color = 'purple';
 //		}
-		node.style.border = BORDER_SIZE + 'px dashed ' + node.border_color;
+		node.style.outline = OUTLINE_SIZE + 'px dashed ' + node.outline_color;
 		var rect = getElementRect(node);
 
 		// Create a button over the top left of the element
@@ -676,7 +677,7 @@ function createButton(element, container_element) {
 				g_cursor_x >= l + r.width ||
 				g_cursor_y <= t ||
 				g_cursor_y >= t + r.height) {
-				node.style.border = node.prev_border;
+				node.style.outline = node.prev_outline;
 				node.canvas = null;
 				document.body.removeChild(canvas);
 				clearInterval(rect_interval);
@@ -713,7 +714,7 @@ function createButton(element, container_element) {
 			menu.style.top = rect.top + window.pageYOffset + 'px';
 			menu.style.zIndex = 100000;
 			menu.style.backgroundColor = '#f0f0f0';
-			menu.style.border = '1px solid black';
+			menu.style.outline = '1px solid black';
 			menu.style.boxShadow = '10px 10px 5px grey';
 			document.body.appendChild(menu);
 
@@ -739,11 +740,11 @@ function createButton(element, container_element) {
 					element.div_interval = null;
 				}
 
-				// Remove the border and buttons
-				node.style.border = node.prev_border;
+				// Remove the outline and buttons
+				node.style.outline = node.prev_outline;
 				menu.parentElement.removeChild(menu);
 
-				// Wait for the next set of DOM events, so the element's border will be removed
+				// Wait for the next set of DOM events, so the element's outline will be removed
 				setTimeout(function() {
 					// Get a screen shot from the background script
 					rect = getElementRectWithChildren(node);
@@ -892,7 +893,7 @@ function checkElementsThatMayBeAds() {
 					case 'iframe':
 						g_known_elements[element.getAttribute('uid')] = true;
 						showElement(element);
-						setElementBorder(element, 'red');
+						setElementOutline(element, 'red');
 						break;
 					case 'img':
 						if (getImageSrc(element)) {
@@ -946,7 +947,7 @@ function checkElementsThatMayBeAds() {
 									if (child.tagName.toLowerCase() in TAGS2 || isValidCSSImagePath(bg)) {
 										showElement(child);
 										if (! isElementTooSmall(child)) {
-											setElementBorder(child, 'purple');
+											setElementOutline(child, 'purple');
 											createButton(child, node);
 										}
 									}
