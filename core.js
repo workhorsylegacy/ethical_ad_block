@@ -447,8 +447,8 @@ function getElementHash(is_printed, element, parent_element, cb) {
 				function handleImg() {
 					var src = getImageSrc(element);
 					getFileBinary(element, src, function(data, total_size) {
-						if (is_printed) {printInfo(element, data);}
 						var hash = hexMD5(data);
+						if (is_printed) {printInfo(element, hash);}
 						cb(hash, element, parent_element);
 					});
 				}
@@ -475,11 +475,11 @@ function getElementHash(is_printed, element, parent_element, cb) {
 			break;
 		case 'embed':
 		case 'object':
-			if (is_printed) {printInfo(element, element.data);}
 			var hash = null;
 			if (element.data) {
 				hash = hexMD5(element.data);
 			}
+			if (is_printed) {printInfo(element, hash);}
 			cb(hash, element, parent_element);
 			break;
 		case 'video':
@@ -488,8 +488,8 @@ function getElementHash(is_printed, element, parent_element, cb) {
 				// Get only the first 50KB and length of the video
 				getFileBinary(element, src, function(data, total_size) {
 //					console.info(data.length);
-					if (is_printed && src) {printInfo(element, src);}
 					var hash = data && total_size ? hexMD5(total_size + ':' + data) : null;
+					if (is_printed) {printInfo(element, hash);}
 					cb(hash, element, parent_element);
 				}, 50000);
 			}
@@ -515,8 +515,8 @@ function getElementHash(is_printed, element, parent_element, cb) {
 			if (isValidCSSImagePath(bg)) {
 				var src = bg.substring(4, bg.length-1);
 				getFileBinary(element, src, function(data, total_size) {
-					if (is_printed) {printInfo(element, data);}
 					var hash = hexMD5(data);
+					if (is_printed) {printInfo(element, hash);}
 					cb(hash, element, parent_element);
 				});
 			} else {
@@ -530,18 +530,18 @@ function getElementHash(is_printed, element, parent_element, cb) {
 			if (isValidCSSImagePath(bg)) {
 				var src = bg.substring(4, bg.length-1);
 				getFileBinary(element, src, function(data, total_size) {
-					if (is_printed) {printInfo(element, data);}
 					var hash = hexMD5(data);
+					if (is_printed) {printInfo(element, hash);}
 					cb(hash, element, parent_element);
 				});
 			} else if (element.children.length > 0) {
 				getElementChildHash(is_printed, element, element, cb);
-//				if (is_printed) {printInfo(element, element.href);}
 //				hash = hexMD5(element.href);
+//				if (is_printed) {printInfo(element, hash);}
 //				cb(hash, element, parent_element);
 			} else if (element.href && element.href.length > 0) {
-				if (is_printed) {printInfo(element, element.href);}
 				hash = hexMD5(element.href);
+				if (is_printed) {printInfo(element, hash);}
 				cb(hash, element, parent_element);
 			} else {
 				cb(hash, element, parent_element);
@@ -773,8 +773,6 @@ function createButton(element, container_element) {
 
 						// Get a hash of the element
 						getElementHash(true, node, null, function(hash, node, parent_node) {
-							console.log(hash);
-
 							// Remove the element
 							node.parentElement.removeChild(node);
 
