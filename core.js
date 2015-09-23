@@ -416,84 +416,91 @@ function getVideoSrc(element) {
 	return null;
 }
 
+function isElementLoaded(element) {
+	var name = element.tagName.toLowerCase();
+
+	switch (name) {
+		case 'div':
+		case 'a':
+		case 'iframe':
+			return true;
+		case 'img':
+			var src = getImageSrc(element);
+			return src && src.length > 0 && element.complete;
+		case 'video':
+			var src = getVideoSrc(element);
+			return src && src.length > 0 && element.readyState === 4;
+		case 'embed':
+		case 'object':
+			return element.data && element.data.length > 0;
+		default:
+			throw "Unexpected element '" + name + "' to check if loaded.";
+	}
+
+	return false;
+}
+
+function isElementHashable(element) {
+	var name = element.tagName.toLowerCase();
+
+	switch (name) {
+		case 'div':
+			// Element has a background image or click event
+			var bg = window.getComputedStyle(element)['background-image'];
+			return isValidCSSImagePath(bg) || element.getAttribute('onclick') || element.getAttribute('_has_event_listener_click');
+		case 'a':
+			// Element has a background image
+			var bg = window.getComputedStyle(element)['background-image'];
+			return isValidCSSImagePath(bg);
+		case 'iframe':
+			return true;
+		case 'img':
+			var src = getImageSrc(element);
+			return src && src.length > 0 && element.complete;
+		case 'video':
+			var src = getVideoSrc(element);
+			return src && src.length > 0 && element.readyState === 4;
+		case 'embed':
+		case 'object':
+			return element.data && element.data.length > 0;
+		default:
+			throw "Unexpected element '" + name + "' to check if hashable.";
+	}
+
+	return false;
+}
+
 function getElementHash(is_printed, element, cb) {
 	function printInfo(element, data) {
 		console.info(element);
 		console.info('hash ' + element.tagName.toLowerCase() + ': ' + data);
 	}
 
-	if (! element.getAttribute('uid')) {
-		throw "Element is missing uid!";
-	}
-
 	// Hash the element based on its type
 	switch (element.tagName.toLowerCase()) {
 		case 'img':
-			// Only check if it has a src
-			if (element.src && element.src.length > 0) {
-				function handleImg() {
-					var src = getImageSrc(element);
-					getFileBinary(element, src, function(data, total_size) {
-						var hash = hexMD5(data);
-						if (is_printed) {printInfo(element, hash);}
-						cb(hash);
-					});
-				}
-
-				// If the src has not loaded, wait for it to load
-				if (! element.complete) {
-					var load_cb = function(e) {
-						element.removeEventListener('load', load_cb);
-
-						handleImg();
-					};
-
-					element.addEventListener('load', load_cb, false);
-				// The src is already loaded
-				} else {
-					handleImg();
-				}
-			}
-			break;
-		case 'iframe':
-			var hash = element.getAttribute('document_hash');
-			if (is_printed) {printInfo(element, hash);}
-			cb(hash);
+			var src = getImageSrc(element);
+			getFileBinary(element, src, function(data, total_size) {
+				var hash = hexMD5(data);
+				if (is_printed) {printInfo(element, hash);}
+				cb(hash);
+			});
 			break;
 		case 'embed':
 		case 'object':
-			var hash = null;
-			if (element.data) {
-				hash = hexMD5(element.data);
-			}
+			var hash = hexMD5(element.data);
 			if (is_printed) {printInfo(element, hash);}
 			cb(hash);
 			break;
 		case 'video':
-			function handleVideo() {
-				var src = getVideoSrc(element);
-				// Get only the first 50KB and length of the video
-				getFileBinary(element, src, function(data, total_size) {
-//					console.info(data.length);
-					var hash = data && total_size ? hexMD5(total_size + ':' + data) : null;
-					if (is_printed) {printInfo(element, hash);}
-					cb(hash);
-				}, 50000);
-			}
-
-			// The src is already loaded
-			if (element.readyState === 4) {
-				handleVideo();
-			// If the src has not loaded, wait for it to load
-			} else {
-				var load_interval = setInterval(function() {
-					if (element.readyState === 4) {
-						clearInterval(load_interval);
-
-						handleVideo();
-					}
-				}, 333);
-			}
+			var src = getVideoSrc(element);
+			// Get only the first 50KB and length of the video
+			getFileBinary(element, src, function(data, total_size) {
+//				console.info(data.length);
+				var hash = data && total_size ? hexMD5(total_size + ':' + data) : null;
+				if (is_printed) {printInfo(element, hash);}
+				cb(hash);
+			}, 50000);
 			break;
 		// FIXME: Update to hash divs that have click events
 		case 'div':
@@ -509,7 +516,6 @@ function getElementHash(is_printed, element, cb) {
 			} else {
 				cb(hash);
 			}
-
 			break;
 		case 'a':
 			var hash = null;
@@ -528,7 +534,6 @@ function getElementHash(is_printed, element, cb) {
 			} else {
 				cb(hash);
 			}
-
 			break;
 		default:
 			throw "Unexpected element '" + element.tagName.toLowerCase() + "' to hash.";
@@ -844,79 +849,50 @@ function checkElementsThatMayBeAds() {
 			var element = elements[i];
 
 			// If the element does not have an uid, generate a random one
-			if (! element.getAttribute('uid')) {
+			if (! element.hasAttribute('uid')) {
 				element.setAttribute('uid', generateRandomId());
 			}
+			var uid = element.getAttribute('uid');
 
 			// Only look at elements that have not already been examined
-			if (! g_known_elements.hasOwnProperty(element.getAttribute('uid'))) {
-				var name = element.tagName.toLowerCase();
-
+			if (! g_known_elements.hasOwnProperty(uid)) {
+				// Make the element hidden before we can examine it
 				hideElement(element);
 
+				// Skip the element if it has not finished loading
+				if (! isElementLoaded(element)) {
+					continue;
+				}
+
+				// Show the element if it is not hashable
+				if (! isElementHashable(element)) {
+					g_known_elements[uid] = true;
+					showElement(element);
+					continue;
+				}
+
+				// Check if the element is an ad
+				var name = element.tagName.toLowerCase();
 				switch (name) {
+					// Show all iframes, and add an outline
 					case 'iframe':
-						g_known_elements[element.getAttribute('uid')] = true;
+						g_known_elements[uid] = true;
 						showElement(element);
 						setElementOutline(element, RED);
 						break;
+					// Check everything else
 					case 'img':
-						if (getImageSrc(element)) {
-							g_known_elements[element.getAttribute('uid')] = true;
-//							console.log(element);
-
-							removeElementIfAd(element, BLUE);
-						}
-						break;
 					case 'div':
-						g_known_elements[element.getAttribute('uid')] = true;
-//						console.info(element.getEventListeners());
-
-						// Element has a background image
-						var bg = window.getComputedStyle(element)['background-image'];
-						if (isValidCSSImagePath(bg)) {
-							removeElementIfAd(element, ORANGE);
-						// Element has an onclick event
-						} else if (element.getAttribute('onclick')) {
-//							console.info(element.getAttribute('onclick'));
-							removeElementIfAd(element, ORANGE);
-						// Element has an addEventListener('click') event
-						} else if (element.getAttribute('_has_event_listener_click')) {
-//							console.info(element.getAttribute('_has_event_listener_click'));
-							removeElementIfAd(element, ORANGE);
-						} else {
-							showElement(element);
-						}
-						break;
 					case 'a':
-						g_known_elements[element.getAttribute('uid')] = true;
-
-						// Anchor has a background image
-						var bg = window.getComputedStyle(element)['background-image'];
-						if (isValidCSSImagePath(bg)) {
-//							console.log(element);
-
-							removeElementIfAd(element, PURPLE);
-						// Anchor is just text
-						} else {
-							showElement(element);
-						}
-						break;
 					case 'object':
 					case 'embed':
-						g_known_elements[element.getAttribute('uid')] = true;
-//						console.log(element);
-
-						removeElementIfAd(element, YELLOW);
-						break;
 					case 'video':
-						g_known_elements[element.getAttribute('uid')] = true;
-//						console.log(element);
-
-						removeElementIfAd(element, BLUE);
+						var color = TAGS1[name];
+						g_known_elements[uid] = true;
+						removeElementIfAd(element, color);
 						break;
 					default:
-						throw "Unexpected element '" + element.tagName.toLowerCase() + "' to check for ads.";
+						throw "Unexpected element '" + name + "' to check for ads.";
 				}
 			}
 		}
