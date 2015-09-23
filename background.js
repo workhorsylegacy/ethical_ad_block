@@ -59,24 +59,17 @@ chrome.runtime.onMessage.addListener(function(msg, sender, send_response) {
 				chrome.tabs.sendMessage(sender.tab.id, message, function(response) {});
 			}
 		);
-		return false; // FIXME: Update this to use send_response instead of sending another message
-	}
-});
-
-
-// When the tab is ready
-chrome.tabs.onUpdated.addListener(function(tab_id, change_info, tab) {
-	active_url = tab.url;
-
-	if (change_info.status === 'complete') {
-		// Send the user id to each new tab
+	} else if (msg.action === 'get_g_user_id') {
 		var message = {
 			action: 'get_g_user_id',
 			data: g_user_id
 		};
-		chrome.tabs.sendMessage(tab_id, message, function(response) {});
+		chrome.tabs.sendMessage(sender.tab.id, message, function(response) {});
 	}
+
+	return false; // FIXME: Update this to use send_response instead of sending another message
 });
+
 
 
 

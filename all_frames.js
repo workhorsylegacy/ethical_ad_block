@@ -15,12 +15,11 @@ function setupEvents() {
 		g_cursor_y = 0;
 	}, false);
 
-	// Get the user id from the background page
-	chrome.runtime.onMessage.addListener(function(msg, sender, send_response) {
-		if (msg.action === 'get_g_user_id') {
-			g_user_id = msg.data;
-		}
-	});
+	// Ask the background script to tell us the user id
+	var message = {
+		action: 'get_g_user_id'
+	};
+	chrome.runtime.sendMessage(message, function(response) {});
 
 	window.addEventListener('message', function(event) {
 		// Just return if there is no data in the event
@@ -41,6 +40,12 @@ function setupEvents() {
 	}, false);
 }
 
+// The background page tells us the user id
+chrome.runtime.onMessage.addListener(function(msg, sender, send_response) {
+	if (msg.action === 'get_g_user_id') {
+		g_user_id = msg.data;
+	}
+});
 
 
 // If running in an iframe
