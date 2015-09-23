@@ -416,8 +416,7 @@ function getVideoSrc(element) {
 	return null;
 }
 
-// FIXME: Remove parent_element
-function getElementHash(is_printed, element, parent_element, cb) {
+function getElementHash(is_printed, element, cb) {
 	function printInfo(element, data) {
 		console.info(element);
 		console.info('hash ' + element.tagName.toLowerCase() + ': ' + data);
@@ -437,7 +436,7 @@ function getElementHash(is_printed, element, parent_element, cb) {
 					getFileBinary(element, src, function(data, total_size) {
 						var hash = hexMD5(data);
 						if (is_printed) {printInfo(element, hash);}
-						cb(hash, element, parent_element);
+						cb(hash);
 					});
 				}
 
@@ -459,7 +458,7 @@ function getElementHash(is_printed, element, parent_element, cb) {
 		case 'iframe':
 			var hash = element.getAttribute('document_hash');
 			if (is_printed) {printInfo(element, hash);}
-			cb(hash, element, parent_element);
+			cb(hash);
 			break;
 		case 'embed':
 		case 'object':
@@ -468,7 +467,7 @@ function getElementHash(is_printed, element, parent_element, cb) {
 				hash = hexMD5(element.data);
 			}
 			if (is_printed) {printInfo(element, hash);}
-			cb(hash, element, parent_element);
+			cb(hash);
 			break;
 		case 'video':
 			function handleVideo() {
@@ -478,7 +477,7 @@ function getElementHash(is_printed, element, parent_element, cb) {
 //					console.info(data.length);
 					var hash = data && total_size ? hexMD5(total_size + ':' + data) : null;
 					if (is_printed) {printInfo(element, hash);}
-					cb(hash, element, parent_element);
+					cb(hash);
 				}, 50000);
 			}
 
@@ -505,10 +504,10 @@ function getElementHash(is_printed, element, parent_element, cb) {
 				getFileBinary(element, src, function(data, total_size) {
 					var hash = hexMD5(data);
 					if (is_printed) {printInfo(element, hash);}
-					cb(hash, element, parent_element);
+					cb(hash);
 				});
 			} else {
-				cb(hash, element, parent_element);
+				cb(hash);
 			}
 
 			break;
@@ -520,14 +519,14 @@ function getElementHash(is_printed, element, parent_element, cb) {
 				getFileBinary(element, src, function(data, total_size) {
 					var hash = hexMD5(data);
 					if (is_printed) {printInfo(element, hash);}
-					cb(hash, element, parent_element);
+					cb(hash);
 				});
 			} else if (element.href && element.href.length > 0) {
 				hash = hexMD5(element.href);
 				if (is_printed) {printInfo(element, hash);}
-				cb(hash, element, parent_element);
+				cb(hash);
 			} else {
-				cb(hash, element, parent_element);
+				cb(hash);
 			}
 
 			break;
@@ -556,38 +555,37 @@ function isElementAd(hash, cb) {
 }
 
 function removeElementIfAd(element, color, cb_after_not_ad) {
-	getElementHash(false, element, null, function(hash, node, parent_node) {
+	getElementHash(false, element, function(hash) {
 		isElementAd(hash, function(is_ad) {
 			if (is_ad) {
-				var parent = node.parentElement;
+				var parent = element.parentElement;
 
 				if (parent) {
 					// If the parent has children, remove only the element
 					if (parent.children && parent.children.length > 0) {
-						parent.removeChild(node);
+						parent.removeChild(element);
 					// If the parent has innerHTML, remove only the element
 					} else if (parent.innerHTML && parent.innerHTML.length > 0) {
-						parent.removeChild(node);
+						parent.removeChild(element);
 					// Else remove the parent
 					} else {
 						parent.parentElement.removeChild(parent);
 					}
 				// Else remove the element
 				} else {
-					parent.removeChild(node);
+					parent.removeChild(element);
 				}
 			} else {
-				showElement(parent_node);
-				showElement(node);
-				if (! isElementTooSmall(node)) {
-					setElementOutline(node, color);
-					createButton(node, null);
+				showElement(element);
+				if (! isElementTooSmall(element)) {
+					setElementOutline(element, color);
+					createButton(element, null);
 				} else {
-//					setElementOutline(node, GREEN);
+//					setElementOutline(element, GREEN);
 				}
 
 				if (cb_after_not_ad) {
-					cb_after_not_ad(node);
+					cb_after_not_ad(element);
 				}
 			}
 		});
@@ -743,7 +741,7 @@ function createButton(element, container_element) {
 						node.style.display = 'none';
 
 						// Get a hash of the element
-						getElementHash(true, node, null, function(hash, node, parent_node) {
+						getElementHash(true, node, function(hash) {
 							// Remove the element
 							node.parentElement.removeChild(node);
 
