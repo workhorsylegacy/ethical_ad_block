@@ -534,11 +534,6 @@ function getElementHash(is_printed, element, parent_element, cb) {
 					if (is_printed) {printInfo(element, hash);}
 					cb(hash, element, parent_element);
 				});
-			} else if (element.children.length > 0) {
-				getElementChildHash(is_printed, element, element, cb);
-//				hash = hexMD5(element.href);
-//				if (is_printed) {printInfo(element, hash);}
-//				cb(hash, element, parent_element);
 			} else if (element.href && element.href.length > 0) {
 				hash = hexMD5(element.href);
 				if (is_printed) {printInfo(element, hash);}
@@ -551,34 +546,6 @@ function getElementHash(is_printed, element, parent_element, cb) {
 		default:
 			throw "Unexpected element '" + element.tagName.toLowerCase() + "' to hash.";
 	}
-}
-
-function getElementChildHash(is_printed, element, parent_element, cb) {
-	var elements = toArray(element.children);
-
-	while (elements.length > 0) {
-		var child = elements.pop();
-		switch (child.tagName.toLowerCase()) {
-			case 'img':
-			case 'iframe':
-			case 'embed':
-			case 'object':
-			case 'video':
-			case 'a':
-				if (! child.getAttribute('uid')) {
-					child.setAttribute('uid', generateRandomId());
-				}
-				getElementHash(is_printed, child, parent_element, cb);
-				return;
-		}
-		if (child.children) {
-			for (var i=0; i<child.children.length; ++i) {
-				elements.push(child.children[i]);
-			}
-		}
-	}
-
-	cb(null, element, parent_element);
 }
 
 function isElementAd(hash, cb) {
@@ -885,15 +852,6 @@ function checkElementsThatMayBeAds() {
 
 				hideElement(element);
 
-				// Skip the element if it is inside a link
-				if (TAGS3.hasOwnProperty(name)) {
-					if (isElementInsideLink(element)) {
-						g_known_elements[element.getAttribute('uid')] = true;
-						showElement(element);
-						continue;
-					}
-				}
-
 				switch (name) {
 					case 'iframe':
 						g_known_elements[element.getAttribute('uid')] = true;
@@ -937,27 +895,6 @@ function checkElementsThatMayBeAds() {
 //							console.log(element);
 
 							removeElementIfAd(element, PURPLE);
-						// Anchor has children
-						} else if (element.children.length > 0) {
-//							console.log(element);
-
-							removeElementIfAd(element, PURPLE, function(node) {
-								// Add buttons to any children that are big enough
-								var children = toArray(node.children);
-								while (children.length > 0) {
-									var child = children.pop();
-									children = children.concat(toArray(child.children));
-									// If the child is a tag we care about, or it has a background image
-									var bg = window.getComputedStyle(child)['background-image'];
-									if (child.tagName.toLowerCase() in TAGS2 || isValidCSSImagePath(bg)) {
-										showElement(child);
-										if (! isElementTooSmall(child)) {
-											setElementOutline(child, PURPLE);
-											createButton(child, node);
-										}
-									}
-								}
-							});
 						// Anchor is just text
 						} else {
 							showElement(element);
