@@ -248,7 +248,7 @@ function isValidCSSImagePath(value) {
 	value = value.toLowerCase();
 	return value && value.length > 0 && value.indexOf('url(') === 0 && value[value.length-1] === ')';
 }
-
+/*
 function isElementInsideLink(element) {
 	var parent = element.parentElement;
 	while (parent) {
@@ -259,7 +259,7 @@ function isElementInsideLink(element) {
 	}
 	return false;
 }
-
+*/
 function isElementTooSmall(element) {
 	var rect = getElementRect(element);
 	return (rect.width < 20 || rect.height < 20);
@@ -416,6 +416,7 @@ function getVideoSrc(element) {
 	return null;
 }
 
+// FIXME: Remove parent_element
 function getElementHash(is_printed, element, parent_element, cb) {
 	function printInfo(element, data) {
 		console.info(element);
@@ -558,7 +559,23 @@ function removeElementIfAd(element, color, cb_after_not_ad) {
 	getElementHash(false, element, null, function(hash, node, parent_node) {
 		isElementAd(hash, function(is_ad) {
 			if (is_ad) {
-				node.parentElement.removeChild(node);
+				var parent = node.parentElement;
+
+				if (parent) {
+					// If the parent has children, remove only the element
+					if (parent.children && parent.children.length > 0) {
+						parent.removeChild(node);
+					// If the parent has innerHTML, remove only the element
+					} else if (parent.innerHTML && parent.innerHTML.length > 0) {
+						parent.removeChild(node);
+					// Else remove the parent
+					} else {
+						parent.parentElement.removeChild(parent);
+					}
+				// Else remove the element
+				} else {
+					parent.removeChild(node);
+				}
 			} else {
 				showElement(parent_node);
 				showElement(node);
