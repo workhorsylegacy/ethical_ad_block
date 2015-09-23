@@ -34,12 +34,12 @@ var g_cursor_x = 0;
 var g_cursor_y = 0;
 var g_user_id = null;
 
-var BLUE = 'rgba(0, 0, 255, .5)';
-var GREEN = 'rgba(0, 255, 0, .5)';
-var RED = 'rgba(255, 0, 0, .5)';
-var ORANGE = 'rgba(255, 165, 0, .5)';
-var PURPLE = 'rgba(128, 0, 128, .5)';
-var YELLOW = 'rgba(255, 255, 0, .5)';
+var BLUE = function(alpha) { return 'rgba(0, 0, 255, ' + alpha + ')'; };
+var GREEN = function(alpha) { return 'rgba(0, 255, 0, ' + alpha + ')'; };
+var RED = function(alpha) { return 'rgba(255, 0, 0, ' + alpha + ')'; };
+var ORANGE = function(alpha) { return 'rgba(255, 165, 0, ' + alpha + ')'; };
+var PURPLE = function(alpha) { return 'rgba(128, 0, 128, ' + alpha + ')'; };
+var YELLOW = function(alpha) { return 'rgba(255, 255, 0, ' + alpha + ')'; };
 
 var TAGS1 = {
 	'a' : PURPLE,
@@ -346,7 +346,7 @@ function setElementOutline(element, color) {
 	}
 
 	if (DEBUG) {
-		element.style.outline = OUTLINE_SIZE + 'px solid ' + color;
+		element.style.outline = OUTLINE_SIZE + 'px solid ' + color(0.5);
 		element.style.outlineOffset = - (OUTLINE_SIZE / 2) + 'px';
 	}
 }
@@ -579,7 +579,7 @@ function removeElementIfAd(element, color, cb_after_not_ad) {
 					setElementOutline(node, color);
 					createButton(node, null);
 				} else {
-//					setElementOutline(node, 'green');
+//					setElementOutline(node, GREEN);
 				}
 
 				if (cb_after_not_ad) {
@@ -614,7 +614,7 @@ function createButton(element, container_element) {
 //		if (! DEBUG) {
 			color = PURPLE;
 //		}
-		node.style.outline = OUTLINE_SIZE + 'px dashed ' + node.outline_color;
+		node.style.outline = OUTLINE_SIZE + 'px dashed ' + node.outline_color(1.0);
 		var rect = getElementRect(node);
 
 		// Create a button over the top left of the element
@@ -632,7 +632,7 @@ function createButton(element, container_element) {
 		// Make the button a color
 		var ctx = canvas.getContext('2d');
 		ctx.rect(0, 0, BUTTON_SIZE, BUTTON_SIZE);
-		ctx.fillStyle = color;
+		ctx.fillStyle = color(1.0);
 		ctx.fill();
 
 		// Connect the canvas to the element
