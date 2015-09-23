@@ -34,27 +34,34 @@ var g_cursor_x = 0;
 var g_cursor_y = 0;
 var g_user_id = null;
 
+var BLUE = 'rgba(0, 0, 255, .5)';
+var GREEN = 'rgba(0, 255, 0, .5)';
+var RED = 'rgba(255, 0, 0, .5)';
+var ORANGE = 'rgba(255, 165, 0, .5)';
+var PURPLE = 'rgba(128, 0, 128, .5)';
+var YELLOW = 'rgba(255, 255, 0, .5)';
+
 var TAGS1 = {
-	'a' : 'purple',
-	'img' : 'blue',
-	'video' : 'blue',
-	'object' : 'yellow',
-	'embed' : 'yellow',
-	'iframe' : 'red',
-	'div' : 'orange'
+	'a' : PURPLE,
+	'img' : BLUE,
+	'video' : BLUE,
+	'object' : YELLOW,
+	'embed' : YELLOW,
+	'iframe' : RED,
+	'div' : ORANGE
 };
 
 var TAGS2 = {
-	'a' : 'purple',
-	'img' : 'blue',
-	'video' : 'blue',
-	'object' : 'yellow',
-	'embed' : 'yellow'
+	'a' : PURPLE,
+	'img' : BLUE,
+	'video' : BLUE,
+	'object' : YELLOW,
+	'embed' : YELLOW
 };
 
 var TAGS3 = {
-	'img' : 'blue',
-	'video' : 'blue'
+	'img' : BLUE,
+	'video' : BLUE
 };
 
 function toArray(obj) {
@@ -638,7 +645,7 @@ function createButton(element, container_element) {
 		var tag = node.tagName.toLowerCase();
 		var color = TAGS1[(container_element ? container_element.tagName : node.tagName).toLowerCase()];
 //		if (! DEBUG) {
-			color = 'purple';
+			color = PURPLE;
 //		}
 		node.style.outline = OUTLINE_SIZE + 'px dashed ' + node.outline_color;
 		var rect = getElementRect(node);
@@ -893,14 +900,14 @@ function checkElementsThatMayBeAds() {
 					case 'iframe':
 						g_known_elements[element.getAttribute('uid')] = true;
 						showElement(element);
-						setElementOutline(element, 'red');
+						setElementOutline(element, RED);
 						break;
 					case 'img':
 						if (getImageSrc(element)) {
 							g_known_elements[element.getAttribute('uid')] = true;
 //							console.log(element);
 
-							removeElementIfAd(element, 'blue');
+							removeElementIfAd(element, BLUE);
 						}
 						break;
 					case 'div':
@@ -910,15 +917,15 @@ function checkElementsThatMayBeAds() {
 						// Element has a background image
 						var bg = window.getComputedStyle(element)['background-image'];
 						if (isValidCSSImagePath(bg)) {
-							removeElementIfAd(element, 'orange');
+							removeElementIfAd(element, ORANGE);
 						// Element has an onclick event
 						} else if (element.getAttribute('onclick')) {
 //							console.info(element.getAttribute('onclick'));
-							removeElementIfAd(element, 'orange');
+							removeElementIfAd(element, ORANGE);
 						// Element has an addEventListener('click') event
 						} else if (element.getAttribute('_has_event_listener_click')) {
 //							console.info(element.getAttribute('_has_event_listener_click'));
-							removeElementIfAd(element, 'orange');
+							removeElementIfAd(element, ORANGE);
 						} else {
 							showElement(element);
 						}
@@ -931,12 +938,12 @@ function checkElementsThatMayBeAds() {
 						if (isValidCSSImagePath(bg)) {
 //							console.log(element);
 
-							removeElementIfAd(element, 'purple');
+							removeElementIfAd(element, PURPLE);
 						// Anchor has children
 						} else if (element.children.length > 0) {
 //							console.log(element);
 
-							removeElementIfAd(element, 'purple', function(node) {
+							removeElementIfAd(element, PURPLE, function(node) {
 								// Add buttons to any children that are big enough
 								var children = toArray(node.children);
 								while (children.length > 0) {
@@ -947,7 +954,7 @@ function checkElementsThatMayBeAds() {
 									if (child.tagName.toLowerCase() in TAGS2 || isValidCSSImagePath(bg)) {
 										showElement(child);
 										if (! isElementTooSmall(child)) {
-											setElementOutline(child, 'purple');
+											setElementOutline(child, PURPLE);
 											createButton(child, node);
 										}
 									}
@@ -963,13 +970,13 @@ function checkElementsThatMayBeAds() {
 						g_known_elements[element.getAttribute('uid')] = true;
 //						console.log(element);
 
-						removeElementIfAd(element, 'yellow');
+						removeElementIfAd(element, YELLOW);
 						break;
 					case 'video':
 						g_known_elements[element.getAttribute('uid')] = true;
 //						console.log(element);
 
-						removeElementIfAd(element, 'blue');
+						removeElementIfAd(element, BLUE);
 						break;
 					default:
 						throw "Unexpected element '" + element.tagName.toLowerCase() + "' to check for ads.";
