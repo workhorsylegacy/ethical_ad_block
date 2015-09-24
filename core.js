@@ -84,6 +84,37 @@ function getResponseHeaderContentLength(xhr) {
 	return content_length;
 }
 
+function blobToDataURL(blob, cb) {
+	var a = new FileReader();
+	a.onload = function(e) {
+		cb(e.target.result);
+	}
+	a.readAsDataURL(blob);
+}
+
+function httpGetBinary(request, success_cb, fail_cb) {
+	var xhr = new XMLHttpRequest();
+	xhr.onreadystatechange = function() {
+		if (xhr.readyState === 4) {
+			if (xhr.status === 200) {
+				var response_bytes = xhr.response;
+				success_cb(response_bytes, response_bytes.length);
+			} else {
+				fail_cb(xhr.status);
+			}
+		} else if (xhr.readyState === 0) {
+			fail_cb(0);
+		}
+	};
+	xhr.onerror = function() {
+		fail_cb(0);
+	};
+	xhr.timeout = 3000;
+	xhr.responseType = "blob";
+	xhr.open('GET', request, true);
+	xhr.send(null);
+}
+
 function httpGetText(request, success_cb, fail_cb) {
 	var xhr = new XMLHttpRequest();
 	xhr.onreadystatechange = function() {
@@ -582,7 +613,7 @@ function removeElementIfAd(element, color, cb_after_not_ad) {
 				showElement(element);
 				if (! isElementTooSmall(element)) {
 					setElementOutline(element, color);
-					createButton(element, null);
+					createButton(element);
 				} else {
 //					setElementOutline(element, GREEN);
 				}
@@ -595,7 +626,7 @@ function removeElementIfAd(element, color, cb_after_not_ad) {
 	});
 }
 
-function createButton(element, container_element) {
+function createButton(element) {
 	// Just return if this element already has a button
 	if (element.canvas) {
 		return;
@@ -615,7 +646,7 @@ function createButton(element, container_element) {
 		}
 
 		var tag = node.tagName.toLowerCase();
-		var color = TAGS1[(container_element ? container_element.tagName : node.tagName).toLowerCase()];
+		var color = TAGS1[node.tagName.toLowerCase()];
 //		if (! DEBUG) {
 			color = PURPLE;
 //		}
@@ -643,7 +674,6 @@ function createButton(element, container_element) {
 		// Connect the canvas to the element
 		node.canvas = canvas;
 		canvas.node = node;
-		canvas.container_element = container_element;
 
 		// Keep checking the mouse position. If it moves out of the element, remove the button
 		var rect_interval = setInterval(function() {
@@ -663,181 +693,237 @@ function createButton(element, container_element) {
 				rect_interval = null;
 			}
 		}, 100);
+		canvas.rect_interval = rect_interval;
 
 		// Remove the element when the button is clicked
 		canvas.addEventListener('click', function(e) {
-			var canvas = e.path[0];
-			var node = canvas.node;
-			var container_element = canvas.container_element;
-
-			// Hide the button
-			canvas.style.display = 'none';
-
-			// If there is a container element, use that instead
-			if (container_element) {
-				node = container_element;
+			if (window !== window.top) {
+				handleIframeClick(e);
+			} else {
+				handleNormalClick(e);
 			}
-
-			// Button menu
-			var rect = getElementRectWithChildren(node);
-			var menu = document.createElement('div');
-			menu.className = 'nostyle';
-			menu.style.padding = '10px';
-			menu.style.position = 'absolute';
-			menu.style.textAlign = 'center';
-			menu.style.minWidth = '200px';
-			menu.style.minHeight = '230px';
-			menu.style.width = rect.width + 'px';
-			menu.style.height = rect.height + 'px';
-			menu.style.left = rect.left + window.pageXOffset + 'px';
-			menu.style.top = rect.top + window.pageYOffset + 'px';
-			menu.style.zIndex = 100000;
-			menu.style.backgroundColor = '#f0f0f0';
-			menu.style.outline = '1px solid black';
-			menu.style.boxShadow = '10px 10px 5px grey';
-			document.body.appendChild(menu);
-
-			// Keep moving the button menu to cover the element
-			var div_interval = setInterval(function() {
-				var rect = getElementRectWithChildren(node);
-				menu.style.width = rect.width + 'px';
-				menu.style.height = rect.height + 'px';
-				menu.style.left = rect.left + window.pageXOffset + 'px';
-				menu.style.top = rect.top + window.pageYOffset + 'px';
-			}, 100);
-
-			function buttonClick(e) {
-				var element = e.path[0];
-
-				// Stop checking button and button menu positions
-				if (element.rect_interval) {
-					clearInterval(element.rect_interval);
-					element.rect_interval = null;
-				}
-				if (element.div_interval) {
-					clearInterval(element.div_interval);
-					element.div_interval = null;
-				}
-
-				// Remove the outline and buttons
-				node.style.outline = node.prev_outline;
-				menu.parentElement.removeChild(menu);
-
-				// Wait for the next set of DOM events, so the element's outline will be removed
-				setTimeout(function() {
-					// Get a screen shot from the background script
-					rect = getElementRectWithChildren(node);
-					getScreenShot(rect, function(image, data_uri) {
-						// Send the image to the top window
-						if (DEBUG) {
-							var src = getImageSrc(image);
-							getImageDataUrl(image, src, function(data_url) {
-								var request = {
-									message: 'append_screen_shot',
-									data_url: data_url
-								};
-								window.top.postMessage(request, '*');
-							});
-						}
-
-						// Hide the element
-						node.style.display = 'none';
-
-						// Get a hash of the element
-						getElementHash(true, node, function(hash) {
-							// Remove the element
-							node.parentElement.removeChild(node);
-
-							if (hash) {
-								// Tell the server that this hash is for an ad
-								var request = 'http://localhost:9000' +
-									'?user_id=' + g_user_id +
-									'&vote_ad=' + hash +
-									'&ad_type=' + element.ad_type;
-								var success_cb = function(response_text) {
-									console.log(response_text);
-								};
-								var fail_cb = function(status) {
-									console.error('Failed to connect to server.');
-								};
-								httpGetText(request, success_cb, fail_cb);
-							}
-						});
-					});
-				}, 333);
-			}
-
-			// Good button
-			var button_good = document.createElement('button');
-			button_good.innerHTML = 'Good';
-			button_good.className = 'btnGreen';
-			button_good.ad_type = 'good';
-			button_good.div_interval = div_interval;
-			button_good.rect_interval = rect_interval;
-			menu.appendChild(button_good);
-			menu.appendChild(document.createElement('br'));
-			button_good.addEventListener('click', buttonClick);
-
-			// Fraudulent button
-			var button_fraud = document.createElement('button');
-			button_fraud.innerHTML = 'Fraudulent';
-			button_fraud.className = 'btnYellow';
-			button_fraud.ad_type = 'fraudulent';
-			button_fraud.div_interval = div_interval;
-			button_fraud.rect_interval = rect_interval;
-			menu.appendChild(button_fraud);
-			menu.appendChild(document.createElement('br'));
-			button_fraud.addEventListener('click', buttonClick);
-
-			// Resource taxing button
-			var button_resource = document.createElement('button');
-			button_resource.innerHTML = 'Resource taxing';
-			button_resource.className = 'btnYellow';
-			button_resource.ad_type = 'taxing';
-			button_resource.div_interval = div_interval;
-			button_resource.rect_interval = rect_interval;
-			menu.appendChild(button_resource);
-			menu.appendChild(document.createElement('br'));
-			button_resource.addEventListener('click', buttonClick);
-
-			// Malicious button
-			var button_malicious = document.createElement('button');
-			button_malicious.innerHTML = 'Malicious';
-			button_malicious.className = 'btnRed';
-			button_malicious.ad_type = 'malicious';
-			button_malicious.div_interval = div_interval;
-			button_malicious.rect_interval = rect_interval;
-			menu.appendChild(button_malicious);
-			menu.appendChild(document.createElement('br'));
-			button_malicious.addEventListener('click', buttonClick);
-
-			// Cancel button
-			var button_cancel = document.createElement('button');
-			button_cancel.innerHTML = 'or Cancel';
-			button_cancel.div_interval = div_interval;
-			button_cancel.rect_interval = rect_interval;
-			menu.appendChild(button_cancel);
-			button_cancel.addEventListener('click', function(e) {
-				var element = e.path[0];
-
-				// Stop checking button and button menu positions
-				if (element.rect_interval) {
-					clearInterval(element.rect_interval);
-					element.rect_interval = null;
-				}
-				if (element.div_interval) {
-					clearInterval(element.div_interval);
-					element.div_interval = null;
-				}
-
-				menu.parentElement.removeChild(menu);
-				canvas.style.display = '';
-			});
-
 		}, false);
 	};
 
 	element.addEventListener('mouseenter', mouse_enter, false);
+}
+
+function handleIframeClick(e) {
+	var canvas = e.path[0];
+	var rect_interval = canvas.rect_interval;
+	var node = canvas.node;
+
+	// Hide the button
+	canvas.style.display = 'none';
+
+	// Button menu
+	// FIXME: Move this to the top window
+	var rect = getElementRectWithChildren(node);
+	var menu = document.createElement('div');
+	menu.className = 'nostyle';
+	menu.style.padding = '10px';
+	menu.style.position = 'absolute';
+	menu.style.textAlign = 'center';
+	menu.style.minWidth = '200px';
+	menu.style.minHeight = '230px';
+	menu.style.width = rect.width + 'px';
+	menu.style.height = rect.height + 'px';
+	menu.style.left = rect.left + window.pageXOffset + 'px';
+	menu.style.top = rect.top + window.pageYOffset + 'px';
+	menu.style.zIndex = 100000;
+	menu.style.backgroundColor = '#f0f0f0';
+	menu.style.outline = '1px solid black';
+	menu.style.boxShadow = '10px 10px 5px grey';
+	document.body.appendChild(menu);
+
+	// Copy each image into a menu
+	var imgs = document.getElementsByTagName('img');
+	if (imgs) {
+		for (var i=0; i<imgs.length; ++i) {
+			var request = imgs[i].src;
+
+			var success_cb = function(response_binary, total_size) {
+				blobToDataURL(response_binary, function(data_url) {
+					console.info(request);
+					console.info(data_url);
+					var new_img = document.createElement('img');
+					new_img.src = data_url;
+					document.body.appendChild(new_img);
+				});
+			};
+			var fail_cb = function(status) {
+				cb(null, 0);
+			};
+			httpGetBinary(request, success_cb, fail_cb);
+
+//			break;
+		}
+	}
+}
+
+function handleNormalClick(e) {
+	var canvas = e.path[0];
+	var rect_interval = canvas.rect_interval;
+	var node = canvas.node;
+
+	// Hide the button
+	canvas.style.display = 'none';
+
+	// Button menu
+	var rect = getElementRectWithChildren(node);
+	var menu = document.createElement('div');
+	menu.className = 'nostyle';
+	menu.style.padding = '10px';
+	menu.style.position = 'absolute';
+	menu.style.textAlign = 'center';
+	menu.style.minWidth = '200px';
+	menu.style.minHeight = '230px';
+	menu.style.width = rect.width + 'px';
+	menu.style.height = rect.height + 'px';
+	menu.style.left = rect.left + window.pageXOffset + 'px';
+	menu.style.top = rect.top + window.pageYOffset + 'px';
+	menu.style.zIndex = 100000;
+	menu.style.backgroundColor = '#f0f0f0';
+	menu.style.outline = '1px solid black';
+	menu.style.boxShadow = '10px 10px 5px grey';
+	document.body.appendChild(menu);
+
+	// Keep moving the button menu to cover the element
+	var div_interval = setInterval(function() {
+		var rect = getElementRectWithChildren(node);
+		menu.style.width = rect.width + 'px';
+		menu.style.height = rect.height + 'px';
+		menu.style.left = rect.left + window.pageXOffset + 'px';
+		menu.style.top = rect.top + window.pageYOffset + 'px';
+	}, 100);
+
+	function buttonClick(e) {
+		var element = e.path[0];
+
+		// Stop checking button and button menu positions
+		if (element.rect_interval) {
+			clearInterval(element.rect_interval);
+			element.rect_interval = null;
+		}
+		if (element.div_interval) {
+			clearInterval(element.div_interval);
+			element.div_interval = null;
+		}
+
+		// Remove the outline and buttons
+		node.style.outline = node.prev_outline;
+		menu.parentElement.removeChild(menu);
+
+		// Wait for the next set of DOM events, so the element's outline will be removed
+		setTimeout(function() {
+			// Get a screen shot from the background script
+			rect = getElementRectWithChildren(node);
+			getScreenShot(rect, function(image, data_uri) {
+				// Send the image to the top window
+				if (DEBUG) {
+					var src = getImageSrc(image);
+					getImageDataUrl(image, src, function(data_url) {
+						var request = {
+							message: 'append_screen_shot',
+							data_url: data_url
+						};
+						window.top.postMessage(request, '*');
+					});
+				}
+
+				// Hide the element
+				node.style.display = 'none';
+
+				// Get a hash of the element
+				getElementHash(true, node, function(hash) {
+					// Remove the element
+					node.parentElement.removeChild(node);
+
+					if (hash) {
+						// Tell the server that this hash is for an ad
+						var request = 'http://localhost:9000' +
+							'?user_id=' + g_user_id +
+							'&vote_ad=' + hash +
+							'&ad_type=' + element.ad_type;
+						var success_cb = function(response_text) {
+							console.log(response_text);
+						};
+						var fail_cb = function(status) {
+							console.error('Failed to connect to server.');
+						};
+						httpGetText(request, success_cb, fail_cb);
+					}
+				});
+			});
+		}, 333);
+	}
+
+	// Good button
+	var button_good = document.createElement('button');
+	button_good.innerHTML = 'Good';
+	button_good.className = 'btnGreen';
+	button_good.ad_type = 'good';
+	button_good.div_interval = div_interval;
+	button_good.rect_interval = rect_interval;
+	menu.appendChild(button_good);
+	menu.appendChild(document.createElement('br'));
+	button_good.addEventListener('click', buttonClick);
+
+	// Fraudulent button
+	var button_fraud = document.createElement('button');
+	button_fraud.innerHTML = 'Fraudulent';
+	button_fraud.className = 'btnYellow';
+	button_fraud.ad_type = 'fraudulent';
+	button_fraud.div_interval = div_interval;
+	button_fraud.rect_interval = rect_interval;
+	menu.appendChild(button_fraud);
+	menu.appendChild(document.createElement('br'));
+	button_fraud.addEventListener('click', buttonClick);
+
+	// Resource taxing button
+	var button_resource = document.createElement('button');
+	button_resource.innerHTML = 'Resource taxing';
+	button_resource.className = 'btnYellow';
+	button_resource.ad_type = 'taxing';
+	button_resource.div_interval = div_interval;
+	button_resource.rect_interval = rect_interval;
+	menu.appendChild(button_resource);
+	menu.appendChild(document.createElement('br'));
+	button_resource.addEventListener('click', buttonClick);
+
+	// Malicious button
+	var button_malicious = document.createElement('button');
+	button_malicious.innerHTML = 'Malicious';
+	button_malicious.className = 'btnRed';
+	button_malicious.ad_type = 'malicious';
+	button_malicious.div_interval = div_interval;
+	button_malicious.rect_interval = rect_interval;
+	menu.appendChild(button_malicious);
+	menu.appendChild(document.createElement('br'));
+	button_malicious.addEventListener('click', buttonClick);
+
+	// Cancel button
+	var button_cancel = document.createElement('button');
+	button_cancel.innerHTML = 'or Cancel';
+	button_cancel.div_interval = div_interval;
+	button_cancel.rect_interval = rect_interval;
+	menu.appendChild(button_cancel);
+	button_cancel.addEventListener('click', function(e) {
+		var element = e.path[0];
+
+		// Stop checking button and button menu positions
+		if (element.rect_interval) {
+			clearInterval(element.rect_interval);
+			element.rect_interval = null;
+		}
+		if (element.div_interval) {
+			clearInterval(element.div_interval);
+			element.div_interval = null;
+		}
+
+		menu.parentElement.removeChild(menu);
+		canvas.style.display = '';
+	});
 }
 
 function checkElementsThatMayBeAds() {
