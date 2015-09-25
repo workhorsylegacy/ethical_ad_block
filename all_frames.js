@@ -36,6 +36,10 @@ function setupEvents() {
 				};
 				img.src = event.data.data_url;
 				break;
+			case 'show_iframe_menu':
+				var srcs = event.data.srcs;
+				showMenu(srcs);
+				break;
 		}
 	}, false);
 }

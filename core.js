@@ -716,48 +716,81 @@ function handleIframeClick(e) {
 	// Hide the button
 	canvas.style.display = 'none';
 
+	// Get all the image sources
+	var imgs = document.getElementsByTagName('img');
+	var srcs = [];
+	for (var i=0; i<imgs.length; ++i) {
+		srcs.push(imgs[i].src);
+	}
+
+	// Send the image sources to the top window, so it can make a menu
+	var request = {
+		message: 'show_iframe_menu',
+		srcs: srcs
+	};
+	window.top.postMessage(request, '*');
+}
+
+// FIXME: Make it so the menu has a scroll bar instead of the iframe
+function showMenu(srcs) {
+	// Transparent container
+	var container = document.createElement('iframe');
+	container.className = 'nostyle';
+	container.style.position = 'fixed';
+	container.style.textAlign = 'center';
+	container.style.width = '100%';
+	container.style.height = '100%';
+	container.style.top = '0px';
+	container.style.bottom = '0px';
+	container.style.right = '0px';
+	container.style.left = '0px';
+	container.style.margin = '0px';
+	container.style.padding = '0px';
+	container.style.zIndex = 100000;
+	container.style.overflow = 'visible';
+	document.body.appendChild(container);
+	var frame = container.contentDocument;
+	frame.open();
+	frame.writeln("<!doctype html><html><body></body></html>");
+	frame.close();
+	frame.body.style.backgroundColor = 'rgba(128, 128, 128, 0.8)';
+	frame.body.style.textAlign = 'center';
+
 	// Button menu
-	// FIXME: Move this to the top window
-	var rect = getElementRectWithChildren(node);
 	var menu = document.createElement('div');
-	menu.className = 'nostyle';
+	menu.style.overflow = 'visible';
+	menu.style.margin = 'auto';
 	menu.style.padding = '10px';
-	menu.style.position = 'absolute';
 	menu.style.textAlign = 'center';
-	menu.style.minWidth = '200px';
-	menu.style.minHeight = '230px';
-	menu.style.width = rect.width + 'px';
-	menu.style.height = rect.height + 'px';
-	menu.style.left = rect.left + window.pageXOffset + 'px';
-	menu.style.top = rect.top + window.pageYOffset + 'px';
-	menu.style.zIndex = 100000;
+	menu.style.width = '60%';
 	menu.style.backgroundColor = '#f0f0f0';
 	menu.style.outline = '1px solid black';
 	menu.style.boxShadow = '10px 10px 5px grey';
-	document.body.appendChild(menu);
+	frame.body.appendChild(menu);
 
-	// Copy each image into a menu
-	var imgs = document.getElementsByTagName('img');
-	if (imgs) {
-		for (var i=0; i<imgs.length; ++i) {
-			var request = imgs[i].src;
+	// Header
+	var header = document.createElement('h3');
+	header.innerHTML = 'Select the elements that best identify the Ad.';
+	menu.appendChild(header);
 
-			var success_cb = function(response_binary, total_size) {
-				blobToDataURL(response_binary, function(data_url) {
-					console.info(request);
-					console.info(data_url);
-					var new_img = document.createElement('img');
-					new_img.src = data_url;
-					document.body.appendChild(new_img);
-				});
-			};
-			var fail_cb = function(status) {
-				cb(null, 0);
-			};
-			httpGetBinary(request, success_cb, fail_cb);
+	// Load each src into an image
+	for (var i=0; i<srcs.length; ++i) {
+		var request = srcs[i];
 
-//			break;
-		}
+		var success_cb = function(response_binary, total_size) {
+			blobToDataURL(response_binary, function(data_url) {
+//				console.info(request);
+//				console.info(data_url);
+				var new_img = document.createElement('img');
+				new_img.src = data_url;
+				menu.appendChild(new_img);
+				menu.appendChild(document.createElement('br'));
+			});
+		};
+		var fail_cb = function(status) {
+
+		};
+		httpGetBinary(request, success_cb, fail_cb);
 	}
 }
 
