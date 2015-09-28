@@ -77,19 +77,18 @@ func responseIsAd(w http.ResponseWriter, values map[string][]string) {
 	// Get the number of times this ad is counted as good and bad
 	var good_count uint64 = 0
 	var bad_count uint64 = 0
-	is_ad := false
-	if _, ok := all_ads.good[ad_id]; ok && all_ads.good[ad_id] > 0 {
-		good_count = all_ads.good[ad_id]
-	} else if _, ok := all_ads.fraudulent[ad_id]; ok && all_ads.fraudulent[ad_id] > 0 {
-		bad_count = all_ads.fraudulent[ad_id]
-	} else if _, ok := all_ads.taxing[ad_id]; ok && all_ads.taxing[ad_id] > 0 {
-		bad_count = all_ads.taxing[ad_id]
-	} else if _, ok := all_ads.malicious[ad_id]; ok && all_ads.malicious[ad_id] > 0 {
-		bad_count = all_ads.malicious[ad_id]
+	if count, ok := all_ads.good[ad_id]; ok && count > 0 {
+		good_count = count
+	} else if count, ok := all_ads.fraudulent[ad_id]; ok && count > 0 {
+		bad_count = count
+	} else if count, ok := all_ads.taxing[ad_id]; ok && count > 0 {
+		bad_count = count
+	} else if count, ok := all_ads.malicious[ad_id]; ok && count > 0 {
+		bad_count = count
 	}
 
 	// Figure out if this is an ad
-	is_ad = bad_count > good_count
+	is_ad := bad_count > good_count
 
 	fmt.Fprintf(w, "%t\n", is_ad)
 }
