@@ -2,6 +2,9 @@
 # This software is licensed under GPL v3 or later
 
 
+# Have this script stop on any error
+set -e
+
 # If there are no arguments, print the correct usage and exit
 if [ "$#" -ne 1 ]; then
 	echo "Build and run ethical_ad_block_server.exe" >&2
