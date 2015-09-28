@@ -44,15 +44,15 @@ func httpCB(w http.ResponseWriter, r *http.Request) {
 	// Set the server name
 	w.Header().Set("Server", "Ethical Ad Block Server 0.1")
 
+	//  Check if element is an ad
+	if hasKey(values, "is_ad") {
+		responseIsAd(w, values)
 	// Vote for ad
-	if hasKey(values, "vote_ad") && hasKey(values, "ad_type") && hasKey(values, "user_id") {
+	} else if hasKey(values, "vote_ad") && hasKey(values, "ad_type") && hasKey(values, "user_id") {
 		responseVoteForAd(w, values)
 	// List ads
 	} else if hasKey(values, "list") {
 		responseListAds(w, values)
-	//  Check if element is an ad
-	} else if hasKey(values, "is_ad") {
-		responseIsAd(w, values)
 	// Clear all data
 	} else if hasKey(values, "clear") {
 		responseClear(w, values)
