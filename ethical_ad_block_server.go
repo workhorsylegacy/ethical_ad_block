@@ -120,6 +120,7 @@ func responseVoteForAd(w http.ResponseWriter, values map[string][]string) {
 	}
 
 	// Figure out which type of vote it will be
+	// FIXME: Move this before the removal of the previous vote
 	var ad_map *map[string]uint64
 	var ad_map_user *map[string]uint64
 	switch ad_type {
