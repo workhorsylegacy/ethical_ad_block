@@ -11,6 +11,7 @@ import (
 	"os"
 	"strconv"
 	"time"
+	"runtime"
 )
 
 type AdData struct {
@@ -53,6 +54,9 @@ func httpCB(w http.ResponseWriter, r *http.Request) {
 	// List ads
 	} else if hasKey(values, "list") {
 		responseListAds(w, values)
+	// Show memory
+	} else if hasKey(values, "memory") {
+		responseShowMemory(w, values)
 	// Clear all data
 	} else if hasKey(values, "clear") {
 		responseClear(w, values)
@@ -175,6 +179,16 @@ func responseListAds(w http.ResponseWriter, values map[string][]string) {
 	for ad_id, votes := range g_all_ads.malicious {
 		fmt.Fprintf(w, "    %s : %d\n", ad_id, votes)
 	}
+}
+
+func responseShowMemory(w http.ResponseWriter, values map[string][]string) {
+	var mem runtime.MemStats
+	runtime.ReadMemStats(&mem)
+
+	fmt.Fprintf(w, "mem.Alloc: %d\n", mem.Alloc)
+	fmt.Fprintf(w, "mem.TotalAlloc: %d\n", mem.TotalAlloc)
+	fmt.Fprintf(w, "mem.HeapAlloc: %d\n", mem.HeapAlloc)
+	fmt.Fprintf(w, "mem.HeapSys: %d\n", mem.HeapSys)
 }
 
 func main() {
