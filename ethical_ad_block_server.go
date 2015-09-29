@@ -197,7 +197,7 @@ func responseShowMemory(w http.ResponseWriter, values map[string][]string) {
 func main() {
 	size := 3 // math.MaxInt32
 
-	store := helpers.NewFileBackedMap(size)
+	store := helpers.NewFileBackedMap("data", size)
 	store.Set("11111111111111111111111111111111", math.MaxUint64)
 	store.Set("22222222222222222222222222222222", 888)
 	store.Set("33333333333333333333333333333333", 999)

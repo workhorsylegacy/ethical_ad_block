@@ -13,7 +13,8 @@ type LRUCache struct {
 	max_length int
 	expiration_list *list.List
 	cache map[string]*list.Element
-	on_evict_cb func(key string, value uint64)
+	on_evict_cb func(external_self interface{}, key string, value uint64)
+	external_self interface{}
 }
 
 type CacheEntry struct {
@@ -87,8 +88,8 @@ func (self *LRUCache) evictElement(element *list.Element) {
 	delete(self.cache, entry.key)
 
 	// Fire the on evict callback
-	if self.on_evict_cb != nil {
-		self.on_evict_cb(entry.key, entry.value)
+	if self.on_evict_cb != nil && self.external_self != nil {
+		self.on_evict_cb(self.external_self, entry.key, entry.value)
 	}
 }
 
