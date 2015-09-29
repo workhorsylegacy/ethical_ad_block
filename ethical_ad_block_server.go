@@ -6,6 +6,7 @@ package main
 
 import (
 	"fmt"
+	"math"
 	"log"
 	"net/http"
 	"os"
@@ -194,18 +195,21 @@ func responseShowMemory(w http.ResponseWriter, values map[string][]string) {
 
 
 func main() {
-	// FIMXE: Add a new data type that uses this to store data in a file, and cache it in LRUCache
-	cache := helpers.NewLRUCache(1)
-	cache.Set("01234567890123456789012345678901", 776)
-	cache.Set("11111111111111111111111111111111", 888)
+	size := 3 // math.MaxInt32
 
-	value, ok := cache.Get("01234567890123456789012345678901")
-	fmt.Printf("cache.Get: %d, %d\n", value, ok)
+	store := helpers.NewFileBackedMap(size)
+	store.Set("11111111111111111111111111111111", math.MaxUint64)
+	store.Set("22222222222222222222222222222222", 888)
+	store.Set("33333333333333333333333333333333", 999)
+	store.Set("44444444444444444444444444444444", 1000)
 
-	value, ok = cache.Get("11111111111111111111111111111111")
-	fmt.Printf("cache.Get: %d, %d\n", value, ok)
+	value, ok := store.Get("22222222222222222222222222222222")
+	fmt.Printf("store.Get: %d, %v\n", value, ok)
 
-	fmt.Printf("cache.Len: %d\n", cache.Len())
+	value, ok = store.Get("11111111111111111111111111111111")
+	fmt.Printf("store.Get: %d, %v\n", value, ok)
+
+	fmt.Printf("store.Len: %d\n", store.Len())
 
 	// Initialize all the maps
 	g_user_ads = make(map[string]*AdData)
