@@ -12,6 +12,7 @@ import (
 	"strconv"
 	"time"
 	"runtime"
+	"ethical_ad_block/helpers"
 )
 
 type AdData struct {
@@ -191,7 +192,21 @@ func responseShowMemory(w http.ResponseWriter, values map[string][]string) {
 	fmt.Fprintf(w, "mem.HeapSys: %d\n", mem.HeapSys)
 }
 
+
 func main() {
+	// FIMXE: Add a new data type that uses this to store data in a file, and cache it in LRUCache
+	cache := helpers.NewLRUCache(1)
+	cache.Set("01234567890123456789012345678901", 776)
+	cache.Set("11111111111111111111111111111111", 888)
+
+	value, ok := cache.Get("01234567890123456789012345678901")
+	fmt.Printf("cache.Get: %d, %d\n", value, ok)
+
+	value, ok = cache.Get("11111111111111111111111111111111")
+	fmt.Printf("cache.Get: %d, %d\n", value, ok)
+
+	fmt.Printf("cache.Len: %d\n", cache.Len())
+
 	// Initialize all the maps
 	g_user_ads = make(map[string]*AdData)
 	g_all_ads = NewAdData()
