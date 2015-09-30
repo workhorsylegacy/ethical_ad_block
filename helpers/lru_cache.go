@@ -5,6 +5,7 @@
 package helpers
 
 import (
+	"math"
 	"container/list"
 )
 
@@ -75,16 +76,20 @@ func (self *LRUCache) Get(key string) (uint64, bool) {
 
 func (self *LRUCache) Increment(key string) uint64 {
 	value, _ := self.Get(key)
-	value++
-	self.Set(key, value)
+	if value < math.MaxUint64 {
+		value++
+		self.Set(key, value)
+	}
 
 	return value
 }
 
 func (self *LRUCache) Decrement(key string) uint64 {
 	value, _ := self.Get(key)
-	value--
-	self.Set(key, value)
+	if value > 0 {
+		value--
+		self.Set(key, value)
+	}
 
 	return value
 }
