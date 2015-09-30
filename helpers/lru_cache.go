@@ -35,6 +35,11 @@ func NewLRUCache(max_length int) *LRUCache {
 	return self
 }
 
+func (self *LRUCache) HasKey(key string) (bool) {
+	_, ok := self.cache[key]
+	return ok
+}
+
 func (self *LRUCache) Set(key string, value uint64) {
 	// If the key is already used, update the value
 	if element, ok := self.cache[key]; ok {
@@ -57,11 +62,6 @@ func (self *LRUCache) Set(key string, value uint64) {
 	self.cache[key] = element
 }
 
-func (self *LRUCache) HasKey(key string) (bool) {
-	_, ok := self.cache[key]
-	return ok
-}
-
 func (self *LRUCache) Get(key string) (uint64, bool) {
 	// If it has the key, return the value
 	if element, ok := self.cache[key]; ok {
@@ -71,6 +71,22 @@ func (self *LRUCache) Get(key string) (uint64, bool) {
 
 	// Otherwise return false
 	return 0, false
+}
+
+func (self *LRUCache) Increment(key string) uint64 {
+	value, _ := self.Get(key)
+	value++
+	self.Set(key, value)
+
+	return value
+}
+
+func (self *LRUCache) Decrement(key string) uint64 {
+	value, _ := self.Get(key)
+	value--
+	self.Set(key, value)
+
+	return value
 }
 
 func (self *LRUCache) Remove(key string) {

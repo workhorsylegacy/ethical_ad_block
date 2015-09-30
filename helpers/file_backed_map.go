@@ -6,7 +6,6 @@ package helpers
 
 import (
 	"os"
-	"fmt"
 	"path/filepath"
 	"path"
 	"io/ioutil"
@@ -75,8 +74,7 @@ func (self *FileBackedMap) LoadFromDisk() {
 		}
 
 		// Save the entry in the cache
-		fmt.Printf("path : %v\n", file_path)
-		key := path.Base(file_path)
+		key := filepath.Base(file_path)
 		value := binary.LittleEndian.Uint64(value_bytes)
 		self.Set(key, value)
 		remaining_length--
@@ -98,18 +96,17 @@ func (self *FileBackedMap) SaveToDisk() {
 		entry = node.Value.(*CacheEntry)
 		key = entry.Key
 		value = entry.Value
-		fmt.Printf("%v : %v\n", key, value)
 		saveEntryToFile(self, key, value)
 	}
-}
-
-func (self *FileBackedMap) Set(key string, value uint64) {
-	self.LRUCache.Set(key, value)
 }
 
 func (self *FileBackedMap) HasKey(key string) (bool) {
 	data_dir := path.Join(self.data_dir, key)
 	return self.LRUCache.HasKey(key) || IsFile(data_dir)
+}
+
+func (self *FileBackedMap) Set(key string, value uint64) {
+	self.LRUCache.Set(key, value)
 }
 
 func (self *FileBackedMap) Get(key string) (uint64, bool) {
@@ -134,6 +131,14 @@ func (self *FileBackedMap) Get(key string) (uint64, bool) {
 	return 0, false
 }
 
+func (self *FileBackedMap) Increment(key string) uint64 {
+	return self.LRUCache.Increment(key)
+}
+
+func (self *FileBackedMap) Decrement(key string) uint64 {
+	return self.LRUCache.Decrement(key)
+}
+
 func (self *FileBackedMap) Remove(key string) {
 	// Remove the key from the cache
 	self.LRUCache.Remove(key)
@@ -146,6 +151,11 @@ func (self *FileBackedMap) Remove(key string) {
 			panic(err)
 		}
 	}
+}
+
+// FIXME: We need a way to range over the FileBackedMap wihout exposing the cache map
+func (self *FileBackedMap) GetCache() map[string]*list.Element {
+	return self.LRUCache.cache
 }
 
 func (self *FileBackedMap) Len() int {
