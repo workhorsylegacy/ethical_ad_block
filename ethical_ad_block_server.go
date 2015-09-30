@@ -68,6 +68,9 @@ func httpCB(w http.ResponseWriter, r *http.Request) {
 	// Clear all data
 	} else if hasKey(values, "clear") {
 		responseClear(w, values)
+	// Write all data to disk
+	} else if hasKey(values, "save") {
+		responseSave(w, values)
 	// Unexpected request
 	} else {
 		http.Error(w, "Unexpected request", http.StatusBadRequest)
@@ -193,6 +196,20 @@ func responseShowMemory(w http.ResponseWriter, values map[string][]string) {
 	fmt.Fprintf(w, "mem.HeapSys: %d\n", mem.HeapSys)
 }
 
+func responseSave(w http.ResponseWriter, values map[string][]string) {
+	// Write the overall votes to disk
+	g_all_ads.good.SaveToDisk()
+	g_all_ads.fraudulent.SaveToDisk()
+	g_all_ads.taxing.SaveToDisk()
+	g_all_ads.malicious.SaveToDisk()
+
+	// Write the user votes to disk
+	for _, user_ads := range g_user_ads {
+		user_ads.SaveToDisk()
+	}
+
+	fmt.Fprintf(w, "All data saved\n")
+}
 
 func main() {
 	// Initialize all the maps
