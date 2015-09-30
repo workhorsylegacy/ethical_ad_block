@@ -85,6 +85,7 @@ func (self *FileBackedMap) LoadFromDisk() {
 	}
 }
 
+// FIXME: Update this to only overwrite if the value is different. This way the oldest stuff will have the oldest modify dates.
 func (self *FileBackedMap) SaveToDisk() {
 	list := self.LRUCache.expiration_list
 	var key string

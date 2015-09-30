@@ -8,6 +8,17 @@ import (
 	"os"
 )
 
+func Larger(numbers... uint64) uint64 {
+	var retval uint64
+	for _, n := range numbers {
+		if n > retval {
+			retval = n
+		}
+	}
+
+	return retval
+}
+
 func IsFile(file_name string) (bool) {
 	// Get the file info
 	finfo, err := os.Stat(file_name)
