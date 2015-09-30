@@ -36,7 +36,7 @@ func NewFileBackedMap(data_dir string, max_length int) *FileBackedMap {
 	self.LRUCache = NewLRUCache(max_length)
 	self.LRUCache.on_evict_cb = saveEntryToFile
 	self.LRUCache.external_self = self
-	self.data_dir = data_dir
+	self.data_dir = path.Join("data", data_dir)
 
 	// Create the data directory if it does not exist
 	if ! IsDir(self.data_dir) {

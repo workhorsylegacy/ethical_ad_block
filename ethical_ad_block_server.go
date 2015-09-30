@@ -15,6 +15,13 @@ import (
 	"ethical_ad_block/helpers"
 )
 
+const (
+	AD_GOOD = 0
+	AD_FRAUDULENT = 1
+	AD_TAXING = 2
+	AD_MALICIOUS = 3
+)
+
 type AdData struct {
 	good *helpers.FileBackedMap
 	fraudulent *helpers.FileBackedMap
@@ -24,14 +31,14 @@ type AdData struct {
 
 func NewAdData() *AdData {
 	self := new(AdData)
-	self.good = helpers.NewFileBackedMap("data_good", 1)
-	self.fraudulent = helpers.NewFileBackedMap("data_fraudulent", 1)
-	self.taxing = helpers.NewFileBackedMap("data_taxing", 1)
-	self.malicious = helpers.NewFileBackedMap("data_malicious", 1)
+	self.good = helpers.NewFileBackedMap("data_good", 1024)
+	self.fraudulent = helpers.NewFileBackedMap("data_fraudulent", 1024)
+	self.taxing = helpers.NewFileBackedMap("data_taxing", 1024)
+	self.malicious = helpers.NewFileBackedMap("data_malicious", 1024)
 	return self
 }
 
-var g_user_ads map[string]*AdData
+var g_user_ads map[string]*helpers.FileBackedMap
 var g_all_ads *AdData
 var g_user_ids map[string]time.Time
 
@@ -67,8 +74,9 @@ func httpCB(w http.ResponseWriter, r *http.Request) {
 	}
 }
 
+// FIXME: This does not remove the files from the FS
 func responseClear(w http.ResponseWriter, values map[string][]string) {
-	g_user_ads = make(map[string]*AdData)
+	g_user_ads = make(map[string]*helpers.FileBackedMap)
 	g_all_ads = NewAdData()
 	g_user_ids = make(map[string]time.Time)
 
@@ -105,56 +113,58 @@ func responseVoteForAd(w http.ResponseWriter, values map[string][]string) {
 	user_id := values["user_id"][0]
 
 	// Initialize space for this user's ads
-	if _, ok := g_user_ads[user_id]; ! ok {
-		g_user_ads[user_id] = NewAdData()
+	user_ads, ok := g_user_ads[user_id]
+	if ! ok {
+		user_ads = helpers.NewFileBackedMap("user_" + user_id, 1024)
+		g_user_ads[user_id] = user_ads
 	}
 
 	// Remove the previous vote, if there already is one for this ad
-	if _, ok := g_user_ads[user_id].good.Get(ad_id); ok {
-		g_user_ads[user_id].good.Remove(ad_id)
-		g_all_ads.good.Decrement(ad_id)
-	} else if _, ok := g_user_ads[user_id].fraudulent.Get(ad_id); ok {
-		g_user_ads[user_id].fraudulent.Remove(ad_id)
-		g_all_ads.fraudulent.Decrement(ad_id)
-	} else if _, ok := g_user_ads[user_id].taxing.Get(ad_id); ok {
-		g_user_ads[user_id].taxing.Remove(ad_id)
-		g_all_ads.taxing.Decrement(ad_id)
-	} else if _, ok := g_user_ads[user_id].malicious.Get(ad_id); ok {
-		g_user_ads[user_id].malicious.Remove(ad_id)
-		g_all_ads.malicious.Decrement(ad_id)
+	if vote_type, ok := user_ads.Get(ad_id); ok {
+		user_ads.Remove(ad_id)
+		switch vote_type {
+			case AD_GOOD:
+				g_all_ads.good.Decrement(ad_id)
+			case AD_FRAUDULENT:
+				g_all_ads.fraudulent.Decrement(ad_id)
+			case AD_TAXING:
+				g_all_ads.taxing.Decrement(ad_id)
+			case AD_MALICIOUS:
+				g_all_ads.malicious.Decrement(ad_id)
+		}
 	}
 
 	// Figure out which type of vote it will be
 	// FIXME: Move this before the removal of the previous vote
-	var ad_map *helpers.FileBackedMap
-	var ad_map_user *helpers.FileBackedMap
+	var all_ads *helpers.FileBackedMap
+	var user_vote_type uint64
 	switch ad_type {
 		case "good":
-			ad_map = g_all_ads.good
-			ad_map_user = g_user_ads[user_id].good
+			all_ads = g_all_ads.good
+			user_vote_type = AD_GOOD
 		case "fraudulent":
-			ad_map = g_all_ads.fraudulent
-			ad_map_user = g_user_ads[user_id].fraudulent
+			all_ads = g_all_ads.fraudulent
+			user_vote_type = AD_FRAUDULENT
 		case "taxing":
-			ad_map = g_all_ads.taxing
-			ad_map_user = g_user_ads[user_id].taxing
+			all_ads = g_all_ads.taxing
+			user_vote_type = AD_TAXING
 		case "malicious":
-			ad_map = g_all_ads.malicious
-			ad_map_user = g_user_ads[user_id].malicious
+			all_ads = g_all_ads.malicious
+			user_vote_type = AD_MALICIOUS
 		default:
 			http.Error(w, "Invalid ad_type", http.StatusBadRequest)
 			return
 	}
 
 	// Cast the vote
-	votes := ad_map.Increment(ad_id)
-	user_votes := ad_map_user.Increment(ad_id)
+	votes := all_ads.Increment(ad_id)
+	user_ads.Set(ad_id, user_vote_type)
 
 	// Save the time that the user voted
 	g_user_ids[user_id] = time.Now()
 
 	// Return the response
-	fmt.Fprintf(w, "ad_id:%s, ad_type:%s, votes:%d, user_votes:%d\n", ad_id, ad_type, votes, user_votes)
+	fmt.Fprintf(w, "ad_id:%s, ad_type:%s, votes:%d\n", ad_id, ad_type, votes)
 }
 
 func responseListAds(w http.ResponseWriter, values map[string][]string) {
@@ -193,7 +203,7 @@ func responseShowMemory(w http.ResponseWriter, values map[string][]string) {
 
 func main() {
 	// Initialize all the maps
-	g_user_ads = make(map[string]*AdData)
+	g_user_ads = make(map[string]*helpers.FileBackedMap)
 	g_all_ads = NewAdData()
 	g_user_ids = make(map[string]time.Time)
 
