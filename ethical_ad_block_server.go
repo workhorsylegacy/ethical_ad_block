@@ -106,6 +106,27 @@ func responseVoteForAd(w http.ResponseWriter, values map[string][]string) {
 	ad_type := values["ad_type"][0]
 	user_id := values["user_id"][0]
 
+	// Figure out which type of vote it will be
+	var all_ads *helpers.FileBackedMap
+	var user_vote_type uint64
+	switch ad_type {
+		case "good":
+			all_ads = g_all_ads.good
+			user_vote_type = AD_GOOD
+		case "fraudulent":
+			all_ads = g_all_ads.fraudulent
+			user_vote_type = AD_FRAUDULENT
+		case "taxing":
+			all_ads = g_all_ads.taxing
+			user_vote_type = AD_TAXING
+		case "malicious":
+			all_ads = g_all_ads.malicious
+			user_vote_type = AD_MALICIOUS
+		default:
+			http.Error(w, "Invalid ad_type", http.StatusBadRequest)
+			return
+	}
+
 	// Initialize space for this user's ads
 	user_ads, ok := g_user_ads[user_id]
 	if ! ok {
@@ -126,28 +147,6 @@ func responseVoteForAd(w http.ResponseWriter, values map[string][]string) {
 			case AD_MALICIOUS:
 				g_all_ads.malicious.Decrement(ad_id)
 		}
-	}
-
-	// Figure out which type of vote it will be
-	// FIXME: Move this before the removal of the previous vote
-	var all_ads *helpers.FileBackedMap
-	var user_vote_type uint64
-	switch ad_type {
-		case "good":
-			all_ads = g_all_ads.good
-			user_vote_type = AD_GOOD
-		case "fraudulent":
-			all_ads = g_all_ads.fraudulent
-			user_vote_type = AD_FRAUDULENT
-		case "taxing":
-			all_ads = g_all_ads.taxing
-			user_vote_type = AD_TAXING
-		case "malicious":
-			all_ads = g_all_ads.malicious
-			user_vote_type = AD_MALICIOUS
-		default:
-			http.Error(w, "Invalid ad_type", http.StatusBadRequest)
-			return
 	}
 
 	// Cast the vote
