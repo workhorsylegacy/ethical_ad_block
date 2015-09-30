@@ -6,7 +6,6 @@ package main
 
 import (
 	"fmt"
-//	"math"
 	"log"
 	"net/http"
 	"os"
@@ -193,23 +192,6 @@ func responseShowMemory(w http.ResponseWriter, values map[string][]string) {
 
 
 func main() {
-/*
-	size := 3 //math.MaxInt32
-	store := helpers.NewFileBackedMap("data", size)
-	store.Set("11111111111111111111111111111111", math.MaxUint64)
-	store.Set("22222222222222222222222222222222", 888)
-	store.Set("33333333333333333333333333333333", 999)
-	store.Set("44444444444444444444444444444444", 1000)
-
-	value, ok := store.Get("22222222222222222222222222222222")
-	fmt.Printf("store.Get: %d, %v\n", value, ok)
-
-	value, ok = store.Get("11111111111111111111111111111111")
-	fmt.Printf("store.Get: %d, %v\n", value, ok)
-
-	fmt.Printf("store.Len: %d\n", store.Len())
-	store.SaveToDisk()
-*/
 	// Initialize all the maps
 	g_user_ads = make(map[string]*AdData)
 	g_all_ads = NewAdData()
