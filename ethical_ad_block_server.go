@@ -11,27 +11,36 @@ import (
 	"os"
 	"strconv"
 	"time"
+	"runtime"
+	"ethical_ad_block/helpers"
+)
+
+const (
+	AD_GOOD = 0
+	AD_FRAUDULENT = 1
+	AD_TAXING = 2
+	AD_MALICIOUS = 3
 )
 
 type AdData struct {
-	good map[string]uint64
-	fraudulent map[string]uint64
-	taxing map[string]uint64
-	malicious map[string]uint64
+	good *helpers.FileBackedMap
+	fraudulent *helpers.FileBackedMap
+	taxing *helpers.FileBackedMap
+	malicious *helpers.FileBackedMap
 }
 
 func NewAdData() *AdData {
 	self := new(AdData)
-	self.good = make(map[string]uint64)
-	self.fraudulent = make(map[string]uint64)
-	self.taxing = make(map[string]uint64)
-	self.malicious = make(map[string]uint64)
+	self.good = helpers.NewFileBackedMap("data_good", 1024)
+	self.fraudulent = helpers.NewFileBackedMap("data_fraudulent", 1024)
+	self.taxing = helpers.NewFileBackedMap("data_taxing", 1024)
+	self.malicious = helpers.NewFileBackedMap("data_malicious", 1024)
 	return self
 }
 
-var user_ads map[string]*AdData
-var all_ads *AdData
-var user_ids map[string]time.Time
+var g_user_ads map[string]*helpers.FileBackedMap
+var g_all_ads *AdData
+var g_user_ids map[string]time.Time
 
 func hasKey(self map[string][]string, key string) bool {
 	value, ok := self[key]
@@ -44,18 +53,24 @@ func httpCB(w http.ResponseWriter, r *http.Request) {
 	// Set the server name
 	w.Header().Set("Server", "Ethical Ad Block Server 0.1")
 
+	//  Check if element is an ad
+	if hasKey(values, "is_ad") {
+		responseIsAd(w, values)
 	// Vote for ad
-	if hasKey(values, "vote_ad") && hasKey(values, "ad_type") && hasKey(values, "user_id") {
+	} else if hasKey(values, "vote_ad") && hasKey(values, "ad_type") && hasKey(values, "user_id") {
 		responseVoteForAd(w, values)
 	// List ads
 	} else if hasKey(values, "list") {
 		responseListAds(w, values)
-	//  Check if element is an ad
-	} else if hasKey(values, "is_ad") {
-		responseIsAd(w, values)
+	// Show memory
+	} else if hasKey(values, "memory") {
+		responseShowMemory(w, values)
 	// Clear all data
 	} else if hasKey(values, "clear") {
 		responseClear(w, values)
+	// Write all data to disk
+	} else if hasKey(values, "save") {
+		responseSave(w, values)
 	// Unexpected request
 	} else {
 		http.Error(w, "Unexpected request", http.StatusBadRequest)
@@ -63,9 +78,16 @@ func httpCB(w http.ResponseWriter, r *http.Request) {
 }
 
 func responseClear(w http.ResponseWriter, values map[string][]string) {
-	user_ads = make(map[string]*AdData)
-	all_ads = NewAdData()
-	user_ids = make(map[string]time.Time)
+	// Clear the overall votes
+	g_all_ads.good.RemoveAll()
+	g_all_ads.fraudulent.RemoveAll()
+	g_all_ads.taxing.RemoveAll()
+	g_all_ads.malicious.RemoveAll()
+
+	// Clear the user votes
+	for _, user_ads := range g_user_ads {
+		user_ads.RemoveAll()
+	}
 
 	fmt.Fprintf(w, "All data cleared\n")
 }
@@ -75,21 +97,14 @@ func responseIsAd(w http.ResponseWriter, values map[string][]string) {
 	ad_id := values["is_ad"][0]
 
 	// Get the number of times this ad is counted as good and bad
-	var good_count uint64 = 0
-	var bad_count uint64 = 0
-	is_ad := false
-	if _, ok := all_ads.good[ad_id]; ok && all_ads.good[ad_id] > 0 {
-		good_count = all_ads.good[ad_id]
-	} else if _, ok := all_ads.fraudulent[ad_id]; ok && all_ads.fraudulent[ad_id] > 0 {
-		bad_count = all_ads.fraudulent[ad_id]
-	} else if _, ok := all_ads.taxing[ad_id]; ok && all_ads.taxing[ad_id] > 0 {
-		bad_count = all_ads.taxing[ad_id]
-	} else if _, ok := all_ads.malicious[ad_id]; ok && all_ads.malicious[ad_id] > 0 {
-		bad_count = all_ads.malicious[ad_id]
-	}
+	good_count, _ := g_all_ads.good.Get(ad_id)
+	fraudulent_count, _ := g_all_ads.fraudulent.Get(ad_id)
+	taxing_count, _ := g_all_ads.taxing.Get(ad_id)
+	malicious_count, _ := g_all_ads.malicious.Get(ad_id)
+	bad_count := helpers.Larger(fraudulent_count, taxing_count, malicious_count)
 
 	// Figure out if this is an ad
-	is_ad = bad_count > good_count
+	is_ad := bad_count > good_count
 
 	fmt.Fprintf(w, "%t\n", is_ad)
 }
@@ -100,88 +115,113 @@ func responseVoteForAd(w http.ResponseWriter, values map[string][]string) {
 	ad_type := values["ad_type"][0]
 	user_id := values["user_id"][0]
 
-	// Initialize space for this user's ads
-	if _, ok := user_ads[user_id]; ! ok {
-		user_ads[user_id] = NewAdData()
-	}
-
-	// Remove the previous vote, if there already is one for this ad
-	if _, ok := user_ads[user_id].good[ad_id]; ok {
-		delete(user_ads[user_id].good, ad_id)
-		all_ads.good[ad_id] -= 1
-	} else if _, ok := user_ads[user_id].fraudulent[ad_id]; ok {
-		delete(user_ads[user_id].fraudulent, ad_id)
-		all_ads.fraudulent[ad_id] -= 1
-	} else if _, ok := user_ads[user_id].taxing[ad_id]; ok {
-		delete(user_ads[user_id].taxing, ad_id)
-		all_ads.taxing[ad_id] -= 1
-	} else if _, ok := user_ads[user_id].malicious[ad_id]; ok {
-		delete(user_ads[user_id].malicious, ad_id)
-		all_ads.malicious[ad_id] -= 1
-	}
-
 	// Figure out which type of vote it will be
-	var ad_map *map[string]uint64
-	var ad_map_user *map[string]uint64
+	var all_ads *helpers.FileBackedMap
+	var user_vote_type uint64
 	switch ad_type {
 		case "good":
-			ad_map = &all_ads.good
-			ad_map_user = &(user_ads[user_id].good)
+			all_ads = g_all_ads.good
+			user_vote_type = AD_GOOD
 		case "fraudulent":
-			ad_map = &all_ads.fraudulent
-			ad_map_user = &(user_ads[user_id].fraudulent)
+			all_ads = g_all_ads.fraudulent
+			user_vote_type = AD_FRAUDULENT
 		case "taxing":
-			ad_map = &all_ads.taxing
-			ad_map_user = &(user_ads[user_id].taxing)
+			all_ads = g_all_ads.taxing
+			user_vote_type = AD_TAXING
 		case "malicious":
-			ad_map = &all_ads.malicious
-			ad_map_user = &(user_ads[user_id].malicious)
+			all_ads = g_all_ads.malicious
+			user_vote_type = AD_MALICIOUS
 		default:
 			http.Error(w, "Invalid ad_type", http.StatusBadRequest)
 			return
 	}
 
+	// Initialize space for this user's ads
+	user_ads, ok := g_user_ads[user_id]
+	if ! ok {
+		user_ads = helpers.NewFileBackedMap("user_" + user_id, 1024)
+		g_user_ads[user_id] = user_ads
+	}
+
+	// Remove the previous vote, if there already is one for this ad
+	if vote_type, ok := user_ads.Get(ad_id); ok {
+		user_ads.Remove(ad_id)
+		switch vote_type {
+			case AD_GOOD:
+				g_all_ads.good.Decrement(ad_id)
+			case AD_FRAUDULENT:
+				g_all_ads.fraudulent.Decrement(ad_id)
+			case AD_TAXING:
+				g_all_ads.taxing.Decrement(ad_id)
+			case AD_MALICIOUS:
+				g_all_ads.malicious.Decrement(ad_id)
+		}
+	}
+
 	// Cast the vote
-	(*ad_map)[ad_id] += 1
-	(*ad_map_user)[ad_id] += 1
-	votes := (*ad_map)[ad_id]
-	user_votes := (*ad_map_user)[ad_id]
+	votes := all_ads.Increment(ad_id)
+	user_ads.Set(ad_id, user_vote_type)
 
 	// Save the time that the user voted
-	user_ids[user_id] = time.Now()
+	g_user_ids[user_id] = time.Now()
 
 	// Return the response
-	fmt.Fprintf(w, "ad_id:%s, ad_type:%s, votes:%d, user_votes:%d\n", ad_id, ad_type, votes, user_votes)
+	fmt.Fprintf(w, "ad_id:%s, ad_type:%s, votes:%d\n", ad_id, ad_type, votes)
 }
 
 func responseListAds(w http.ResponseWriter, values map[string][]string) {
 	// Print the values of all the ad maps
 	fmt.Fprintf(w, "good:\n")
-	for ad_id, votes := range all_ads.good {
-		fmt.Fprintf(w, "    %s : %d\n", ad_id, votes)
+	for ad_id, votes := range g_all_ads.good.GetCache() {
+		fmt.Fprintf(w, "    %s : %d\n", ad_id, votes.Value.(*helpers.CacheEntry).Value)
 	}
 
 	fmt.Fprintf(w, "fraudulent:\n")
-	for ad_id, votes := range all_ads.fraudulent {
-		fmt.Fprintf(w, "    %s : %d\n", ad_id, votes)
+	for ad_id, votes := range g_all_ads.fraudulent.GetCache() {
+		fmt.Fprintf(w, "    %s : %d\n", ad_id, votes.Value.(*helpers.CacheEntry).Value)
 	}
 
 	fmt.Fprintf(w, "taxing:\n")
-	for ad_id, votes := range all_ads.taxing {
-		fmt.Fprintf(w, "    %s : %d\n", ad_id, votes)
+	for ad_id, votes := range g_all_ads.taxing.GetCache() {
+		fmt.Fprintf(w, "    %s : %d\n", ad_id, votes.Value.(*helpers.CacheEntry).Value)
 	}
 
 	fmt.Fprintf(w, "malicious:\n")
-	for ad_id, votes := range all_ads.malicious {
-		fmt.Fprintf(w, "    %s : %d\n", ad_id, votes)
+	for ad_id, votes := range g_all_ads.malicious.GetCache() {
+		fmt.Fprintf(w, "    %s : %d\n", ad_id, votes.Value.(*helpers.CacheEntry).Value)
 	}
+}
+
+func responseShowMemory(w http.ResponseWriter, values map[string][]string) {
+	var mem runtime.MemStats
+	runtime.ReadMemStats(&mem)
+
+	fmt.Fprintf(w, "mem.Alloc: %d\n", mem.Alloc)
+	fmt.Fprintf(w, "mem.TotalAlloc: %d\n", mem.TotalAlloc)
+	fmt.Fprintf(w, "mem.HeapAlloc: %d\n", mem.HeapAlloc)
+	fmt.Fprintf(w, "mem.HeapSys: %d\n", mem.HeapSys)
+}
+
+func responseSave(w http.ResponseWriter, values map[string][]string) {
+	// Write the overall votes to disk
+	g_all_ads.good.SaveToDisk()
+	g_all_ads.fraudulent.SaveToDisk()
+	g_all_ads.taxing.SaveToDisk()
+	g_all_ads.malicious.SaveToDisk()
+
+	// Write the user votes to disk
+	for _, user_ads := range g_user_ads {
+		user_ads.SaveToDisk()
+	}
+
+	fmt.Fprintf(w, "All data saved\n")
 }
 
 func main() {
 	// Initialize all the maps
-	user_ads = make(map[string]*AdData)
-	all_ads = NewAdData()
-	user_ids = make(map[string]time.Time)
+	g_user_ads = make(map[string]*helpers.FileBackedMap)
+	g_all_ads = NewAdData()
+	g_user_ids = make(map[string]time.Time)
 
 	// Get the port number
 	var err error
