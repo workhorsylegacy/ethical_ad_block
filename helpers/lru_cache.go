@@ -18,8 +18,8 @@ type LRUCache struct {
 }
 
 type CacheEntry struct {
-	key string
-	value uint64
+	Key string
+	Value uint64
 }
 
 func NewLRUCache(max_length int) *LRUCache {
@@ -39,7 +39,7 @@ func (self *LRUCache) Set(key string, value uint64) {
 	// If the key is already used, update the value
 	if element, ok := self.cache[key]; ok {
 		self.expiration_list.MoveToFront(element)
-		element.Value.(*CacheEntry).value = value
+		element.Value.(*CacheEntry).Value = value
 		return
 	}
 
@@ -66,7 +66,7 @@ func (self *LRUCache) Get(key string) (uint64, bool) {
 	// If it has the key, return the value
 	if element, ok := self.cache[key]; ok {
 		self.expiration_list.MoveToFront(element)
-		return element.Value.(*CacheEntry).value, true
+		return element.Value.(*CacheEntry).Value, true
 	}
 
 	// Otherwise return false
@@ -85,11 +85,11 @@ func (self *LRUCache) evictElement(element *list.Element) {
 
 	// Remove the item from the cache
 	entry := element.Value.(*CacheEntry)
-	delete(self.cache, entry.key)
+	delete(self.cache, entry.Key)
 
 	// Fire the on evict callback
 	if self.on_evict_cb != nil && self.external_self != nil {
-		self.on_evict_cb(self.external_self, entry.key, entry.value)
+		self.on_evict_cb(self.external_self, entry.Key, entry.Value)
 	}
 }
 

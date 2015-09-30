@@ -6,9 +6,12 @@ package helpers
 
 import (
 	"os"
+	"fmt"
+	"path/filepath"
 	"path"
 	"io/ioutil"
 	"encoding/binary"
+	"container/list"
 )
 
 // FIXME: Move this to a goroutine, so we don't have to wait for the FS to block
@@ -41,7 +44,63 @@ func NewFileBackedMap(data_dir string, max_length int) *FileBackedMap {
 		os.Mkdir(self.data_dir, 0644)
 	}
 
+	// Load the recent most entries
+	self.LoadFromDisk()
+
 	return self
+}
+
+func (self *FileBackedMap) LoadFromDisk() {
+	// Reset the cache
+	self.LRUCache.expiration_list = list.New()
+	self.LRUCache.cache = make(map[string]*list.Element)
+	remaining_length := self.LRUCache.max_length
+
+	// Walk the FS and look at each file
+	err := filepath.Walk(self.data_dir, func(file_path string, finfo os.FileInfo, err error) error {
+		// Stop adding entries if we are out of space
+		if remaining_length <= 0 {
+			return nil
+		}
+
+		// Skip if not a valid file
+		if err != nil || finfo.IsDir() || len(finfo.Name()) == 0 {
+			return nil
+		}
+
+		// Read the file into bytes, skip on failure
+		value_bytes, err := ioutil.ReadFile(file_path)
+		if err != nil {
+			return nil
+		}
+
+		// Save the entry in the cache
+		fmt.Printf("path : %v\n", file_path)
+		key := path.Base(file_path)
+		value := binary.LittleEndian.Uint64(value_bytes)
+		self.Set(key, value)
+		remaining_length--
+		return nil
+	})
+	if err != nil {
+		panic(err)
+	}
+}
+
+func (self *FileBackedMap) SaveToDisk() {
+	list := self.LRUCache.expiration_list
+	var key string
+	var value uint64
+	var entry *CacheEntry
+
+	// Dump the cache to FS
+	for node := list.Back(); node != nil; node = node.Prev() {
+		entry = node.Value.(*CacheEntry)
+		key = entry.Key
+		value = entry.Value
+		fmt.Printf("%v : %v\n", key, value)
+		saveEntryToFile(self, key, value)
+	}
 }
 
 func (self *FileBackedMap) Set(key string, value uint64) {
@@ -62,9 +121,9 @@ func (self *FileBackedMap) Get(key string) (uint64, bool) {
 	// If the key is in the FS, read the value from the FS
 	data_dir := path.Join(self.data_dir, key)
 	if IsFile(data_dir) {
-		value_bytes, error := ioutil.ReadFile(data_dir)
-		if error != nil {
-			panic(error)
+		value_bytes, err := ioutil.ReadFile(data_dir)
+		if err != nil {
+			panic(err)
 		} else {
 			value := binary.LittleEndian.Uint64(value_bytes)
 			self.Set(key, value)
@@ -82,9 +141,9 @@ func (self *FileBackedMap) Remove(key string) {
 	// Remove the key from the FS
 	data_dir := path.Join(self.data_dir, key)
 	if IsFile(data_dir) {
-		error := os.Remove(data_dir)
-		if error != nil {
-			panic(error)
+		err := os.Remove(data_dir)
+		if err != nil {
+			panic(err)
 		}
 	}
 }

@@ -195,8 +195,7 @@ func responseShowMemory(w http.ResponseWriter, values map[string][]string) {
 
 
 func main() {
-	size := 3 // math.MaxInt32
-
+	size := 3 //math.MaxInt32
 	store := helpers.NewFileBackedMap("data", size)
 	store.Set("11111111111111111111111111111111", math.MaxUint64)
 	store.Set("22222222222222222222222222222222", 888)
@@ -210,6 +209,7 @@ func main() {
 	fmt.Printf("store.Get: %d, %v\n", value, ok)
 
 	fmt.Printf("store.Len: %d\n", store.Len())
+	store.SaveToDisk()
 
 	// Initialize all the maps
 	g_user_ads = make(map[string]*AdData)
