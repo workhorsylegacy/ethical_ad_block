@@ -114,6 +114,12 @@ func (self *LRUCache) evictElement(element *list.Element) {
 	}
 }
 
+func (self *LRUCache) Each(cb func(key string, value uint64)) {
+	for k, v := range self.cache {
+		cb(k, v.Value.(*CacheEntry).Value)
+	}
+}
+
 func (self *LRUCache) Len() int {
 	return self.expiration_list.Len()
 }

@@ -172,24 +172,24 @@ func responseVoteForAd(w http.ResponseWriter, values map[string][]string) {
 func responseListAds(w http.ResponseWriter, values map[string][]string) {
 	// Print the values of all the ad maps
 	fmt.Fprintf(w, "good:\n")
-	for ad_id, votes := range g_all_ads.good.GetCache() {
-		fmt.Fprintf(w, "    %s : %d\n", ad_id, votes.Value.(*helpers.CacheEntry).Value)
-	}
+	g_all_ads.good.Each(func(ad_id string, votes uint64) {
+		fmt.Fprintf(w, "    %s : %d\n", ad_id, votes)
+	})
 
 	fmt.Fprintf(w, "fraudulent:\n")
-	for ad_id, votes := range g_all_ads.fraudulent.GetCache() {
-		fmt.Fprintf(w, "    %s : %d\n", ad_id, votes.Value.(*helpers.CacheEntry).Value)
-	}
+	g_all_ads.fraudulent.Each(func(ad_id string, votes uint64) {
+		fmt.Fprintf(w, "    %s : %d\n", ad_id, votes)
+	})
 
 	fmt.Fprintf(w, "taxing:\n")
-	for ad_id, votes := range g_all_ads.taxing.GetCache() {
-		fmt.Fprintf(w, "    %s : %d\n", ad_id, votes.Value.(*helpers.CacheEntry).Value)
-	}
+	g_all_ads.taxing.Each(func(ad_id string, votes uint64) {
+		fmt.Fprintf(w, "    %s : %d\n", ad_id, votes)
+	})
 
 	fmt.Fprintf(w, "malicious:\n")
-	for ad_id, votes := range g_all_ads.malicious.GetCache() {
-		fmt.Fprintf(w, "    %s : %d\n", ad_id, votes.Value.(*helpers.CacheEntry).Value)
-	}
+	g_all_ads.malicious.Each(func(ad_id string, votes uint64) {
+		fmt.Fprintf(w, "    %s : %d\n", ad_id, votes)
+	})
 }
 
 func responseShowMemory(w http.ResponseWriter, values map[string][]string) {
