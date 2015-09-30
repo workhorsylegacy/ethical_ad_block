@@ -95,6 +95,11 @@ func (self *LRUCache) Remove(key string) {
 	}
 }
 
+func (self *LRUCache) RemoveAll() {
+	self.expiration_list.Init()
+	self.cache = make(map[string]*list.Element)
+}
+
 func (self *LRUCache) evictElement(element *list.Element) {
 	// Remove the element from the expiration list
 	self.expiration_list.Remove(element)

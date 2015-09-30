@@ -51,7 +51,7 @@ func NewFileBackedMap(data_dir string, max_length int) *FileBackedMap {
 
 func (self *FileBackedMap) LoadFromDisk() {
 	// Reset the cache
-	self.LRUCache.expiration_list = list.New()
+	self.LRUCache.expiration_list.Init()
 	self.LRUCache.cache = make(map[string]*list.Element)
 	remaining_length := self.LRUCache.max_length
 
@@ -152,6 +152,17 @@ func (self *FileBackedMap) Remove(key string) {
 			panic(err)
 		}
 	}
+}
+
+func (self *FileBackedMap) RemoveAll() {
+	// Delete and recreate the data dir
+	if IsDir(self.data_dir) {
+		os.RemoveAll(self.data_dir)
+	}
+	os.Mkdir(self.data_dir, 0644)
+
+	// Remove all the data in memory
+	self.LRUCache.RemoveAll()
 }
 
 // FIXME: We need a way to range over the FileBackedMap wihout exposing the cache map

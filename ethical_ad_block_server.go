@@ -77,11 +77,17 @@ func httpCB(w http.ResponseWriter, r *http.Request) {
 	}
 }
 
-// FIXME: This does not remove the files from the FS
 func responseClear(w http.ResponseWriter, values map[string][]string) {
-	g_user_ads = make(map[string]*helpers.FileBackedMap)
-	g_all_ads = NewAdData()
-	g_user_ids = make(map[string]time.Time)
+	// Clear the overall votes
+	g_all_ads.good.RemoveAll()
+	g_all_ads.fraudulent.RemoveAll()
+	g_all_ads.taxing.RemoveAll()
+	g_all_ads.malicious.RemoveAll()
+
+	// Clear the user votes
+	for _, user_ads := range g_user_ads {
+		user_ads.RemoveAll()
+	}
 
 	fmt.Fprintf(w, "All data cleared\n")
 }
