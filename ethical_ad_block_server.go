@@ -27,6 +27,7 @@ type AdData struct {
 	fraudulent *helpers.FileBackedMap
 	taxing *helpers.FileBackedMap
 	malicious *helpers.FileBackedMap
+	is_bad *helpers.FileBackedMap
 }
 
 func NewAdData() *AdData {
@@ -35,6 +36,7 @@ func NewAdData() *AdData {
 	self.fraudulent = helpers.NewFileBackedMap("data_fraudulent", 1024)
 	self.taxing = helpers.NewFileBackedMap("data_taxing", 1024)
 	self.malicious = helpers.NewFileBackedMap("data_malicious", 1024)
+	self.is_bad = helpers.NewFileBackedMap("data_is_bad", 1048576)
 	return self
 }
 
@@ -60,9 +62,9 @@ func httpCB(w http.ResponseWriter, r *http.Request) {
 	header.Set("Last-Modified", epoch)
 	header.Set("If-Modified-Since", epoch)
 
-	//  Check if element is an ad
-	if hasKey(values, "is_ad") {
-		responseIsAd(w, values)
+	//  Check if element is bad
+	if hasKey(values, "is_bad") {
+		responseIsBad(w, values)
 	// Vote for ad
 	} else if hasKey(values, "vote_ad") && hasKey(values, "ad_type") && hasKey(values, "user_id") {
 		responseVoteForAd(w, values)
@@ -90,6 +92,7 @@ func responseClear(w http.ResponseWriter, values map[string][]string) {
 	g_all_ads.fraudulent.RemoveAll()
 	g_all_ads.taxing.RemoveAll()
 	g_all_ads.malicious.RemoveAll()
+	g_all_ads.is_bad.RemoveAll()
 
 	// Clear the user votes
 	for _, user_ads := range g_user_ads {
@@ -99,21 +102,14 @@ func responseClear(w http.ResponseWriter, values map[string][]string) {
 	fmt.Fprintf(w, "All data cleared\n")
 }
 
-func responseIsAd(w http.ResponseWriter, values map[string][]string) {
+func responseIsBad(w http.ResponseWriter, values map[string][]string) {
 	// Get the arguments
-	ad_id := values["is_ad"][0]
+	ad_id := values["is_bad"][0]
 
-	// Get the number of times this ad is counted as good and bad
-	good_count, _ := g_all_ads.good.Get(ad_id)
-	fraudulent_count, _ := g_all_ads.fraudulent.Get(ad_id)
-	taxing_count, _ := g_all_ads.taxing.Get(ad_id)
-	malicious_count, _ := g_all_ads.malicious.Get(ad_id)
-	bad_count := helpers.Larger(fraudulent_count, taxing_count, malicious_count)
+	// Figure out if this is bad
+	is_bad, _ := g_all_ads.is_bad.Get(ad_id)
 
-	// Figure out if this is an ad
-	is_ad := bad_count > good_count
-
-	fmt.Fprintf(w, "%t\n", is_ad)
+	fmt.Fprintf(w, "%t\n", helpers.Uint64ToBool(is_bad))
 }
 
 func responseVoteForAd(w http.ResponseWriter, values map[string][]string) {
@@ -165,9 +161,12 @@ func responseVoteForAd(w http.ResponseWriter, values map[string][]string) {
 		}
 	}
 
-	// Cast the vote
+	// Cast the new vote
 	votes := all_ads.Increment(ad_id)
 	user_ads.Set(ad_id, user_vote_type)
+
+	// Update if this ad is considered bad or not
+	updateIsBad(ad_id)
 
 	// Save the time that the user voted
 	g_user_ids[user_id] = time.Now()
@@ -197,6 +196,11 @@ func responseListAds(w http.ResponseWriter, values map[string][]string) {
 	g_all_ads.malicious.Each(func(ad_id string, votes uint64) {
 		fmt.Fprintf(w, "    %s : %d\n", ad_id, votes)
 	})
+
+	fmt.Fprintf(w, "is_bad:\n")
+	g_all_ads.is_bad.Each(func(ad_id string, votes uint64) {
+		fmt.Fprintf(w, "    %s : %d\n", ad_id, votes)
+	})
 }
 
 func responseShowMemory(w http.ResponseWriter, values map[string][]string) {
@@ -215,6 +219,7 @@ func responseSave(w http.ResponseWriter, values map[string][]string) {
 	g_all_ads.fraudulent.SaveToDisk()
 	g_all_ads.taxing.SaveToDisk()
 	g_all_ads.malicious.SaveToDisk()
+	g_all_ads.is_bad.SaveToDisk()
 
 	// Write the user votes to disk
 	for _, user_ads := range g_user_ads {
@@ -222,6 +227,20 @@ func responseSave(w http.ResponseWriter, values map[string][]string) {
 	}
 
 	fmt.Fprintf(w, "All data saved\n")
+}
+
+func updateIsBad(ad_id string) {
+	// Get the number of times this ad is counted as good and bad
+	good_count, _ := g_all_ads.good.Get(ad_id)
+	fraudulent_count, _ := g_all_ads.fraudulent.Get(ad_id)
+	taxing_count, _ := g_all_ads.taxing.Get(ad_id)
+	malicious_count, _ := g_all_ads.malicious.Get(ad_id)
+	bad_count := helpers.Larger(fraudulent_count, taxing_count, malicious_count)
+
+	// Figure out if this is bad
+	is_bad := helpers.BoolToUint64(bad_count > good_count)
+
+	g_all_ads.is_bad.Set(ad_id, is_bad)
 }
 
 func main() {

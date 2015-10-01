@@ -576,7 +576,7 @@ function isElementAd(hash, cb) {
 	}
 
 	// Check the web server to see if this hash is for an ad
-	var request = 'http://localhost:9000?is_ad=' + hash;
+	var request = 'http://localhost:9000?is_bad=' + hash;
 	var success_cb = function(response_text) {
 		var is_ad = (response_text.toLowerCase() === 'true\n');
 		cb(is_ad);
