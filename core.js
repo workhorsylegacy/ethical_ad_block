@@ -576,9 +576,18 @@ function isElementAd(hash, cb) {
 	}
 
 	// Check the web server to see if this hash is for an ad
-	var request = 'http://localhost:9000?is_bad=' + hash;
+	/*
+	Ad types:
+	AD_UNKNOWN = 0
+	AD_GOOD = 1
+	AD_FRAUDULENT = 2
+	AD_TAXING = 3
+	AD_MALICIOUS = 4
+	*/
+	var request = 'http://localhost:9000?voted_ad_type=' + hash;
 	var success_cb = function(response_text) {
-		var is_ad = (response_text.toLowerCase() === 'true\n');
+		var ad_type = parseInt(response_text);
+		var is_ad = (ad_type >= 2 && ad_type <= 4);
 		cb(is_ad);
 	};
 	var fail_cb = function(status) {

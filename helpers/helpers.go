@@ -8,22 +8,6 @@ import (
 	"os"
 )
 
-func BoolToUint64(value bool) uint64 {
-	if value {
-		return 1
-	} else {
-		return 0
-	}
-}
-
-func Uint64ToBool(value uint64) bool {
-	if value == 0 {
-		return false
-	} else {
-		return true
-	}
-}
-
 func Larger(numbers... uint64) uint64 {
 	var retval uint64
 	for _, n := range numbers {

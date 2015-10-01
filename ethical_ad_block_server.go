@@ -16,27 +16,28 @@ import (
 )
 
 const (
-	AD_GOOD = 0
-	AD_FRAUDULENT = 1
-	AD_TAXING = 2
-	AD_MALICIOUS = 3
+	AD_UNKNOWN = 0
+	AD_GOOD = 1
+	AD_FRAUDULENT = 2
+	AD_TAXING = 3
+	AD_MALICIOUS = 4
 )
 
 type AdData struct {
-	good *helpers.FileBackedMap
-	fraudulent *helpers.FileBackedMap
-	taxing *helpers.FileBackedMap
-	malicious *helpers.FileBackedMap
-	is_bad *helpers.FileBackedMap
+	votes_good *helpers.FileBackedMap
+	votes_fraudulent *helpers.FileBackedMap
+	votes_taxing *helpers.FileBackedMap
+	votes_malicious *helpers.FileBackedMap
+	voted_ad_type *helpers.FileBackedMap
 }
 
 func NewAdData() *AdData {
 	self := new(AdData)
-	self.good = helpers.NewFileBackedMap("data_good", 1024)
-	self.fraudulent = helpers.NewFileBackedMap("data_fraudulent", 1024)
-	self.taxing = helpers.NewFileBackedMap("data_taxing", 1024)
-	self.malicious = helpers.NewFileBackedMap("data_malicious", 1024)
-	self.is_bad = helpers.NewFileBackedMap("data_is_bad", 1048576)
+	self.votes_good = helpers.NewFileBackedMap("votes_good", 1024)
+	self.votes_fraudulent = helpers.NewFileBackedMap("votes_fraudulent", 1024)
+	self.votes_taxing = helpers.NewFileBackedMap("votes_taxing", 1024)
+	self.votes_malicious = helpers.NewFileBackedMap("votes_malicious", 1024)
+	self.voted_ad_type = helpers.NewFileBackedMap("voted_ad_type", 1048576)
 	return self
 }
 
@@ -62,9 +63,9 @@ func httpCB(w http.ResponseWriter, r *http.Request) {
 	header.Set("Last-Modified", epoch)
 	header.Set("If-Modified-Since", epoch)
 
-	//  Check if element is bad
-	if hasKey(values, "is_bad") {
-		responseIsBad(w, values)
+	//  Check which type the ad is
+	if hasKey(values, "voted_ad_type") {
+		responseVotedAdType(w, values)
 	// Vote for ad
 	} else if hasKey(values, "vote_ad") && hasKey(values, "ad_type") && hasKey(values, "user_id") {
 		responseVoteForAd(w, values)
@@ -88,11 +89,11 @@ func httpCB(w http.ResponseWriter, r *http.Request) {
 
 func responseClear(w http.ResponseWriter, values map[string][]string) {
 	// Clear the overall votes
-	g_all_ads.good.RemoveAll()
-	g_all_ads.fraudulent.RemoveAll()
-	g_all_ads.taxing.RemoveAll()
-	g_all_ads.malicious.RemoveAll()
-	g_all_ads.is_bad.RemoveAll()
+	g_all_ads.votes_good.RemoveAll()
+	g_all_ads.votes_fraudulent.RemoveAll()
+	g_all_ads.votes_taxing.RemoveAll()
+	g_all_ads.votes_malicious.RemoveAll()
+	g_all_ads.voted_ad_type.RemoveAll()
 
 	// Clear the user votes
 	for _, user_ads := range g_user_ads {
@@ -102,14 +103,14 @@ func responseClear(w http.ResponseWriter, values map[string][]string) {
 	fmt.Fprintf(w, "All data cleared\n")
 }
 
-func responseIsBad(w http.ResponseWriter, values map[string][]string) {
+func responseVotedAdType(w http.ResponseWriter, values map[string][]string) {
 	// Get the arguments
-	ad_id := values["is_bad"][0]
+	ad_id := values["voted_ad_type"][0]
 
-	// Figure out if this is bad
-	is_bad, _ := g_all_ads.is_bad.Get(ad_id)
+	// Get the voted ad type
+	voted_ad_type, _ := g_all_ads.voted_ad_type.Get(ad_id)
 
-	fmt.Fprintf(w, "%t\n", helpers.Uint64ToBool(is_bad))
+	fmt.Fprintf(w, "%d\n", voted_ad_type)
 }
 
 func responseVoteForAd(w http.ResponseWriter, values map[string][]string) {
@@ -120,19 +121,19 @@ func responseVoteForAd(w http.ResponseWriter, values map[string][]string) {
 
 	// Figure out which type of vote it will be
 	var all_ads *helpers.FileBackedMap
-	var user_vote_type uint64
+	var user_vote_type uint64 = AD_UNKNOWN
 	switch ad_type {
 		case "good":
-			all_ads = g_all_ads.good
+			all_ads = g_all_ads.votes_good
 			user_vote_type = AD_GOOD
 		case "fraudulent":
-			all_ads = g_all_ads.fraudulent
+			all_ads = g_all_ads.votes_fraudulent
 			user_vote_type = AD_FRAUDULENT
 		case "taxing":
-			all_ads = g_all_ads.taxing
+			all_ads = g_all_ads.votes_taxing
 			user_vote_type = AD_TAXING
 		case "malicious":
-			all_ads = g_all_ads.malicious
+			all_ads = g_all_ads.votes_malicious
 			user_vote_type = AD_MALICIOUS
 		default:
 			http.Error(w, "Invalid ad_type", http.StatusBadRequest)
@@ -151,13 +152,13 @@ func responseVoteForAd(w http.ResponseWriter, values map[string][]string) {
 		user_ads.Remove(ad_id)
 		switch vote_type {
 			case AD_GOOD:
-				g_all_ads.good.Decrement(ad_id)
+				g_all_ads.votes_good.Decrement(ad_id)
 			case AD_FRAUDULENT:
-				g_all_ads.fraudulent.Decrement(ad_id)
+				g_all_ads.votes_fraudulent.Decrement(ad_id)
 			case AD_TAXING:
-				g_all_ads.taxing.Decrement(ad_id)
+				g_all_ads.votes_taxing.Decrement(ad_id)
 			case AD_MALICIOUS:
-				g_all_ads.malicious.Decrement(ad_id)
+				g_all_ads.votes_malicious.Decrement(ad_id)
 		}
 	}
 
@@ -165,8 +166,8 @@ func responseVoteForAd(w http.ResponseWriter, values map[string][]string) {
 	votes := all_ads.Increment(ad_id)
 	user_ads.Set(ad_id, user_vote_type)
 
-	// Update if this ad is considered bad or not
-	updateIsBad(ad_id)
+	// Update the voted ad type
+	updateVotedAdType(ad_id)
 
 	// Save the time that the user voted
 	g_user_ids[user_id] = time.Now()
@@ -178,27 +179,27 @@ func responseVoteForAd(w http.ResponseWriter, values map[string][]string) {
 func responseListAds(w http.ResponseWriter, values map[string][]string) {
 	// Print the values of all the ad maps
 	fmt.Fprintf(w, "good:\n")
-	g_all_ads.good.Each(func(ad_id string, votes uint64) {
+	g_all_ads.votes_good.Each(func(ad_id string, votes uint64) {
 		fmt.Fprintf(w, "    %s : %d\n", ad_id, votes)
 	})
 
 	fmt.Fprintf(w, "fraudulent:\n")
-	g_all_ads.fraudulent.Each(func(ad_id string, votes uint64) {
+	g_all_ads.votes_fraudulent.Each(func(ad_id string, votes uint64) {
 		fmt.Fprintf(w, "    %s : %d\n", ad_id, votes)
 	})
 
-	fmt.Fprintf(w, "taxing:\n")
-	g_all_ads.taxing.Each(func(ad_id string, votes uint64) {
+	fmt.Fprintf(w, "votes_taxing:\n")
+	g_all_ads.votes_taxing.Each(func(ad_id string, votes uint64) {
 		fmt.Fprintf(w, "    %s : %d\n", ad_id, votes)
 	})
 
 	fmt.Fprintf(w, "malicious:\n")
-	g_all_ads.malicious.Each(func(ad_id string, votes uint64) {
+	g_all_ads.votes_malicious.Each(func(ad_id string, votes uint64) {
 		fmt.Fprintf(w, "    %s : %d\n", ad_id, votes)
 	})
 
-	fmt.Fprintf(w, "is_bad:\n")
-	g_all_ads.is_bad.Each(func(ad_id string, votes uint64) {
+	fmt.Fprintf(w, "voted_ad_type:\n")
+	g_all_ads.voted_ad_type.Each(func(ad_id string, votes uint64) {
 		fmt.Fprintf(w, "    %s : %d\n", ad_id, votes)
 	})
 }
@@ -215,11 +216,11 @@ func responseShowMemory(w http.ResponseWriter, values map[string][]string) {
 
 func responseSave(w http.ResponseWriter, values map[string][]string) {
 	// Write the overall votes to disk
-	g_all_ads.good.SaveToDisk()
-	g_all_ads.fraudulent.SaveToDisk()
-	g_all_ads.taxing.SaveToDisk()
-	g_all_ads.malicious.SaveToDisk()
-	g_all_ads.is_bad.SaveToDisk()
+	g_all_ads.votes_good.SaveToDisk()
+	g_all_ads.votes_fraudulent.SaveToDisk()
+	g_all_ads.votes_taxing.SaveToDisk()
+	g_all_ads.votes_malicious.SaveToDisk()
+	g_all_ads.voted_ad_type.SaveToDisk()
 
 	// Write the user votes to disk
 	for _, user_ads := range g_user_ads {
@@ -229,18 +230,30 @@ func responseSave(w http.ResponseWriter, values map[string][]string) {
 	fmt.Fprintf(w, "All data saved\n")
 }
 
-func updateIsBad(ad_id string) {
-	// Get the number of times this ad is counted as good and bad
-	good_count, _ := g_all_ads.good.Get(ad_id)
-	fraudulent_count, _ := g_all_ads.fraudulent.Get(ad_id)
-	taxing_count, _ := g_all_ads.taxing.Get(ad_id)
-	malicious_count, _ := g_all_ads.malicious.Get(ad_id)
-	bad_count := helpers.Larger(fraudulent_count, taxing_count, malicious_count)
+func updateVotedAdType(ad_id string) {
+	// Get the number of times this ad is counted for each category
+	good_count, _ := g_all_ads.votes_good.Get(ad_id)
+	fraudulent_count, _ := g_all_ads.votes_fraudulent.Get(ad_id)
+	taxing_count, _ := g_all_ads.votes_taxing.Get(ad_id)
+	malicious_count, _ := g_all_ads.votes_malicious.Get(ad_id)
+	largest_count := helpers.Larger(good_count, fraudulent_count, taxing_count, malicious_count)
 
-	// Figure out if this is bad
-	is_bad := helpers.BoolToUint64(bad_count > good_count)
+	// Figure out the top type of votes
+	var ad_type uint64
+	if largest_count == 0 {
+		ad_type = AD_UNKNOWN
+	} else if good_count >= largest_count {
+		ad_type = AD_GOOD
+	} else if fraudulent_count >= largest_count {
+		ad_type = AD_FRAUDULENT
+	} else if taxing_count >= largest_count {
+		ad_type = AD_TAXING
+	} else if malicious_count >= largest_count {
+		ad_type = AD_MALICIOUS
+	}
 
-	g_all_ads.is_bad.Set(ad_id, is_bad)
+	// Save the top ad type in the cache
+	g_all_ads.voted_ad_type.Set(ad_id, ad_type)
 }
 
 func main() {
