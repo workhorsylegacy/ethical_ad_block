@@ -8,6 +8,19 @@ import (
 	"os"
 )
 
+// This function is ugly
+func IsAlphaNumeric(value string) bool {
+	for _, n := range value {
+		if n >= '0' && n <= '9' || n >= 'a' && n <= 'z' || n >= 'A' && n <= 'Z' {
+			
+		} else {
+			return false
+		}
+	}
+
+	return true
+}
+
 func Larger(numbers... uint64) uint64 {
 	var retval uint64
 	for _, n := range numbers {

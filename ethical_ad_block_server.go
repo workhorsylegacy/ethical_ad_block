@@ -50,23 +50,11 @@ func hasParameter(self map[string][]string, key string) bool {
 	return ok && value != nil && len(value) > 0 && value[0] != "null"
 }
 
-func isAlphaNumeric(value string) bool {
-	for _, n := range value {
-		if n >= '0' && n <= '9' || n >= 'a' && n <= 'z' || n >= 'A' && n <= 'Z' {
-			
-		} else {
-			return false
-		}
-	}
-
-	return true
-}
-
 func validateParameters(parameters map[string][]string, keys... string) (map[string]string, bool) {
 	var validated_parameters map[string]string
 	for _, key := range keys {
 		if value, ok := parameters[key]; ok {
-			if value != nil && len(value) > 0 && value[0] != "null" && isAlphaNumeric(value[0]) {
+			if value != nil && len(value) > 0 && value[0] != "null" && helpers.IsAlphaNumeric(value[0]) {
 				validated_parameters[key] = value[0]
 			} else {
 				return nil, false
