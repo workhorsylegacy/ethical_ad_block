@@ -5,18 +5,17 @@
 /*
 TODO:
 
-. Dont look through iframe children. if the child is removed, look to see of it was the only thing in the iframe, and remove if so.
-. Some videos have a transparent div on top of them with an onclick event. This makes it hard to click the video.
+. Make it get CSS background-image images in the popup selector.
+. Make popup selector submit images as ads and remove iframe
 . Move popup menu to center of top frame
 . Make hashing work with svg
 . Save the randomly generated user id in localStorage
-. Save and load server data from file
 
 . Add a Selenium test suite to stop regressions
 . Update so things can be marked as "social". Then users can block all social media buttons and crap.
 . Add a moderator mode that shows all ads, including counts below them, and lets users vote on them
 . Show users a warning if another Ad Blocker is running
-. Ad element screen shot to ad voting
+. Add element screen shot to ad voting
 . Getting screen shots gets the wrong area in Windows 8.1 tablet
 . Make it work on Firefox
 . Make it work on touch screens
