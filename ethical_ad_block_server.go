@@ -50,8 +50,37 @@ func hasKey(self map[string][]string, key string) bool {
 	return ok && value != nil && len(value) > 0 && value[0] != "null"
 }
 
+func isAlphaNumeric(value string) bool {
+	for _, n := range value {
+		if n >= '0' && n <= '9' || n >= 'a' && n <= 'z' || n >= 'A' && n <= 'Z' {
+			
+		} else {
+			return false
+		}
+	}
+
+	return true
+}
+
+func validateParameters(parameters map[string][]string, keys... string) (map[string]string, bool) {
+	var validated_parameters map[string]string
+	for _, key := range keys {
+		if value, ok := parameters[key]; ok {
+			if value != nil && len(value) > 0 && value[0] != "null" && isAlphaNumeric(value[0]) {
+				validated_parameters[key] = value[0]
+			} else {
+				return nil, false
+			}
+		} else {
+			return nil, false
+		}
+	}
+
+	return validated_parameters, true
+}
+
 func httpCB(w http.ResponseWriter, r *http.Request) {
-	values := r.URL.Query()
+	values := r.URL.Query() // FIXME: Rename to parameters
 
 	// Set the server headers
 	epoch := "Thu, 01 Jan 1970 00:00:00 UTC"
@@ -63,12 +92,21 @@ func httpCB(w http.ResponseWriter, r *http.Request) {
 	header.Set("Last-Modified", epoch)
 	header.Set("If-Modified-Since", epoch)
 
+	// FIXME: Validate the HTTP method too
 	//  Check which type the ad is
 	if hasKey(values, "voted_ad_type") {
-		responseVotedAdType(w, values)
+		if v, ok := validateParameters(values, "voted_ad_type"); ok {
+			responseVotedAdType(w, v)
+		} else {
+			http.Error(w, "Invalid parameters", 422)
+		}
 	// Vote for ad
 	} else if hasKey(values, "vote_ad") && hasKey(values, "ad_type") && hasKey(values, "user_id") {
-		responseVoteForAd(w, values)
+		if v, ok := validateParameters(values, "vote_ad", "ad_type", "user_id"); ok {
+			responseVoteForAd(w, v)
+		} else {
+			http.Error(w, "Invalid parameters", 422)
+		}
 	// List ads
 	} else if hasKey(values, "list") {
 		responseListAds(w, values)
@@ -103,9 +141,9 @@ func responseClear(w http.ResponseWriter, values map[string][]string) {
 	fmt.Fprintf(w, "All data cleared\n")
 }
 
-func responseVotedAdType(w http.ResponseWriter, values map[string][]string) {
+func responseVotedAdType(w http.ResponseWriter, values map[string]string) {
 	// Get the arguments
-	ad_id := values["voted_ad_type"][0]
+	ad_id := values["voted_ad_type"]
 
 	// Get the voted ad type
 	voted_ad_type, _ := g_all_ads.voted_ad_type.Get(ad_id)
@@ -113,11 +151,11 @@ func responseVotedAdType(w http.ResponseWriter, values map[string][]string) {
 	fmt.Fprintf(w, "%d\n", voted_ad_type)
 }
 
-func responseVoteForAd(w http.ResponseWriter, values map[string][]string) {
+func responseVoteForAd(w http.ResponseWriter, values map[string]string) {
 	// Get the arguments
-	ad_id := values["vote_ad"][0]
-	ad_type := values["ad_type"][0]
-	user_id := values["user_id"][0]
+	ad_id := values["vote_ad"]
+	ad_type := values["ad_type"]
+	user_id := values["user_id"]
 
 	// Figure out which type of vote it will be
 	var all_ads *helpers.FileBackedMap
