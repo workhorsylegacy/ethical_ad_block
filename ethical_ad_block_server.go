@@ -50,8 +50,15 @@ func hasKey(self map[string][]string, key string) bool {
 func httpCB(w http.ResponseWriter, r *http.Request) {
 	values := r.URL.Query()
 
-	// Set the server name
-	w.Header().Set("Server", "Ethical Ad Block Server 0.1")
+	// Set the server headers
+	epoch := "Thu, 01 Jan 1970 00:00:00 UTC"
+	header := w.Header()
+	header.Set("Server", "Ethical Ad Block Server 0.1")
+	header.Set("Pragma", "no-cache")
+	header.Set("Cache-Control", "no-store, no-cache, must-revalidate, post-check=0, pre-check=0")
+	header.Set("Expires", "0")
+	header.Set("Last-Modified", epoch)
+	header.Set("If-Modified-Since", epoch)
 
 	//  Check if element is an ad
 	if hasKey(values, "is_ad") {
