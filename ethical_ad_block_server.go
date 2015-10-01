@@ -45,7 +45,7 @@ var g_user_ads map[string]*helpers.FileBackedMap
 var g_all_ads *AdData
 var g_user_ids map[string]time.Time
 
-func hasKey(self map[string][]string, key string) bool {
+func hasParameter(self map[string][]string, key string) bool {
 	value, ok := self[key]
 	return ok && value != nil && len(value) > 0 && value[0] != "null"
 }
@@ -80,7 +80,7 @@ func validateParameters(parameters map[string][]string, keys... string) (map[str
 }
 
 func httpCB(w http.ResponseWriter, r *http.Request) {
-	values := r.URL.Query() // FIXME: Rename to parameters
+	parameters := r.URL.Query()
 
 	// Set the server headers
 	epoch := "Thu, 01 Jan 1970 00:00:00 UTC"
@@ -94,30 +94,30 @@ func httpCB(w http.ResponseWriter, r *http.Request) {
 
 	// FIXME: Validate the HTTP method too
 	//  Check which type the ad is
-	if hasKey(values, "voted_ad_type") {
-		if v, ok := validateParameters(values, "voted_ad_type"); ok {
+	if hasParameter(parameters, "voted_ad_type") {
+		if v, ok := validateParameters(parameters, "voted_ad_type"); ok {
 			responseVotedAdType(w, v)
 		} else {
 			http.Error(w, "Invalid parameters", 422)
 		}
 	// Vote for ad
-	} else if hasKey(values, "vote_ad") && hasKey(values, "ad_type") && hasKey(values, "user_id") {
-		if v, ok := validateParameters(values, "vote_ad", "ad_type", "user_id"); ok {
+	} else if hasParameter(parameters, "vote_ad") && hasParameter(parameters, "ad_type") && hasParameter(parameters, "user_id") {
+		if v, ok := validateParameters(parameters, "vote_ad", "ad_type", "user_id"); ok {
 			responseVoteForAd(w, v)
 		} else {
 			http.Error(w, "Invalid parameters", 422)
 		}
 	// List ads
-	} else if hasKey(values, "list") {
+	} else if hasParameter(parameters, "list") {
 		responseListAds(w)
 	// Show memory
-	} else if hasKey(values, "memory") {
+	} else if hasParameter(parameters, "memory") {
 		responseShowMemory(w)
 	// Clear all data
-	} else if hasKey(values, "clear") {
+	} else if hasParameter(parameters, "clear") {
 		responseClear(w)
 	// Write all data to disk
-	} else if hasKey(values, "save") {
+	} else if hasParameter(parameters, "save") {
 		responseSave(w)
 	// Unexpected request
 	} else {
@@ -141,9 +141,9 @@ func responseClear(w http.ResponseWriter) {
 	fmt.Fprintf(w, "All data cleared\n")
 }
 
-func responseVotedAdType(w http.ResponseWriter, values map[string]string) {
+func responseVotedAdType(w http.ResponseWriter, parameters map[string]string) {
 	// Get the arguments
-	ad_id := values["voted_ad_type"]
+	ad_id := parameters["voted_ad_type"]
 
 	// Get the voted ad type
 	voted_ad_type, _ := g_all_ads.voted_ad_type.Get(ad_id)
@@ -151,11 +151,11 @@ func responseVotedAdType(w http.ResponseWriter, values map[string]string) {
 	fmt.Fprintf(w, "%d\n", voted_ad_type)
 }
 
-func responseVoteForAd(w http.ResponseWriter, values map[string]string) {
+func responseVoteForAd(w http.ResponseWriter, parameters map[string]string) {
 	// Get the arguments
-	ad_id := values["vote_ad"]
-	ad_type := values["ad_type"]
-	user_id := values["user_id"]
+	ad_id := parameters["vote_ad"]
+	ad_type := parameters["ad_type"]
+	user_id := parameters["user_id"]
 
 	// Figure out which type of vote it will be
 	var all_ads *helpers.FileBackedMap
