@@ -109,23 +109,23 @@ func httpCB(w http.ResponseWriter, r *http.Request) {
 		}
 	// List ads
 	} else if hasKey(values, "list") {
-		responseListAds(w, values)
+		responseListAds(w)
 	// Show memory
 	} else if hasKey(values, "memory") {
-		responseShowMemory(w, values)
+		responseShowMemory(w)
 	// Clear all data
 	} else if hasKey(values, "clear") {
-		responseClear(w, values)
+		responseClear(w)
 	// Write all data to disk
 	} else if hasKey(values, "save") {
-		responseSave(w, values)
+		responseSave(w)
 	// Unexpected request
 	} else {
 		http.Error(w, "Unexpected request", http.StatusBadRequest)
 	}
 }
 
-func responseClear(w http.ResponseWriter, values map[string][]string) {
+func responseClear(w http.ResponseWriter) {
 	// Clear the overall votes
 	g_all_ads.votes_good.RemoveAll()
 	g_all_ads.votes_fraudulent.RemoveAll()
@@ -214,7 +214,7 @@ func responseVoteForAd(w http.ResponseWriter, values map[string]string) {
 	fmt.Fprintf(w, "ad_id:%s, ad_type:%s, votes:%d\n", ad_id, ad_type, votes)
 }
 
-func responseListAds(w http.ResponseWriter, values map[string][]string) {
+func responseListAds(w http.ResponseWriter) {
 	// Print the values of all the ad maps
 	fmt.Fprintf(w, "good:\n")
 	g_all_ads.votes_good.Each(func(ad_id string, votes uint64) {
@@ -242,7 +242,7 @@ func responseListAds(w http.ResponseWriter, values map[string][]string) {
 	})
 }
 
-func responseShowMemory(w http.ResponseWriter, values map[string][]string) {
+func responseShowMemory(w http.ResponseWriter) {
 	var mem runtime.MemStats
 	runtime.ReadMemStats(&mem)
 
@@ -252,7 +252,7 @@ func responseShowMemory(w http.ResponseWriter, values map[string][]string) {
 	fmt.Fprintf(w, "mem.HeapSys: %d\n", mem.HeapSys)
 }
 
-func responseSave(w http.ResponseWriter, values map[string][]string) {
+func responseSave(w http.ResponseWriter) {
 	// Write the overall votes to disk
 	g_all_ads.votes_good.SaveToDisk()
 	g_all_ads.votes_fraudulent.SaveToDisk()
