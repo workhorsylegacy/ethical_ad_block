@@ -19,7 +19,7 @@ if ! type go >/dev/null 2>&1; then
 	exit 1
 fi
 
-# FIXME: Make sure we are using at least go version 1.4
+# FIXME: Make sure we are using at least go version 1.5
 
 # Remove the exes
 rm -f ethical_ad_block_server.exe

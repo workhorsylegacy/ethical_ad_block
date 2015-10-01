@@ -165,9 +165,8 @@ func (self *FileBackedMap) RemoveAll() {
 	self.LRUCache.RemoveAll()
 }
 
-// FIXME: We need a way to range over the FileBackedMap wihout exposing the cache map
-func (self *FileBackedMap) GetCache() map[string]*list.Element {
-	return self.LRUCache.cache
+func (self *FileBackedMap) Each(cb func(key string, value uint64)) {
+	self.LRUCache.Each(cb)
 }
 
 func (self *FileBackedMap) Len() int {
