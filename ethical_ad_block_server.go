@@ -86,7 +86,12 @@ func httpCB(w http.ResponseWriter, r *http.Request) {
 	header.Set("Last-Modified", epoch)
 	header.Set("If-Modified-Since", epoch)
 
-	// FIXME: Validate the HTTP method too
+	// Make sure HTTP Get is used
+	if r.Method != "GET" {
+		http.Error(w, "Invalid HTTP Method", http.StatusMethodNotAllowed)
+		return
+	}
+
 	//  Check which type the ad is
 	if hasParameters(parameters, "voted_ad_type") {
 		if v, ok := validateParameters(parameters, "voted_ad_type"); ok {
@@ -94,6 +99,7 @@ func httpCB(w http.ResponseWriter, r *http.Request) {
 		} else {
 			http.Error(w, "Invalid parameters", 422)
 		}
+	// FIXME: Make voting use HTTP POST
 	// Vote for ad
 	} else if hasParameters(parameters, "vote_ad", "ad_type", "user_id") {
 		if v, ok := validateParameters(parameters, "vote_ad", "ad_type", "user_id"); ok {
