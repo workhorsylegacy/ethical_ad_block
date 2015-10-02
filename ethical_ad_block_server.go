@@ -75,7 +75,11 @@ func validateParameters(parameters map[string][]string, keys... string) (map[str
 }
 
 func httpCB(w http.ResponseWriter, r *http.Request) {
-	parameters := r.URL.Query()
+	// All requests with a path should 404
+	if r.URL.Path != "/" {
+		http.Error(w, "Not Found", http.StatusNotFound)
+		return
+	}
 
 	// Set the server headers
 	epoch := "Thu, 01 Jan 1970 00:00:00 UTC"
@@ -94,6 +98,7 @@ func httpCB(w http.ResponseWriter, r *http.Request) {
 	}
 
 	//  Check which type the ad is
+	parameters := r.URL.Query()
 	if hasParameters(parameters, "voted_ad_type") {
 		if v, ok := validateParameters(parameters, "voted_ad_type"); ok {
 			responseVotedAdType(w, v)
