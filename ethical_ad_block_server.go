@@ -58,7 +58,7 @@ func hasParameters(parameters map[string][]string, keys... string) bool {
 }
 
 func validateParameters(parameters map[string][]string, keys... string) (map[string]string, bool) {
-	var validated_parameters map[string]string
+	validated_parameters := make(map[string]string)
 	for _, key := range keys {
 		if value, ok := parameters[key]; ok {
 			if value != nil && len(value) > 0 && value[0] != "null" && helpers.IsAlphaNumeric(value[0]) {
