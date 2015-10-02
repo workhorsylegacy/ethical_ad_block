@@ -45,9 +45,15 @@ var g_user_ads map[string]*helpers.FileBackedMap
 var g_all_ads *AdData
 var g_user_ids map[string]time.Time
 
-func hasParameter(self map[string][]string, key string) bool {
-	value, ok := self[key]
-	return ok && value != nil && len(value) > 0 && value[0] != "null"
+func hasParameters(parameters map[string][]string, keys... string) bool {
+	for _, key := range keys {
+		value, ok := parameters[key]
+		if ! ok || value == nil || len(value) == 0 {
+			return false
+		}
+	}
+
+	return true
 }
 
 func validateParameters(parameters map[string][]string, keys... string) (map[string]string, bool) {
@@ -82,30 +88,30 @@ func httpCB(w http.ResponseWriter, r *http.Request) {
 
 	// FIXME: Validate the HTTP method too
 	//  Check which type the ad is
-	if hasParameter(parameters, "voted_ad_type") {
+	if hasParameters(parameters, "voted_ad_type") {
 		if v, ok := validateParameters(parameters, "voted_ad_type"); ok {
 			responseVotedAdType(w, v)
 		} else {
 			http.Error(w, "Invalid parameters", 422)
 		}
 	// Vote for ad
-	} else if hasParameter(parameters, "vote_ad") && hasParameter(parameters, "ad_type") && hasParameter(parameters, "user_id") {
+	} else if hasParameters(parameters, "vote_ad", "ad_type", "user_id") {
 		if v, ok := validateParameters(parameters, "vote_ad", "ad_type", "user_id"); ok {
 			responseVoteForAd(w, v)
 		} else {
 			http.Error(w, "Invalid parameters", 422)
 		}
 	// List ads
-	} else if hasParameter(parameters, "list") {
+	} else if hasParameters(parameters, "list") {
 		responseListAds(w)
 	// Show memory
-	} else if hasParameter(parameters, "memory") {
+	} else if hasParameters(parameters, "memory") {
 		responseShowMemory(w)
 	// Clear all data
-	} else if hasParameter(parameters, "clear") {
+	} else if hasParameters(parameters, "clear") {
 		responseClear(w)
 	// Write all data to disk
-	} else if hasParameter(parameters, "save") {
+	} else if hasParameters(parameters, "save") {
 		responseSave(w)
 	// Unexpected request
 	} else {
