@@ -21,6 +21,7 @@ const (
 	AD_FRAUDULENT = 2
 	AD_TAXING = 3
 	AD_MALICIOUS = 4
+	StatusUnprocessableEntity = 422
 )
 
 type AdData struct {
@@ -97,7 +98,7 @@ func httpCB(w http.ResponseWriter, r *http.Request) {
 		if v, ok := validateParameters(parameters, "voted_ad_type"); ok {
 			responseVotedAdType(w, v)
 		} else {
-			http.Error(w, "Invalid parameters", 422)
+			http.Error(w, "Invalid parameters", StatusUnprocessableEntity)
 		}
 	// FIXME: Make voting use HTTP POST
 	// Vote for ad
@@ -105,7 +106,7 @@ func httpCB(w http.ResponseWriter, r *http.Request) {
 		if v, ok := validateParameters(parameters, "vote_ad", "ad_type", "user_id"); ok {
 			responseVoteForAd(w, v)
 		} else {
-			http.Error(w, "Invalid parameters", 422)
+			http.Error(w, "Invalid parameters", StatusUnprocessableEntity)
 		}
 	// List ads
 	} else if hasParameters(parameters, "list") {
