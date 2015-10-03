@@ -91,6 +91,6 @@ if (window !== window.top) {
 	checkElementsLoop();
 }
 
-applyMonkeyPatch();
+addScriptTrackEventListeners();
 
 

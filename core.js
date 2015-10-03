@@ -1038,7 +1038,7 @@ function checkElementsLoop() {
 
 // Monkey patch the addEventListener and removeEventListener methods to
 // keep a list of events for lookup via the getEventListeners method.
-function monkeyPatch() {
+function monkeyPatchTrackEventListeners() {
 	// Don't patch the methods if already patched
 	if (Element.prototype._has_monkey_patched_event_listeners) {
 		return;
@@ -1127,9 +1127,9 @@ function monkeyPatch() {
 	};
 }
 
-function applyMonkeyPatch() {
+function addScriptTrackEventListeners() {
 	var script = document.createElement('script');
-	script.textContent = '(' + monkeyPatch + ')();';
+	script.textContent = '(' + monkeyPatchTrackEventListeners + ')();';
 	(document.head || document.documentElement).appendChild(script);
 }
 
