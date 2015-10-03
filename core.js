@@ -762,7 +762,7 @@ function showMenu(srcs) {
 	document.body.appendChild(container);
 	var frame = container.contentDocument;
 	frame.open();
-	frame.writeln("<!doctype html><html><body></body></html>");
+	frame.writeln("<!doctype html><html><head _is_popup_menu></head><body></body></html>");
 	frame.close();
 	frame.body.style.backgroundColor = 'rgba(128, 128, 128, 0.8)';
 	frame.body.style.textAlign = 'center';
@@ -1132,3 +1132,11 @@ function applyMonkeyPatch() {
 	script.textContent = '(' + monkeyPatch + ')();';
 	(document.head || document.documentElement).appendChild(script);
 }
+
+function addStyleRemovePluginStyles() {
+	var style = document.createElement('style');
+	style.textContent = "a, img, video, iframe, object, embed, div { opacity: 1; pointer-events: all; }";
+	document.head.appendChild(style);
+}
+
+

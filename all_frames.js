@@ -54,21 +54,43 @@ chrome.runtime.onMessage.addListener(function(msg, sender, send_response) {
 
 // If running in an iframe
 if (window !== window.top) {
+	var is_setup = false;
+	var is_checking = false;
+
 	// Tell the parent window that this iframe has loaded
 	// NOTE: This does not use the onload event, because it does not always 
 	// fire, and can get trampled by other onload events.
-	setInterval(function() {
-		if (window.document.readyState === 'complete' && ! document.body.hasAttribute('_is_loaded')) {
-			document.body.setAttribute('_is_loaded', 'true');
-
+	var setup_interval = setInterval(function() {
+		// Wait for the iframe to be completely loaded, then setup events
+		if (! is_setup && window.document.readyState === 'complete') {
+			is_setup = true;
 			setupEvents();
 		}
+
+		// Wait for the iframe head to be created
+		if (! is_checking && document.head) {
+			is_checking = true;
+			// If the iframe is a popup window, turn off the global style sheet that hides things
+			if (document.head.hasAttribute('_is_popup_menu')) {
+				addStyleRemovePluginStyles();
+			// If the iframe is anything else, start checking it for ads
+			} else {
+				checkElementsLoop();
+			}
+		}
+
+		// Stop polling if everything is done
+		if (is_setup && is_checking) {
+			clearInterval(setup_interval);
+			setup_interval = null;
+		}
 	}, 333);
+// If running in top window
 } else {
 	setupEvents();
+	checkElementsLoop();
 }
 
 applyMonkeyPatch();
-checkElementsLoop();
 
 
