@@ -46,7 +46,9 @@ var g_user_ads map[string]*helpers.FileBackedMap
 var g_all_ads *AdData
 var g_user_ids map[string]time.Time
 
-func hasParameters(parameters map[string][]string, keys... string) bool {
+func hasParameters(r *http.Request, keys... string) bool {
+	parameters := r.URL.Query()
+
 	for _, key := range keys {
 		value, ok := parameters[key]
 		if ! ok || value == nil || len(value) == 0 {
@@ -57,18 +59,31 @@ func hasParameters(parameters map[string][]string, keys... string) bool {
 	return true
 }
 
-func validateParameters(parameters map[string][]string, keys... string) (map[string]string, bool) {
+func validateRequest(method string, w http.ResponseWriter, r *http.Request, keys... string) (map[string]string, bool) {
+	// Reply with a HTTP "Method Not Allowed" if the wrong HTTP Method is used
+	if r.Method != method {
+		http.Error(w, "Expected HTTP Method '" + r.Method + "'", http.StatusMethodNotAllowed)
+		return nil, false
+	}
+
+	// Copy all the values and make sure they are valid
+	parameters := r.URL.Query()
 	validated_parameters := make(map[string]string)
+	has_valid_params := true
 	for _, key := range keys {
-		if value, ok := parameters[key]; ok {
-			if value != nil && len(value) > 0 && value[0] != "null" && helpers.IsAlphaNumeric(value[0]) {
-				validated_parameters[key] = value[0]
-			} else {
-				return nil, false
-			}
+		value, has_value := parameters[key]
+		if has_value && value != nil && len(value) > 0 && value[0] != "null" && helpers.IsAlphaNumeric(value[0]) {
+			validated_parameters[key] = value[0]
 		} else {
-			return nil, false
+			has_valid_params = false
+			break
 		}
+	}
+
+	// Reply with a HTTP "Unprocessable Entity" if the params are missing or invalid
+	if ! has_valid_params {
+		http.Error(w, "Invalid parameters", StatusUnprocessableEntity)
+		return nil, false
 	}
 
 	return validated_parameters, true
@@ -91,39 +106,28 @@ func httpCB(w http.ResponseWriter, r *http.Request) {
 	header.Set("Last-Modified", epoch)
 	header.Set("If-Modified-Since", epoch)
 
-	// Make sure HTTP Get is used
-	if r.Method != "GET" {
-		http.Error(w, "Invalid HTTP Method", http.StatusMethodNotAllowed)
-		return
-	}
-
 	//  Check which type the ad is
-	parameters := r.URL.Query()
-	if hasParameters(parameters, "voted_ad_type") {
-		if v, ok := validateParameters(parameters, "voted_ad_type"); ok {
-			responseVotedAdType(w, v)
-		} else {
-			http.Error(w, "Invalid parameters", StatusUnprocessableEntity)
+	if hasParameters(r, "voted_ad_type") {
+		if parameters, ok := validateRequest("GET", w, r, "voted_ad_type"); ok {
+			responseVotedAdType(w, parameters)
 		}
-	// FIXME: Make voting use HTTP POST
 	// Vote for ad
-	} else if hasParameters(parameters, "vote_ad", "ad_type", "user_id") {
-		if v, ok := validateParameters(parameters, "vote_ad", "ad_type", "user_id"); ok {
-			responseVoteForAd(w, v)
-		} else {
-			http.Error(w, "Invalid parameters", StatusUnprocessableEntity)
+	} else if hasParameters(r, "vote_ad", "ad_type", "user_id") {
+		// FIXME: Make voting use HTTP POST
+		if parameters, ok := validateRequest("GET", w, r, "vote_ad", "ad_type", "user_id"); ok {
+			responseVoteForAd(w, parameters)
 		}
 	// List ads
-	} else if hasParameters(parameters, "list") {
+	} else if hasParameters(r, "list") {
 		responseListAds(w)
 	// Show memory
-	} else if hasParameters(parameters, "memory") {
+	} else if hasParameters(r, "memory") {
 		responseShowMemory(w)
 	// Clear all data
-	} else if hasParameters(parameters, "clear") {
+	} else if hasParameters(r, "clear") {
 		responseClear(w)
 	// Write all data to disk
-	} else if hasParameters(parameters, "save") {
+	} else if hasParameters(r, "save") {
 		responseSave(w)
 	// Unexpected request
 	} else {
