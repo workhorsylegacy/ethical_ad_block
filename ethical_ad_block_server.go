@@ -197,6 +197,7 @@ func responseVoteForAd(w http.ResponseWriter, parameters map[string]string) {
 
 	// Remove the previous vote, if there already is one for this ad
 	if vote_type, ok := user_ads.Get(ad_id); ok {
+		// FIXME: We don't really need to remove this, since we Set it again on the new vote.
 		user_ads.Remove(ad_id)
 		switch vote_type {
 			case AD_GOOD:

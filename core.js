@@ -5,6 +5,8 @@
 /*
 TODO:
 
+. on the server, replace path with filepath
+. on the server, when reading/writing from file, stop allocations by using strconv.ParseUint/fmt.Sprintf
 . Make it get CSS background-image images in the popup selector.
 . Make popup selector submit images as ads and remove iframe
 . Move popup menu to center of top frame
