@@ -18,6 +18,7 @@ TODO:
 . Add a moderator mode that shows all ads, including counts below them, and lets users vote on them
 . Show users a warning if another Ad Blocker is running
 . Add element screen shot to ad voting
+. Add the size and URLS of images to votes. This way we can track large images
 . Getting screen shots gets the wrong area in Windows 8.1 tablet
 . Make it work on Firefox
 . Make it work on touch screens
