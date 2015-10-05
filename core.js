@@ -5,6 +5,8 @@
 /*
 TODO:
 
+. Have the server cache "ad check" requests in the backend for 5 minutes.
+. change any video elements to not have auto play
 . on the server, replace path with filepath
 . on the server, when reading/writing from file, stop allocations by using strconv.ParseUint/fmt.Sprintf
 . Make it get CSS background-image images in the popup selector.
