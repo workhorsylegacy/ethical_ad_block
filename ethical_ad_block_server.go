@@ -90,6 +90,8 @@ func validateRequest(method string, w http.ResponseWriter, r *http.Request, keys
 }
 
 func httpCB(w http.ResponseWriter, r *http.Request) {
+//	fmt.Printf("request: %v\n", r.URL)
+
 	// All requests with a path should 404
 	if r.URL.Path != "/" {
 		http.Error(w, "Not Found", http.StatusNotFound)
@@ -101,7 +103,7 @@ func httpCB(w http.ResponseWriter, r *http.Request) {
 	header := w.Header()
 	header.Set("Server", "Ethical Ad Block Server 0.1")
 	header.Set("Pragma", "no-cache")
-	header.Set("Cache-Control", "no-store, no-cache, must-revalidate, post-check=0, pre-check=0")
+	header.Set("Cache-Control", "public, no-store, no-cache, must-revalidate, post-check=0, pre-check=0")
 	header.Set("Expires", "0")
 	header.Set("Last-Modified", epoch)
 	header.Set("If-Modified-Since", epoch)
