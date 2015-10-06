@@ -892,7 +892,6 @@ function handleNormalClick(e) {
 			rect = getElementRectWithChildren(node);
 			getScreenShot(rect, function(image, data_uri) {
 				// Send the image to the top window
-/*
 				if (DEBUG) {
 					var src = getImageSrc(image);
 					getImageDataUrl(image, src, function(data_url) {
@@ -903,7 +902,7 @@ function handleNormalClick(e) {
 						window.top.postMessage(request, '*');
 					});
 				}
-*/
+
 				// Hide the element
 				node.style.display = 'none';
 
