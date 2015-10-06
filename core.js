@@ -5,7 +5,6 @@
 /*
 TODO:
 
-. Have the server cache "ad check" requests in the backend for 5 minutes.
 . change any video elements to not have auto play
 . on the server, replace path with filepath
 . on the server, when reading/writing from file, stop allocations by using strconv.ParseUint/fmt.Sprintf
@@ -573,14 +572,12 @@ function getElementHash(is_printed, element, cb) {
 	}
 }
 
-function isElementAd(hash, cb) {
-	// If the hash is null, just use false
-	if (hash === null || hash === undefined) {
-		cb(false);
-		return;
-	}
+function adTypeToIsAd(ad_type) {
+	var is_ad = (ad_type >= 2 && ad_type <= 4);
+	return is_ad;
+}
 
-	// Check the web server to see if this hash is for an ad
+function isElementAd(hash, cb) {
 	/*
 	Ad types:
 	AD_UNKNOWN = 0
@@ -589,16 +586,45 @@ function isElementAd(hash, cb) {
 	AD_TAXING = 3
 	AD_MALICIOUS = 4
 	*/
-	var request = 'http://localhost:9000?voted_ad_type=' + hash;
-	var success_cb = function(response_text) {
-		var ad_type = parseInt(response_text);
-		var is_ad = (ad_type >= 2 && ad_type <= 4);
-		cb(is_ad);
-	};
-	var fail_cb = function(status) {
+
+	// If the hash is null, just use false
+	if (hash === null || hash === undefined) {
 		cb(false);
+		return;
+	}
+
+	// Check the background script if it has the cached ad type
+	var message = {
+		action: 'get_voted_ad_type',
+		ad_id: hash
 	};
-	httpGetText(request, success_cb, fail_cb);
+	chrome.runtime.sendMessage(message, function(response) {
+		// The ad type was in the background script
+		if (response.voted_ad_type !== null) {
+			var is_ad = adTypeToIsAd(response.voted_ad_type);
+			cb(is_ad);
+		// The ad type was not in the background script, so check for it on the web server
+		} else {
+			var request = 'http://localhost:9000?voted_ad_type=' + hash;
+			var success_cb = function(response_text) {
+				var voted_ad_type = parseInt(response_text);
+				var is_ad = adTypeToIsAd(voted_ad_type);
+				cb(is_ad);
+
+				// Save the vote type in the background script
+				var message = {
+					action: 'set_voted_ad_type',
+					ad_id: hash,
+					voted_ad_type: voted_ad_type
+				};
+				chrome.runtime.sendMessage(message, function(response) {});
+			};
+			var fail_cb = function(status) {
+				cb(false);
+			};
+			httpGetText(request, success_cb, fail_cb);
+		}
+	});
 }
 
 function removeElementIfAd(element, color, cb_after_not_ad) {
@@ -866,6 +892,7 @@ function handleNormalClick(e) {
 			rect = getElementRectWithChildren(node);
 			getScreenShot(rect, function(image, data_uri) {
 				// Send the image to the top window
+/*
 				if (DEBUG) {
 					var src = getImageSrc(image);
 					getImageDataUrl(image, src, function(data_url) {
@@ -876,7 +903,7 @@ function handleNormalClick(e) {
 						window.top.postMessage(request, '*');
 					});
 				}
-
+*/
 				// Hide the element
 				node.style.display = 'none';
 
@@ -886,18 +913,25 @@ function handleNormalClick(e) {
 					node.parentElement.removeChild(node);
 
 					if (hash) {
-						// Tell the server that this hash is for an ad
-						var request = 'http://localhost:9000' +
-							'?user_id=' + g_user_id +
-							'&vote_ad=' + hash +
-							'&ad_type=' + element.ad_type;
-						var success_cb = function(response_text) {
-							console.log(response_text);
+						var message = {
+							action: 'remove_voted_ad_type',
+							ad_id: hash
 						};
-						var fail_cb = function(status) {
-							console.error('Failed to connect to server.');
-						};
-						httpGetText(request, success_cb, fail_cb);
+						chrome.runtime.sendMessage(message, function(response) {
+							// Tell the server that this hash is for an ad
+							var request = 'http://localhost:9000' +
+								'?user_id=' + g_user_id +
+								'&vote_ad=' + hash +
+								'&ad_type=' + element.ad_type;
+							console.info(request);
+							var success_cb = function(response_text) {
+								console.log(response_text);
+							};
+							var fail_cb = function(status) {
+								console.error('Failed to connect to server.');
+							};
+							httpGetText(request, success_cb, fail_cb);
+						});
 					}
 				});
 			});
