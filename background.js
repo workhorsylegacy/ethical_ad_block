@@ -47,7 +47,7 @@ chrome.webRequest.onBeforeRequest.addListener(function(info) {
 
 // FIXME: Update this to use send_response instead of sending another message, instead of return false
 chrome.runtime.onMessage.addListener(function(msg, sender, send_response) {
-	switch (msg.action ) {
+	switch (msg.action) {
 		case 'get_voted_ad_type':
 			var ad_id = msg.ad_id;
 			var voted_ad_type = null;
