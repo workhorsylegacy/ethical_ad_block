@@ -5,15 +5,15 @@
 /*
 TODO:
 
-. change any video elements to not have auto play
-. on the server, replace path with filepath
-. on the server, when reading/writing from file, stop allocations by using strconv.ParseUint/fmt.Sprintf
 . Make it get CSS background-image images in the popup selector.
 . Make popup selector submit images as ads and remove iframe
 . Move popup menu to center of top frame
 . Make hashing work with svg
 . Save the randomly generated user id in localStorage
 
+. on the server, replace path with filepath
+. on the server, when reading/writing from file, stop allocations by using strconv.ParseUint/fmt.Sprintf
+. change any video elements to not have auto play
 . Add a Selenium test suite to stop regressions
 . Update so things can be marked as "social". Then users can block all social media buttons and crap.
 . Add a moderator mode that shows all ads, including counts below them, and lets users vote on them
