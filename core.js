@@ -11,6 +11,7 @@ TODO:
 . Make hashing work with svg
 . Save the randomly generated user id in localStorage
 
+. Save the element hash inside the element with setAttribute, so we will not have to download images multiples times to hash.
 . on the server, replace path with filepath
 . on the server, when reading/writing from file, stop allocations by using strconv.ParseUint/fmt.Sprintf
 . change any video elements to not have auto play
@@ -95,22 +96,23 @@ function blobToDataURL(blob, cb) {
 	a.readAsDataURL(blob);
 }
 
+// FIXME: There is no reason to have a httpGetBinary and getFileBinary function
 function httpGetBinary(request, success_cb, fail_cb) {
 	var xhr = new XMLHttpRequest();
 	xhr.onreadystatechange = function() {
 		if (xhr.readyState === 4) {
 			if (xhr.status === 200) {
 				var response_bytes = xhr.response;
-				success_cb(response_bytes, response_bytes.length);
+				success_cb(request, response_bytes, response_bytes.length);
 			} else {
-				fail_cb(xhr.status);
+				if (fail_cb) fail_cb(xhr.status);
 			}
 		} else if (xhr.readyState === 0) {
-			fail_cb(0);
+			if (fail_cb) fail_cb(0);
 		}
 	};
 	xhr.onerror = function() {
-		fail_cb(0);
+		if (fail_cb) fail_cb(0);
 	};
 	xhr.timeout = 3000;
 	xhr.responseType = "blob";
@@ -185,6 +187,7 @@ function httpGetTextChunk(request, success_cb, fail_cb, max_len) {
 	xhr.send(null);
 }
 
+// FIXME: rename to httpGetBinary
 function getFileBinary(element, src, cb, max_len) {
 	if (! src) {
 		console.error("Element src is missing: " + element.outerHTML);
@@ -830,41 +833,88 @@ function showMenu(srcs) {
 
 	// Load each src into an image
 	for (var i=0; i<srcs.length; ++i) {
-		var request = srcs[i];
-
-		var success_cb = function(response_binary, total_size) {
+		var success_cb = function(original_src, response_binary, total_size) {
 			blobToDataURL(response_binary, function(data_url) {
-//				console.info(request);
+//				console.info(original_src);
 //				console.info(data_url);
-				var check = document.createElement('input');
-				check.type = 'checkbox';
-				images.appendChild(check);
+
+				var box = document.createElement('div');
+				box.type = 'checkbox';
+				images.appendChild(box);
 
 				var new_img = document.createElement('img');
-				new_img.style.border = '1px solid black';
 				new_img.src = data_url;
-				images.appendChild(new_img);
-				images.appendChild(document.createElement('br'));
+				box.appendChild(new_img);
+				box.appendChild(document.createElement('br'));
+
+				var check = document.createElement('input');
+				check.type = 'checkbox';
+				check.original_src = original_src;
+				box.appendChild(check);
 
 				var span = document.createElement('span');
-				span.innerHTML = request;
-				images.appendChild(span);
-				images.appendChild(document.createElement('br'));
+				span.innerHTML = original_src;
+				box.appendChild(span);
+				box.appendChild(document.createElement('hr'));
 			});
 		};
 		var fail_cb = function(status) {
 
 		};
-		httpGetBinary(request, success_cb, fail_cb);
+		httpGetBinary(srcs[i], success_cb, fail_cb);
 	}
 
 	// Button
 	var button = document.createElement('button');
 	button.innerHTML = 'Submit as Ads';
 	button.addEventListener('click', function() {
-		alert('FIXME: Submit the checked images as ads, close those images, and close this menu.');
+		// Tell the server that all the selected images are ads
+		var inputs = menu.getElementsByTagName('input');
+		for (var i=0; i<inputs.length; ++i) {
+			var input = inputs[i];
+			if (input.type === 'checkbox' && input.checked && input.original_src) {
+				httpGetBinary(input.original_src, function(original_src, data, total_size) {
+					var hash = hexMD5(data);
+
+					console.log(original_src);
+					console.info(data);
+					console.info(hash);
+
+					if (hash) {
+						voteForAd(hash, 'fraudulent'); // FIXME: Let the user select the ad type
+					}
+				}, null);
+			}
+		}
+
+		// FIXME: Remove all the images that are ads
+
+		// Remove the popup menu
+		document.body.removeChild(container);
 	});
 	menu.appendChild(button);
+}
+
+function voteForAd(hash, ad_type) {
+	var message = {
+		action: 'remove_voted_ad_type',
+		ad_id: hash
+	};
+	chrome.runtime.sendMessage(message, function(response) {
+		// Tell the server that this hash is for an ad
+		var request = 'http://localhost:9000' +
+			'?user_id=' + g_user_id +
+			'&vote_ad=' + hash +
+			'&ad_type=' + ad_type;
+		console.info(request);
+		var success_cb = function(response_text) {
+			console.log(response_text);
+		};
+		var fail_cb = function(status) {
+			console.error('Failed to connect to server.');
+		};
+		httpGetText(request, success_cb, fail_cb);
+	});
 }
 
 function handleNormalClick(e) {
@@ -946,25 +996,7 @@ function handleNormalClick(e) {
 					node.parentElement.removeChild(node);
 
 					if (hash) {
-						var message = {
-							action: 'remove_voted_ad_type',
-							ad_id: hash
-						};
-						chrome.runtime.sendMessage(message, function(response) {
-							// Tell the server that this hash is for an ad
-							var request = 'http://localhost:9000' +
-								'?user_id=' + g_user_id +
-								'&vote_ad=' + hash +
-								'&ad_type=' + element.ad_type;
-							console.info(request);
-							var success_cb = function(response_text) {
-								console.log(response_text);
-							};
-							var fail_cb = function(status) {
-								console.error('Failed to connect to server.');
-							};
-							httpGetText(request, success_cb, fail_cb);
-						});
+						voteForAd(hash, element.ad_type);
 					}
 				});
 			});
