@@ -795,7 +795,7 @@ function showMenu(srcs) {
 	frame.body.style.backgroundColor = 'rgba(128, 128, 128, 0.8)';
 	frame.body.style.textAlign = 'center';
 
-	// Button menu
+	// Menu
 	var menu = document.createElement('div');
 	menu.style.overflow = 'visible';
 	menu.style.margin = 'auto';
@@ -807,10 +807,26 @@ function showMenu(srcs) {
 	menu.style.boxShadow = '10px 10px 5px grey';
 	frame.body.appendChild(menu);
 
+	// FIXME: Move to the corner of the menu, instead of the page
+	// Close button
+	var close = document.createElement('button');
+	close.style.position = 'absolute';
+	close.style.top = '0px';
+	close.style.right = '0px';
+	close.innerHTML = 'Close';
+	close.addEventListener('click', function() {
+		document.body.removeChild(container);
+	});
+	menu.appendChild(close);
+
 	// Header
 	var header = document.createElement('h3');
 	header.innerHTML = 'Select the elements that best identify the Ad.';
 	menu.appendChild(header);
+
+	// Images
+	var images = document.createElement('div');
+	menu.appendChild(images);
 
 	// Load each src into an image
 	for (var i=0; i<srcs.length; ++i) {
@@ -820,10 +836,20 @@ function showMenu(srcs) {
 			blobToDataURL(response_binary, function(data_url) {
 //				console.info(request);
 //				console.info(data_url);
+				var check = document.createElement('input');
+				check.type = 'checkbox';
+				images.appendChild(check);
+
 				var new_img = document.createElement('img');
+				new_img.style.border = '1px solid black';
 				new_img.src = data_url;
-				menu.appendChild(new_img);
-				menu.appendChild(document.createElement('br'));
+				images.appendChild(new_img);
+				images.appendChild(document.createElement('br'));
+
+				var span = document.createElement('span');
+				span.innerHTML = request;
+				images.appendChild(span);
+				images.appendChild(document.createElement('br'));
 			});
 		};
 		var fail_cb = function(status) {
@@ -831,6 +857,14 @@ function showMenu(srcs) {
 		};
 		httpGetBinary(request, success_cb, fail_cb);
 	}
+
+	// Button
+	var button = document.createElement('button');
+	button.innerHTML = 'Submit as Ads';
+	button.addEventListener('click', function() {
+		alert('FIXME: Submit the checked images as ads, close those images, and close this menu.');
+	});
+	menu.appendChild(button);
 }
 
 function handleNormalClick(e) {
