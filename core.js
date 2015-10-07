@@ -96,14 +96,14 @@ function blobToDataURL(blob, cb) {
 	a.readAsDataURL(blob);
 }
 
-// FIXME: There is no reason to have a httpGetBinary and getFileBinary function
 function httpGetBinary(request, success_cb, fail_cb) {
 	var xhr = new XMLHttpRequest();
 	xhr.onreadystatechange = function() {
 		if (xhr.readyState === 4) {
 			if (xhr.status === 200) {
 				var response_bytes = xhr.response;
-				success_cb(request, response_bytes, response_bytes.length);
+				var total_len = getResponseHeaderContentLength(xhr);
+				success_cb(request, response_bytes, total_len);
 			} else {
 				if (fail_cb) fail_cb(xhr.status);
 			}
@@ -115,7 +115,51 @@ function httpGetBinary(request, success_cb, fail_cb) {
 		if (fail_cb) fail_cb(0);
 	};
 	xhr.timeout = 3000;
-	xhr.responseType = "blob";
+	xhr.responseType = 'blob';
+	xhr.open('GET', request, true);
+	xhr.send(null);
+}
+
+function httpGetBinaryChunk(request, success_cb, fail_cb, max_len) {
+	var total_len = 0;
+	var data = null;
+	var xhr = new XMLHttpRequest();
+	xhr.onprogress = function(e) {
+		if (xhr.status !== 200) {
+			if (fail_cb) fail_cb(0);
+			success_cb = null;
+			fail_cb = null;
+			xhr.abort();
+		} else {
+			var cur_len = 0;
+			if (xhr.response) {
+				cur_len = getResponseHeaderContentLength(xhr);
+			}
+			total_len += cur_len;
+			if (data === null) {
+				data = xhr.response;
+			} else if (xhr.response) {
+				data.append(xhr.response);
+			}
+			if (total_len >= max_len) {
+				data = data.slice(0, max_len);
+			}
+			if (xhr.readyState === 4 || total_len >= max_len) {
+				var content_length = getResponseHeaderContentLength(xhr);
+				if (success_cb) success_cb(request, data, content_length);
+				success_cb = null;
+				fail_cb = null;
+				xhr.abort();
+			}
+		}
+	};
+	xhr.onerror = function() {
+		if (fail_cb) fail_cb(0);
+		success_cb = null;
+		fail_cb = null;
+	};
+	xhr.timeout = 3000;
+	xhr.responseType = 'blob';
 	xhr.open('GET', request, true);
 	xhr.send(null);
 }
@@ -128,85 +172,18 @@ function httpGetText(request, success_cb, fail_cb) {
 				var content_length = getResponseHeaderContentLength(xhr);
 				success_cb(xhr.responseText, content_length);
 			} else {
-				fail_cb(xhr.status);
+				if (fail_cb) fail_cb(xhr.status);
 			}
 		} else if (xhr.readyState === 0) {
-			fail_cb(0);
-		}
-	};
-	xhr.onerror = function() {
-		fail_cb(0);
-	};
-	xhr.timeout = 3000;
-	xhr.open('GET', request, true);
-	xhr.send(null);
-}
-
-function httpGetTextChunk(request, success_cb, fail_cb, max_len) {
-//	console.info('request: ' + request);
-	var total_len = 0;
-	var data = '';
-	var xhr = new XMLHttpRequest();
-	xhr.onprogress = function(e) {
-//		console.info('    status: ' + xhr.status);
-//		console.info('    readyState: ' + xhr.readyState);
-		if (xhr.status !== 200) {
-//			console.info('        total: ' + total_len);
 			if (fail_cb) fail_cb(0);
-			success_cb = null;
-			fail_cb = null;
-			xhr.abort();
-		} else {
-			var cur_len = xhr.responseText.length;
-//			console.info('        cur: ' + cur_len);
-			total_len += cur_len;
-			// FIXME: Appending to a string is bad for GC, as it creates a new string each time. Replace with array.
-			data += xhr.responseText;
-			if (total_len >= max_len) {
-				data = data.slice(0, max_len);
-			}
-			if (xhr.readyState === 4 || total_len >= max_len) {
-				var content_length = getResponseHeaderContentLength(xhr);
-//				console.info('        total: ' + total_len);
-//				console.info('        content_length: ' + content_length);
-				if (success_cb) success_cb(data, content_length);
-				success_cb = null;
-				fail_cb = null;
-				xhr.abort();
-			}
 		}
 	};
 	xhr.onerror = function() {
-//		console.info('        total: ' + total_len);
 		if (fail_cb) fail_cb(0);
-		success_cb = null;
-		fail_cb = null;
 	};
 	xhr.timeout = 3000;
 	xhr.open('GET', request, true);
 	xhr.send(null);
-}
-
-// FIXME: rename to httpGetBinary
-function getFileBinary(element, src, cb, max_len) {
-	if (! src) {
-		console.error("Element src is missing: " + element.outerHTML);
-		cb(null, 0);
-	} else {
-		var request = src;
-		var success_cb = function(response_text, total_size) {
-//			console.info(response_text);
-			cb(response_text, total_size);
-		};
-		var fail_cb = function(status) {
-			cb(null, 0);
-		};
-		if (max_len) {
-			httpGetTextChunk(request, success_cb, fail_cb, max_len);
-		} else {
-			httpGetText(request, success_cb, fail_cb);
-		}
-	}
 }
 
 function getImageDataUrl(element, src, cb) {
@@ -515,10 +492,12 @@ function getElementHash(is_printed, element, cb) {
 	switch (element.tagName.toLowerCase()) {
 		case 'img':
 			var src = getImageSrc(element);
-			getFileBinary(element, src, function(data, total_size) {
-				var hash = hexMD5(data);
-				if (is_printed) {printInfo(element, hash);}
-				cb(hash);
+			httpGetBinary(src, function(src, data, total_size) {
+				blobToDataURL(data, function(data_url) {
+					var hash = hexMD5(data_url);
+					if (is_printed) {printInfo(element, hash);}
+					cb(hash);
+				});
 			});
 			break;
 		case 'embed':
@@ -530,11 +509,13 @@ function getElementHash(is_printed, element, cb) {
 		case 'video':
 			var src = getVideoSrc(element);
 			// Get only the first 50KB and length of the video
-			getFileBinary(element, src, function(data, total_size) {
+			httpGetBinaryChunk(src, function(src, data, total_size) {
 //				console.info(data.length);
-				var hash = data && total_size ? hexMD5(total_size + ':' + data) : null;
-				if (is_printed) {printInfo(element, hash);}
-				cb(hash);
+				blobToDataURL(data, function(data_url) {
+					var hash = data_url && total_size ? hexMD5(total_size + ':' + data_url) : null;
+					if (is_printed) {printInfo(element, hash);}
+					cb(hash);
+				});
 			}, 50000);
 			break;
 		// FIXME: Update to hash divs that have click events
@@ -543,10 +524,12 @@ function getElementHash(is_printed, element, cb) {
 			var bg = window.getComputedStyle(element)['background-image'];
 			if (isValidCSSImagePath(bg)) {
 				var src = bg.substring(4, bg.length-1);
-				getFileBinary(element, src, function(data, total_size) {
-					var hash = hexMD5(data);
-					if (is_printed) {printInfo(element, hash);}
-					cb(hash);
+				httpGetBinary(src, function(src, data, total_size) {
+					blobToDataURL(data, function(data_url) {
+						var hash = hexMD5(data_url);
+						if (is_printed) {printInfo(element, hash);}
+						cb(hash);
+					});
 				});
 			} else {
 				cb(hash);
@@ -557,10 +540,12 @@ function getElementHash(is_printed, element, cb) {
 			var bg = window.getComputedStyle(element)['background-image'];
 			if (isValidCSSImagePath(bg)) {
 				var src = bg.substring(4, bg.length-1);
-				getFileBinary(element, src, function(data, total_size) {
-					var hash = hexMD5(data);
-					if (is_printed) {printInfo(element, hash);}
-					cb(hash);
+				httpGetBinary(src, function(src, data, total_size) {
+					blobToDataURL(data, function(data_url) {
+						var hash = hexMD5(data_url);
+						if (is_printed) {printInfo(element, hash);}
+						cb(hash);
+					});
 				});
 			} else if (element.href && element.href.length > 0) {
 				hash = hexMD5(element.href);
@@ -833,7 +818,11 @@ function showMenu(srcs) {
 
 	// Load each src into an image
 	for (var i=0; i<srcs.length; ++i) {
-		var success_cb = function(original_src, response_binary, total_size) {
+		httpGetBinary(srcs[i], function(original_src, response_binary, total_size) {
+
+			console.info(original_src);
+			console.info(response_binary);
+			console.info(total_size);
 			blobToDataURL(response_binary, function(data_url) {
 //				console.info(original_src);
 //				console.info(data_url);
@@ -857,11 +846,7 @@ function showMenu(srcs) {
 				box.appendChild(span);
 				box.appendChild(document.createElement('hr'));
 			});
-		};
-		var fail_cb = function(status) {
-
-		};
-		httpGetBinary(srcs[i], success_cb, fail_cb);
+		});
 	}
 
 	// Button
@@ -874,16 +859,18 @@ function showMenu(srcs) {
 			var input = inputs[i];
 			if (input.type === 'checkbox' && input.checked && input.original_src) {
 				httpGetBinary(input.original_src, function(original_src, data, total_size) {
-					var hash = hexMD5(data);
+					blobToDataURL(data, function(data_url) {
+						var hash = hexMD5(data_url);
 
-					console.log(original_src);
-					console.info(data);
-					console.info(hash);
+						console.log(original_src);
+						console.info(data_url);
+						console.info(hash);
 
-					if (hash) {
-						voteForAd(hash, 'fraudulent'); // FIXME: Let the user select the ad type
-					}
-				}, null);
+						if (hash) {
+							voteForAd(hash, 'fraudulent'); // FIXME: Let the user select the ad type
+						}
+					});
+				});
 			}
 		}
 
