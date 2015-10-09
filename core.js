@@ -88,6 +88,10 @@ function getResponseHeaderContentLength(xhr) {
 	return content_length;
 }
 
+function isDataURI(src) {
+	return src && src.indexOf('data:') === 0;
+}
+
 function blobToDataURL(blob, cb) {
 	var a = new FileReader();
 	a.onload = function(e) {
@@ -187,6 +191,13 @@ function httpGetText(request, success_cb, fail_cb) {
 }
 
 function getImageDataUrl(element, src, cb) {
+	// If the src is already a Data URL, just return that
+	if (isDataURI(src)) {
+		cb(src);
+		return;
+	}
+
+	// Otherwise, load it into a canvas, and return the Data URL
 	var img = new Image();
 	img.crossOrigin = 'Anonymous';
 	img.onload = function(e) {
@@ -492,13 +503,21 @@ function getElementHash(is_printed, element, cb) {
 	switch (element.tagName.toLowerCase()) {
 		case 'img':
 			var src = getImageSrc(element);
-			httpGetBinary(src, function(src, data, total_size) {
-				blobToDataURL(data, function(data_url) {
-					var hash = hexMD5(data_url);
-					if (is_printed) {printInfo(element, hash);}
-					cb(hash);
+			// If the image src is already a data URI, hash that
+			if (isDataURI(src)) {
+				var hash = hexMD5(src);
+				if (is_printed) {printInfo(element, hash);}
+				cb(hash);
+			// Else download the blob and hash that
+			} else {
+				httpGetBinary(src, function(src, data, total_size) {
+					blobToDataURL(data, function(data_url) {
+						var hash = hexMD5(data_url);
+						if (is_printed) {printInfo(element, hash);}
+						cb(hash);
+					});
 				});
-			});
+			}
 			break;
 		case 'embed':
 		case 'object':
