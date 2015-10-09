@@ -13,7 +13,7 @@ import (
 	"container/list"
 )
 
-// FIXME: Move this to a goroutine, so we don't have to wait for the FS to block
+// FIXME: What should we do when writing to file fails?
 func saveEntryToFile(external_self interface{}, key string, value uint64) {
 	self := external_self.(*FileBackedMap)
 
@@ -23,7 +23,10 @@ func saveEntryToFile(external_self interface{}, key string, value uint64) {
 
 	// Write the bytes to file, with the file name as the key name
 	data_dir := path.Join(self.data_dir, key)
-	ioutil.WriteFile(data_dir, b, 0644)
+	err := ioutil.WriteFile(data_dir, b, 0644)
+	if err != nil {
+		panic(err)
+	}
 }
 
 type FileBackedMap struct {
@@ -31,6 +34,7 @@ type FileBackedMap struct {
 	data_dir string
 }
 
+// FIXME: What should we do when making the dir fails
 func NewFileBackedMap(data_dir string, max_length int) *FileBackedMap {
 	self := new(FileBackedMap)
 	self.LRUCache = NewLRUCache(max_length)
@@ -40,7 +44,10 @@ func NewFileBackedMap(data_dir string, max_length int) *FileBackedMap {
 
 	// Create the data directory if it does not exist
 	if ! IsDir(self.data_dir) {
-		os.Mkdir(self.data_dir, 0644)
+		err := os.Mkdir(self.data_dir, 0644)
+		if err != nil {
+			panic(err)
+		}
 	}
 
 	// Load the recent most entries
@@ -110,6 +117,7 @@ func (self *FileBackedMap) Set(key string, value uint64) {
 	self.LRUCache.Set(key, value)
 }
 
+// FIXME: What should we do when reading the file fails?
 func (self *FileBackedMap) Get(key string) (uint64, bool) {
 	// If the key is already in the cache, return the value
 	if value, ok := self.LRUCache.Get(key); ok {
@@ -140,6 +148,7 @@ func (self *FileBackedMap) Decrement(key string) uint64 {
 	return self.LRUCache.Decrement(key)
 }
 
+// FIXME: What should we do when removing the file fails?
 func (self *FileBackedMap) Remove(key string) {
 	// Remove the key from the cache
 	self.LRUCache.Remove(key)

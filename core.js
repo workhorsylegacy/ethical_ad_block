@@ -5,7 +5,7 @@
 /*
 TODO:
 
-. Make popup selector submit images as ads and remove iframe
+. Make popup selector remove iframe
 . Move popup menu to center of top frame
 . Make hashing work with svg
 . Save the randomly generated user id in localStorage
