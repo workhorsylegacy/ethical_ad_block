@@ -34,7 +34,7 @@ function setupEvents() {
 					var self = e.path[0];
 					document.body.appendChild(self);
 				};
-				img.src = event.data.data_url;
+				img.src = event.data.data_uri;
 				break;
 			case 'show_iframe_menu':
 				var srcs = event.data.srcs;

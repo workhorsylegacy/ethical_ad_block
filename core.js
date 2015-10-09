@@ -92,7 +92,7 @@ function isDataURI(src) {
 	return src && src.indexOf('data:') === 0;
 }
 
-function blobToDataURL(blob, cb) {
+function blobToDataURI(blob, cb) {
 	var a = new FileReader();
 	a.onload = function(e) {
 		cb(e.target.result);
@@ -100,7 +100,7 @@ function blobToDataURL(blob, cb) {
 	a.readAsDataURL(blob);
 }
 
-function httpGetBinary(request, success_cb, fail_cb) {
+function httpGetBlob(request, success_cb, fail_cb) {
 	var xhr = new XMLHttpRequest();
 	xhr.onreadystatechange = function() {
 		if (xhr.readyState === 4) {
@@ -124,7 +124,7 @@ function httpGetBinary(request, success_cb, fail_cb) {
 	xhr.send(null);
 }
 
-function httpGetBinaryChunk(request, success_cb, fail_cb, max_len) {
+function httpGetBlobChunk(request, success_cb, fail_cb, max_len) {
 	var total_len = 0;
 	var data = null;
 	var xhr = new XMLHttpRequest();
@@ -190,14 +190,14 @@ function httpGetText(request, success_cb, fail_cb) {
 	xhr.send(null);
 }
 
-function getImageDataUrl(element, src, cb) {
-	// If the src is already a Data URL, just return that
+function getImageDataURI(element, src, cb) {
+	// If the src is already a Data URI, just return that
 	if (isDataURI(src)) {
 		cb(src);
 		return;
 	}
 
-	// Otherwise, load it into a canvas, and return the Data URL
+	// Otherwise, load it into a canvas, and return the Data URI
 	var img = new Image();
 	img.crossOrigin = 'Anonymous';
 	img.onload = function(e) {
@@ -206,8 +206,9 @@ function getImageDataUrl(element, src, cb) {
 		temp_canvas.height = img.height;
 		var ctx = temp_canvas.getContext('2d');
 		ctx.drawImage(img, 0, 0);
-		var data_url = temp_canvas.toDataURL('image/png', 1.0);
-		cb(data_url);
+		var data_uri = temp_canvas.toDataURL('image/png', 1.0);
+		console.info('data_uri: ' + data_uri);
+		cb(data_uri);
 	};
 	img.onerror = function(e) {
 		console.error('Failed to copy image: ' + img.src);
@@ -510,9 +511,9 @@ function getElementHash(is_printed, element, cb) {
 				cb(hash);
 			// Else download the blob and hash that
 			} else {
-				httpGetBinary(src, function(src, data, total_size) {
-					blobToDataURL(data, function(data_url) {
-						var hash = hexMD5(data_url);
+				httpGetBlob(src, function(src, data, total_size) {
+					blobToDataURI(data, function(data_uri) {
+						var hash = hexMD5(data_uri);
 						if (is_printed) {printInfo(element, hash);}
 						cb(hash);
 					});
@@ -528,10 +529,10 @@ function getElementHash(is_printed, element, cb) {
 		case 'video':
 			var src = getVideoSrc(element);
 			// Get only the first 50KB and length of the video
-			httpGetBinaryChunk(src, function(src, data, total_size) {
+			httpGetBlobChunk(src, function(src, data, total_size) {
 //				console.info(data.length);
-				blobToDataURL(data, function(data_url) {
-					var hash = data_url && total_size ? hexMD5(total_size + ':' + data_url) : null;
+				blobToDataURI(data, function(data_uri) {
+					var hash = data_uri && total_size ? hexMD5(total_size + ':' + data_uri) : null;
 					if (is_printed) {printInfo(element, hash);}
 					cb(hash);
 				});
@@ -543,9 +544,9 @@ function getElementHash(is_printed, element, cb) {
 			var bg = window.getComputedStyle(element)['background-image'];
 			if (isValidCSSImagePath(bg)) {
 				var src = bg.substring(4, bg.length-1);
-				httpGetBinary(src, function(src, data, total_size) {
-					blobToDataURL(data, function(data_url) {
-						var hash = hexMD5(data_url);
+				httpGetBlob(src, function(src, data, total_size) {
+					blobToDataURI(data, function(data_uri) {
+						var hash = hexMD5(data_uri);
 						if (is_printed) {printInfo(element, hash);}
 						cb(hash);
 					});
@@ -559,9 +560,9 @@ function getElementHash(is_printed, element, cb) {
 			var bg = window.getComputedStyle(element)['background-image'];
 			if (isValidCSSImagePath(bg)) {
 				var src = bg.substring(4, bg.length-1);
-				httpGetBinary(src, function(src, data, total_size) {
-					blobToDataURL(data, function(data_url) {
-						var hash = hexMD5(data_url);
+				httpGetBlob(src, function(src, data, total_size) {
+					blobToDataURI(data, function(data_uri) {
+						var hash = hexMD5(data_uri);
 						if (is_printed) {printInfo(element, hash);}
 						cb(hash);
 					});
@@ -837,21 +838,21 @@ function showMenu(srcs) {
 
 	// Load each src into an image
 	for (var i=0; i<srcs.length; ++i) {
-		httpGetBinary(srcs[i], function(original_src, response_binary, total_size) {
+		httpGetBlob(srcs[i], function(original_src, response_blob, total_size) {
 
 			console.info(original_src);
-			console.info(response_binary);
+			console.info(response_blob);
 			console.info(total_size);
-			blobToDataURL(response_binary, function(data_url) {
+			blobToDataURI(response_blob, function(data_uri) {
 //				console.info(original_src);
-//				console.info(data_url);
+//				console.info(data_uri);
 
 				var box = document.createElement('div');
 				box.type = 'checkbox';
 				images.appendChild(box);
 
 				var new_img = document.createElement('img');
-				new_img.src = data_url;
+				new_img.src = data_uri;
 				box.appendChild(new_img);
 				box.appendChild(document.createElement('br'));
 
@@ -877,12 +878,12 @@ function showMenu(srcs) {
 		for (var i=0; i<inputs.length; ++i) {
 			var input = inputs[i];
 			if (input.type === 'checkbox' && input.checked && input.original_src) {
-				httpGetBinary(input.original_src, function(original_src, data, total_size) {
-					blobToDataURL(data, function(data_url) {
-						var hash = hexMD5(data_url);
+				httpGetBlob(input.original_src, function(original_src, data, total_size) {
+					blobToDataURI(data, function(data_uri) {
+						var hash = hexMD5(data_uri);
 
 						console.log(original_src);
-						console.info(data_url);
+						console.info(data_uri);
 						console.info(hash);
 
 						if (hash) {
@@ -984,10 +985,10 @@ function handleNormalClick(e) {
 				// Send the image to the top window
 				if (DEBUG) {
 					var src = getImageSrc(image);
-					getImageDataUrl(image, src, function(data_url) {
+					getImageDataURI(image, src, function(data_uri) {
 						var request = {
 							message: 'append_screen_shot',
-							data_url: data_url
+							data_uri: data_uri
 						};
 						window.top.postMessage(request, '*');
 					});

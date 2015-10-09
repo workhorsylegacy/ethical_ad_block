@@ -84,10 +84,10 @@ chrome.runtime.onMessage.addListener(function(msg, sender, send_response) {
 			chrome.tabs.captureVisibleTab(
 				null,
 				{'format': 'png'},
-				function(data_url) {
+				function(data_uri) {
 					var message = {
 						action: 'screen_shot',
-						data: data_url
+						data: data_uri
 					};
 					chrome.tabs.sendMessage(sender.tab.id, message, function(response) {});
 				}
