@@ -767,7 +767,7 @@ function handleIframeClick(e) {
 	var imgs = document.getElementsByTagName('img');
 	var srcs = [];
 	for (var i=0; i<imgs.length; ++i) {
-		srcs.push(imgs[i].src);
+		srcs.push(getImageSrc(imgs[i]));
 	}
 
 	// Send the image sources to the top window, so it can make a menu
@@ -778,8 +778,22 @@ function handleIframeClick(e) {
 	window.top.postMessage(request, '*');
 }
 
+function removeImages(srcs) {
+	var imgs = document.getElementsByTagName('img');
+	for (var i=0; i<imgs.length; ++i) {
+		var img = imgs[i];
+		var src = getImageSrc(img);
+		for (var j=0; j<srcs.length; ++j) {
+			if (src === srcs[j]) {
+				img.parentElement.removeChild(img);
+				break;
+			}
+		}
+	}
+}
+
 // FIXME: Make it so the menu has a scroll bar instead of the iframe
-function showMenu(srcs) {
+function showMenu(source_window, srcs) {
 	// Transparent container
 	var container = document.createElement('iframe');
 	container.className = 'nostyle';
@@ -874,10 +888,12 @@ function showMenu(srcs) {
 	button.innerHTML = 'Submit as Ads';
 	button.addEventListener('click', function() {
 		// Tell the server that all the selected images are ads
+		var srcs_to_remove = [];
 		var inputs = menu.getElementsByTagName('input');
 		for (var i=0; i<inputs.length; ++i) {
 			var input = inputs[i];
 			if (input.type === 'checkbox' && input.checked && input.original_src) {
+				srcs_to_remove.push(input.original_src);
 				httpGetBlob(input.original_src, function(original_src, data, total_size) {
 					blobToDataURI(data, function(data_uri) {
 						var hash = hexMD5(data_uri);
@@ -894,7 +910,12 @@ function showMenu(srcs) {
 			}
 		}
 
-		// FIXME: Remove all the images that are ads
+		// Remove all the images that are ads
+		var request = {
+			message: 'remove_images_in_iframe',
+			srcs: srcs_to_remove
+		};
+		source_window.postMessage(request, '*');
 
 		// Remove the popup menu
 		document.body.removeChild(container);
