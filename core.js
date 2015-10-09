@@ -5,7 +5,6 @@
 /*
 TODO:
 
-. Make it get CSS background-image images in the popup selector.
 . Make popup selector submit images as ads and remove iframe
 . Move popup menu to center of top frame
 . Make hashing work with svg
@@ -270,7 +269,7 @@ function getScreenShot(rect, cb) {
 // Return true if value is a valid CSS image path, such as "url(blah.png)"
 function isValidCSSImagePath(value) {
 	value = value.toLowerCase();
-	return value && value.length > 0 && value.indexOf('url(') === 0 && value[value.length-1] === ')';
+	return value && value.length > 0 && value.startsWith('url(') && value.endsWith(')');
 }
 /*
 function isElementInsideLink(element) {
@@ -764,10 +763,20 @@ function handleIframeClick(e) {
 	canvas.style.display = 'none';
 
 	// Get all the image sources
-	var imgs = document.getElementsByTagName('img');
 	var srcs = [];
+	var imgs = document.getElementsByTagName('img');
 	for (var i=0; i<imgs.length; ++i) {
 		srcs.push(getImageSrc(imgs[i]));
+	}
+
+	// Get all the background-image sources
+	var elements = document.getElementsByTagName('*');
+	for (var i=0; i<elements.length; ++i) {
+		var bg = window.getComputedStyle(elements[i])['background-image'];
+		if (isValidCSSImagePath(bg)) {
+			var src = bg.substring(4, bg.length-1);
+			srcs.push(src);
+		}
 	}
 
 	// Send the image sources to the top window, so it can make a menu
@@ -779,6 +788,7 @@ function handleIframeClick(e) {
 }
 
 function removeImages(srcs) {
+	// Remove any images that use those sources
 	var imgs = document.getElementsByTagName('img');
 	for (var i=0; i<imgs.length; ++i) {
 		var img = imgs[i];
@@ -787,6 +797,22 @@ function removeImages(srcs) {
 			if (src === srcs[j]) {
 				img.parentElement.removeChild(img);
 				break;
+			}
+		}
+	}
+
+	// Remove any elements that use those sources as background-images
+	var elements = document.getElementsByTagName('*');
+	for (var i=0; i<elements.length; ++i) {
+		var element = elements[i];
+		var bg = window.getComputedStyle(element)['background-image'];
+		if (isValidCSSImagePath(bg)) {
+			var src = bg.substring(4, bg.length-1);
+			for (var j=0; j<srcs.length; ++j) {
+				if (src === srcs[j]) {
+					element.parentElement.removeChild(element);
+					break;
+				}
 			}
 		}
 	}
