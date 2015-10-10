@@ -18,7 +18,6 @@ import (
 // Setting key fails when dir does not exist
 // Setting key fails when file to write to is locked
 // Getting key fails when file to read is locked
-// Getting from file fails when file is empty/garbage
 
 type TestSuite struct {
     suite.Suite
@@ -90,8 +89,6 @@ func (suite *TestSuite) TestFailWithInvalidSize() {
 	assert.Nil(suite.T(), fbm)
 }
 
-// FIXME: The read fails because the buffer is not 8 bytes when read from the file.
-// Make sure that it fails when the buffer is the correct size.
 func (suite *TestSuite) TestFailOnReadGarbage() {
 	// Create the map
 	fbm, err := NewFileBackedMap("test", 1)
