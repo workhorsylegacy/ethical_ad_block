@@ -6,6 +6,7 @@ package helpers
 
 import (
 	"errors"
+//	"fmt"
 	"os"
 	"path/filepath"
 	"io/ioutil"
@@ -20,6 +21,14 @@ func saveEntryToFile(external_self interface{}, key string, value uint64) (error
 	// Convert the value to bytes
 	b := make([]byte, 8)
 	binary.LittleEndian.PutUint64(b, value)
+
+	// Make the dir if it does not exist
+	if ! IsDir(self.FullPath()) {
+		err := os.MkdirAll(self.FullPath(), 0644)
+		if err != nil {
+			return err
+		}
+	}
 
 	// Write the bytes to file, with the file name as the key name
 	key_path := filepath.Join(self.FullPath(), key)
@@ -39,7 +48,7 @@ type FileBackedMap struct {
 
 func NewFileBackedMap(data_name string, max_length int) (*FileBackedMap, error) {
 	if data_name == "" {
-		err := errors.New("Invalid dir name '" + data_name + "'.")
+		err := errors.New("Invalid data name '" + data_name + "'.")
 		return nil, err
 	}
 
@@ -77,6 +86,14 @@ func (self *FileBackedMap) LoadFromDisk() (error) {
 	self.LRUCache.expiration_list.Init()
 	self.LRUCache.cache = make(map[string]*list.Element)
 	remaining_length := self.LRUCache.max_length
+
+	// Create the data directory if it does not exist
+	if ! IsDir(self.FullPath()) {
+		err := os.MkdirAll(self.FullPath(), 0644)
+		if err != nil {
+			return err
+		}
+	}
 
 	// Walk the FS and look at each file
 	err := filepath.Walk(self.FullPath(), func(file_path string, finfo os.FileInfo, err error) error {
@@ -131,8 +148,8 @@ func (self *FileBackedMap) HasKey(key string) (bool) {
 	return self.LRUCache.HasKey(key) || IsFile(key_path)
 }
 
-func (self *FileBackedMap) Set(key string, value uint64) {
-	self.LRUCache.Set(key, value)
+func (self *FileBackedMap) Set(key string, value uint64) (error) {
+	return self.LRUCache.Set(key, value)
 }
 
 func (self *FileBackedMap) Get(key string) (uint64, bool) {
@@ -145,7 +162,8 @@ func (self *FileBackedMap) Get(key string) (uint64, bool) {
 	key_path := filepath.Join(self.FullPath(), key)
 	if IsFile(key_path) {
 		value_bytes, err := ioutil.ReadFile(key_path)
-		if err != nil {
+		if err != nil || len(value_bytes) != 8 {
+			os.Remove(key_path)
 			return 0, false
 		} else {
 			value := binary.LittleEndian.Uint64(value_bytes)
@@ -178,7 +196,7 @@ func (self *FileBackedMap) Remove(key string) (error) {
 	// Remove the key from the cache
 	err := self.LRUCache.Remove(key)
 	if err != nil {
-		return nil
+		return err
 	}
 
 	return nil

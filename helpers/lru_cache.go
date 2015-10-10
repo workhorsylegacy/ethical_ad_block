@@ -42,19 +42,22 @@ func (self *LRUCache) HasKey(key string) (bool) {
 	return ok
 }
 
-func (self *LRUCache) Set(key string, value uint64) {
+func (self *LRUCache) Set(key string, value uint64) (error) {
 	// If the key is already used, update the value
 	if element, ok := self.cache[key]; ok {
 		self.expiration_list.MoveToFront(element)
 		element.Value.(*CacheEntry).Value = value
-		return
+		return nil
 	}
 
 	// If the size will be greater than the max, remove the oldest element
 	if self.expiration_list.Len() + 1 > self.max_length {
 		element := self.expiration_list.Back()
 		if element != nil {
-			self.evictElement(element)
+			err := self.evictElement(element)
+			if err != nil {
+				return err
+			}
 		}
 	}
 
@@ -62,6 +65,8 @@ func (self *LRUCache) Set(key string, value uint64) {
 	entry := CacheEntry{key, value}
 	element := self.expiration_list.PushFront(&entry)
 	self.cache[key] = element
+
+	return nil
 }
 
 func (self *LRUCache) Get(key string) (uint64, bool) {
@@ -112,12 +117,7 @@ func (self *LRUCache) RemoveAll() {
 }
 
 func (self *LRUCache) evictElement(element *list.Element) (error) {
-	// Remove the element from the expiration list
-	self.expiration_list.Remove(element)
-
-	// Remove the item from the cache
 	entry := element.Value.(*CacheEntry)
-	delete(self.cache, entry.Key)
 
 	// Fire the on evict callback
 	if self.on_evict_cb != nil && self.external_self != nil {
@@ -126,6 +126,12 @@ func (self *LRUCache) evictElement(element *list.Element) (error) {
 			return err
 		}
 	}
+
+	// Remove the element from the expiration list
+	self.expiration_list.Remove(element)
+
+	// Remove the item from the cache
+	delete(self.cache, entry.Key)
 
 	return nil
 }
