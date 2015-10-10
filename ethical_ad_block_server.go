@@ -34,11 +34,28 @@ type AdData struct {
 
 func NewAdData() *AdData {
 	self := new(AdData)
-	self.votes_good = helpers.NewFileBackedMap("votes_good", 1024)
-	self.votes_fraudulent = helpers.NewFileBackedMap("votes_fraudulent", 1024)
-	self.votes_taxing = helpers.NewFileBackedMap("votes_taxing", 1024)
-	self.votes_malicious = helpers.NewFileBackedMap("votes_malicious", 1024)
-	self.voted_ad_type = helpers.NewFileBackedMap("voted_ad_type", 1048576)
+	var err error
+	self.votes_good, err = helpers.NewFileBackedMap("votes_good", 1024)
+	if err != nil {
+		panic(err)
+	}
+	self.votes_fraudulent, err = helpers.NewFileBackedMap("votes_fraudulent", 1024)
+	if err != nil {
+		panic(err)
+	}
+	self.votes_taxing, err = helpers.NewFileBackedMap("votes_taxing", 1024)
+	if err != nil {
+		panic(err)
+	}
+	self.votes_malicious, err = helpers.NewFileBackedMap("votes_malicious", 1024)
+	if err != nil {
+		panic(err)
+	}
+	self.voted_ad_type, err = helpers.NewFileBackedMap("voted_ad_type", 1048576)
+	if err != nil {
+		panic(err)
+	}
+
 	return self
 }
 
@@ -193,7 +210,7 @@ func responseVoteForAd(w http.ResponseWriter, parameters map[string]string) {
 	// Initialize space for this user's ads
 	user_ads, ok := g_user_ads[user_id]
 	if ! ok {
-		user_ads = helpers.NewFileBackedMap("user_" + user_id, 1024)
+		user_ads, _ = helpers.NewFileBackedMap("user_" + user_id, 1024)
 		g_user_ads[user_id] = user_ads
 	}
 

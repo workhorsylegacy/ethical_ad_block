@@ -11,10 +11,11 @@ import (
 
 
 type LRUCache struct {
+	// FIXME: Rename to max_len
 	max_length int
 	expiration_list *list.List
 	cache map[string]*list.Element
-	on_evict_cb func(external_self interface{}, key string, value uint64)
+	on_evict_cb func(external_self interface{}, key string, value uint64) (error)
 	external_self interface{}
 }
 
@@ -94,10 +95,15 @@ func (self *LRUCache) Decrement(key string) uint64 {
 	return value
 }
 
-func (self *LRUCache) Remove(key string) {
+func (self *LRUCache) Remove(key string) (error) {
 	if element, ok := self.cache[key]; ok {
-		self.evictElement(element)
+		err := self.evictElement(element)
+		if err != nil {
+			return err
+		}
 	}
+
+	return nil
 }
 
 func (self *LRUCache) RemoveAll() {
@@ -105,7 +111,7 @@ func (self *LRUCache) RemoveAll() {
 	self.cache = make(map[string]*list.Element)
 }
 
-func (self *LRUCache) evictElement(element *list.Element) {
+func (self *LRUCache) evictElement(element *list.Element) (error) {
 	// Remove the element from the expiration list
 	self.expiration_list.Remove(element)
 
@@ -115,8 +121,13 @@ func (self *LRUCache) evictElement(element *list.Element) {
 
 	// Fire the on evict callback
 	if self.on_evict_cb != nil && self.external_self != nil {
-		self.on_evict_cb(self.external_self, entry.Key, entry.Value)
+		err := self.on_evict_cb(self.external_self, entry.Key, entry.Value)
+		if err != nil {
+			return err
+		}
 	}
+
+	return nil
 }
 
 func (self *LRUCache) Each(cb func(key string, value uint64)) {
@@ -127,5 +138,9 @@ func (self *LRUCache) Each(cb func(key string, value uint64)) {
 
 func (self *LRUCache) Len() int {
 	return self.expiration_list.Len()
+}
+
+func (self *LRUCache) MaxLen() int {
+	return self.max_length
 }
 
