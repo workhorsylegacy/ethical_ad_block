@@ -217,7 +217,13 @@ func responseVoteForAd(w http.ResponseWriter, parameters map[string]string) {
 	// Remove the previous vote, if there already is one for this ad
 	if vote_type, ok := user_ads.Get(ad_id); ok {
 		// FIXME: We don't really need to remove this, since we Set it again on the new vote.
-		user_ads.Remove(ad_id)
+		err := user_ads.Remove(ad_id)
+		if err != nil {
+			http.Error(w, "Failed to remove ad", http.StatusInternalServerError)
+			log.Printf("%v\n", err)
+			return
+		}
+
 		switch vote_type {
 			case AD_GOOD:
 				g_all_ads.votes_good.Decrement(ad_id)
@@ -232,10 +238,20 @@ func responseVoteForAd(w http.ResponseWriter, parameters map[string]string) {
 
 	// Cast the new vote
 	votes := all_ads.Increment(ad_id)
-	user_ads.Set(ad_id, user_vote_type)
+	err := user_ads.Set(ad_id, user_vote_type)
+	if err != nil {
+		http.Error(w, "Failed to set ad", http.StatusInternalServerError)
+		log.Printf("%v\n", err)
+		return
+	}
 
 	// Update the voted ad type
-	updateVotedAdType(ad_id)
+	err = updateVotedAdType(ad_id)
+	if err != nil {
+		http.Error(w, "Failed to update ad voted type", http.StatusInternalServerError)
+		log.Printf("%v\n", err)
+		return
+	}
 
 	// Save the time that the user voted
 	g_user_ids[user_id] = time.Now()
@@ -298,7 +314,7 @@ func responseSave(w http.ResponseWriter) {
 	fmt.Fprintf(w, "All data saved\n")
 }
 
-func updateVotedAdType(ad_id string) {
+func updateVotedAdType(ad_id string) (error) {
 	// Get the number of times this ad is counted for each category
 	good_count, _ := g_all_ads.votes_good.Get(ad_id)
 	fraudulent_count, _ := g_all_ads.votes_fraudulent.Get(ad_id)
@@ -321,10 +337,17 @@ func updateVotedAdType(ad_id string) {
 	}
 
 	// Save the top ad type in the cache
-	g_all_ads.voted_ad_type.Set(ad_id, ad_type)
+	err := g_all_ads.voted_ad_type.Set(ad_id, ad_type)
+	if err != nil {
+		return err
+	}
+
+	return nil
 }
 
 func main() {
+	log.SetFlags(log.LstdFlags | log.Lshortfile)
+
 	// Initialize all the maps
 	g_user_ads = make(map[string]*helpers.FileBackedMap)
 	g_all_ads = NewAdData()
