@@ -6,7 +6,7 @@ package helpers
 
 import (
 	"errors"
-//	"fmt"
+//	"log"
 	"os"
 	"path/filepath"
 	"io/ioutil"

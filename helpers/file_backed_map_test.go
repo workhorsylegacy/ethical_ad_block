@@ -9,7 +9,7 @@ import (
 	"os"
 	"path/filepath"
 	"io/ioutil"
-//	"fmt"
+	"log"
 	"testing"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/suite"
@@ -32,7 +32,7 @@ func (suite *TestSuite) SetupTest() {
 	assert.Nil(suite.T(), err)
 }
 
-func (suite *TestSuite) TestCreateEmptyMap() {
+func (suite *TestSuite) TestNew() {
 	// Create the map
 	fbm, err := NewFileBackedMap("test", 1)
 	assert.Nil(suite.T(), err)
@@ -47,6 +47,72 @@ func (suite *TestSuite) TestCreateEmptyMap() {
 	full_path, _ := filepath.Abs(filepath.Join("data", "test"))
 	assert.Equal(suite.T(), full_path, fbm.FullPath())
 	assert.True(suite.T(), IsDir(fbm.FullPath()))
+}
+
+func (suite *TestSuite) TestSet() {
+	// Create the map
+	fbm, err := NewFileBackedMap("test", 1)
+	assert.Nil(suite.T(), err)
+	assert.NotNil(suite.T(), fbm)
+
+	// Write key "aaa" to FS
+	err = fbm.Set("aaa", 8)
+	assert.Nil(suite.T(), err)
+	fbm.SaveToDisk()
+
+	// Make sure the "data" dir and keys were created
+	assert.True(suite.T(), IsDir(fbm.FullPath()))
+	key_path := fbm.FullKeyPath("aaa")
+	assert.True(suite.T(), IsFile(key_path))
+}
+
+func (suite *TestSuite) TestRemove() {
+	// Create the map
+	fbm, err := NewFileBackedMap("test", 1)
+	assert.Nil(suite.T(), err)
+	assert.NotNil(suite.T(), fbm)
+
+	// Write key to FS
+	err = fbm.Set("zzz", 8)
+	assert.Nil(suite.T(), err)
+	fbm.SaveToDisk()
+
+	// Make sure the key is in the cache and FS
+	assert.True(suite.T(), fbm.HasKey("zzz"))
+	assert.True(suite.T(), IsFile(fbm.FullKeyPath("zzz")))
+
+	// Remove the key and make sure it is gone from the cache and FS
+	err = fbm.Remove("zzz")
+	assert.Nil(suite.T(), err)
+	assert.False(suite.T(), fbm.HasKey("zzz"))
+	assert.False(suite.T(), IsFile(fbm.FullKeyPath("zzz")))
+}
+
+func (suite *TestSuite) TestRemoveAll() {
+	// Create the map
+	fbm, err := NewFileBackedMap("test", 1)
+	assert.Nil(suite.T(), err)
+	assert.NotNil(suite.T(), fbm)
+
+	// Write keys to FS
+	err = fbm.Set("aaa", 8)
+	assert.Nil(suite.T(), err)
+	err = fbm.Set("bbb", 7)
+	assert.Nil(suite.T(), err)
+	fbm.SaveToDisk()
+
+	// Make sure the keys are in the cache and FS
+	assert.True(suite.T(), fbm.HasKey("aaa"))
+	assert.True(suite.T(), fbm.HasKey("bbb"))
+	assert.True(suite.T(), IsFile(fbm.FullKeyPath("aaa")))
+	assert.True(suite.T(), IsFile(fbm.FullKeyPath("bbb")))
+
+	// Remove the keys and make sure they are gone from the cache and FS
+	fbm.RemoveAll()
+	assert.False(suite.T(), fbm.HasKey("aaa"))
+	assert.False(suite.T(), fbm.HasKey("bbb"))
+	assert.False(suite.T(), IsFile(fbm.FullKeyPath("aaa")))
+	assert.False(suite.T(), IsFile(fbm.FullKeyPath("bbb")))
 }
 
 func (suite *TestSuite) TestDataDirRecreatedOnNew() {
@@ -75,8 +141,7 @@ func (suite *TestSuite) TestDataDirRecreatedOnWrite() {
 	// Write key "aaa" to FS
 	err = fbm.Set("aaa", 8)
 	assert.Nil(suite.T(), err)
-	err = fbm.Set("bbb", 7)
-	assert.Nil(suite.T(), err)
+	fbm.SaveToDisk()
 
 	// Make sure the "data" dir and keys were recreated
 	assert.True(suite.T(), IsDir(fbm.FullPath()))
@@ -118,7 +183,7 @@ func (suite *TestSuite) TestFailOnReadGarbage() {
 }
 
 
-
 func TestExampleTestSuite(t *testing.T) {
+	log.SetFlags(log.LstdFlags | log.Lshortfile)
     suite.Run(t, new(TestSuite))
 }

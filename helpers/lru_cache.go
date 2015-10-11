@@ -102,10 +102,12 @@ func (self *LRUCache) Decrement(key string) uint64 {
 
 func (self *LRUCache) Remove(key string) (error) {
 	if element, ok := self.cache[key]; ok {
-		err := self.evictElement(element)
-		if err != nil {
-			return err
-		}
+		// Remove the element from the expiration list
+		self.expiration_list.Remove(element)
+
+		// Remove the item from the cache
+		entry := element.Value.(*CacheEntry)
+		delete(self.cache, entry.Key)
 	}
 
 	return nil
