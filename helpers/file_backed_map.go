@@ -203,26 +203,22 @@ func (self *FileBackedMap) Remove(key string) (error) {
 }
 
 // FIXME: What should we do when removing the directory or creating it fails?
-func (self *FileBackedMap) RemoveAll() {
+func (self *FileBackedMap) RemoveAll() (error) {
 	// Delete and recreate the data dir
 	if IsDir(self.FullPath()) {
 		err := os.RemoveAll(self.FullPath())
 		if err != nil {
-			panic(err)
+			return err
 		}
 	}
 	err := os.Mkdir(self.FullPath(), 0644)
 	if err != nil {
-		panic(err)
-	}
-
-	// Fatal error if the directory does not exist
-	if ! IsDir(self.FullPath()) {
-		panic("Failed to create the directory: '" + self.FullPath() + "'.")
+		return err
 	}
 
 	// Remove all the data in memory
 	self.LRUCache.RemoveAll()
+	return nil
 }
 
 func (self *FileBackedMap) Each(cb func(key string, value uint64)) {

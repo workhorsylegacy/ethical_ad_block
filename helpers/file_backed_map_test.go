@@ -108,7 +108,8 @@ func (suite *TestSuite) TestRemoveAll() {
 	assert.True(suite.T(), IsFile(fbm.FullKeyPath("bbb")))
 
 	// Remove the keys and make sure they are gone from the cache and FS
-	fbm.RemoveAll()
+	err = fbm.RemoveAll()
+	assert.Nil(suite.T(), err)
 	assert.False(suite.T(), fbm.HasKey("aaa"))
 	assert.False(suite.T(), fbm.HasKey("bbb"))
 	assert.False(suite.T(), IsFile(fbm.FullKeyPath("aaa")))

@@ -59,6 +59,16 @@ func NewAdData() *AdData {
 	return self
 }
 
+func (self *AdData) AllMaps() []*helpers.FileBackedMap {
+	return []*helpers.FileBackedMap{
+		self.votes_good,
+		self.votes_fraudulent,
+		self.votes_taxing,
+		self.votes_malicious,
+		self.voted_ad_type,
+	}
+}
+
 var g_user_ads map[string]*helpers.FileBackedMap
 var g_all_ads *AdData
 var g_user_ids map[string]time.Time
@@ -156,15 +166,25 @@ func httpCB(w http.ResponseWriter, r *http.Request) {
 
 func responseClear(w http.ResponseWriter) {
 	// Clear the overall votes
-	g_all_ads.votes_good.RemoveAll()
-	g_all_ads.votes_fraudulent.RemoveAll()
-	g_all_ads.votes_taxing.RemoveAll()
-	g_all_ads.votes_malicious.RemoveAll()
-	g_all_ads.voted_ad_type.RemoveAll()
+	has_error := false
+	for _, m := range g_all_ads.AllMaps() {
+		if err := m.RemoveAll(); err != nil {
+			has_error = true
+			log.Printf("%v\n", err)
+		}
+	}
 
 	// Clear the user votes
 	for _, user_ads := range g_user_ads {
-		user_ads.RemoveAll()
+		if err := user_ads.RemoveAll(); err != nil {
+			has_error = true
+			log.Printf("%v\n", err)
+		}
+	}
+
+	if has_error {
+		http.Error(w, "Failed to clear ads", http.StatusInternalServerError)
+		return
 	}
 
 	fmt.Fprintf(w, "All data cleared\n")
