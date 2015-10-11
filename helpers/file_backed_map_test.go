@@ -33,15 +33,23 @@ func (suite *TestSuite) SetupTest() {
 }
 
 func (suite *TestSuite) TestCreateEmptyMap() {
+	// Create the map
 	fbm, err := NewFileBackedMap("test", 1)
 	assert.Nil(suite.T(), err)
 	assert.NotNil(suite.T(), fbm)
+
+	// Make sure the fields are correct
 	assert.Equal(suite.T(), "test", fbm.DataName())
 	assert.Equal(suite.T(), 0, fbm.Len())
 	assert.Equal(suite.T(), 1, fbm.MaxLen())
+
+	// Make sure the directory exists
+	full_path, _ := filepath.Abs(filepath.Join("data", "test"))
+	assert.Equal(suite.T(), full_path, fbm.FullPath())
+	assert.True(suite.T(), IsDir(fbm.FullPath()))
 }
 
-func (suite *TestSuite) TestDataDirRecreateOnNew() {
+func (suite *TestSuite) TestDataDirRecreatedOnNew() {
 	// Remove the "data" directory
 	err := os.RemoveAll("data")
 	assert.Nil(suite.T(), err)
@@ -51,11 +59,10 @@ func (suite *TestSuite) TestDataDirRecreateOnNew() {
 	fbm, err := NewFileBackedMap("test", 1)
 	assert.Nil(suite.T(), err)
 	assert.NotNil(suite.T(), fbm)
-	full_path, _ := filepath.Abs(filepath.Join("data", "test"))
-	assert.Equal(suite.T(), full_path, fbm.FullPath())
+	assert.True(suite.T(), IsDir("data"))
 }
 
-func (suite *TestSuite) TestDataDirRecreateOnWrite() {
+func (suite *TestSuite) TestDataDirRecreatedOnWrite() {
 	// Create the map
 	fbm, err := NewFileBackedMap("test", 1)
 	assert.Nil(suite.T(), err)
@@ -73,7 +80,7 @@ func (suite *TestSuite) TestDataDirRecreateOnWrite() {
 
 	// Make sure the "data" dir and keys were recreated
 	assert.True(suite.T(), IsDir(fbm.FullPath()))
-	key_path := filepath.Join(fbm.FullPath(), "aaa")
+	key_path := fbm.FullKeyPath("aaa")
 	assert.True(suite.T(), IsFile(key_path))
 }
 
@@ -96,7 +103,7 @@ func (suite *TestSuite) TestFailOnReadGarbage() {
 	assert.NotNil(suite.T(), fbm)
 
 	// Write "garbage" to the "zzz" key
-	key_path := filepath.Join(fbm.FullPath(), "zzz")
+	key_path := fbm.FullKeyPath("zzz")
 	err = ioutil.WriteFile(key_path, []byte("garbage"), 0644)
 	assert.Nil(suite.T(), err)
 

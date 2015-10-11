@@ -31,7 +31,7 @@ func saveEntryToFile(external_self interface{}, key string, value uint64) (error
 	}
 
 	// Write the bytes to file, with the file name as the key name
-	key_path := filepath.Join(self.FullPath(), key)
+	key_path := self.FullKeyPath(key)
 	err := ioutil.WriteFile(key_path, b, 0644)
 	if err != nil {
 		return err
@@ -144,7 +144,7 @@ func (self *FileBackedMap) SaveToDisk() {
 }
 
 func (self *FileBackedMap) HasKey(key string) (bool) {
-	key_path := filepath.Join(self.FullPath(), key)
+	key_path := self.FullKeyPath(key)
 	return self.LRUCache.HasKey(key) || IsFile(key_path)
 }
 
@@ -159,7 +159,7 @@ func (self *FileBackedMap) Get(key string) (uint64, bool) {
 	}
 
 	// If the key is in the FS, read the value from the FS
-	key_path := filepath.Join(self.FullPath(), key)
+	key_path := self.FullKeyPath(key)
 	if IsFile(key_path) {
 		value_bytes, err := ioutil.ReadFile(key_path)
 		if err != nil || len(value_bytes) != 8 {
@@ -185,7 +185,7 @@ func (self *FileBackedMap) Decrement(key string) uint64 {
 
 func (self *FileBackedMap) Remove(key string) (error) {
 	// Remove the key from the FS
-	key_path := filepath.Join(self.FullPath(), key)
+	key_path := self.FullKeyPath(key)
 	if IsFile(key_path) {
 		err := os.Remove(key_path)
 		if err != nil {
@@ -239,4 +239,8 @@ func (self *FileBackedMap) DataName() string {
 
 func (self *FileBackedMap) FullPath() string {
 	return filepath.Join(self.data_dir, self.data_name)
+}
+
+func (self *FileBackedMap) FullKeyPath(key_name string) string {
+	return filepath.Join(self.data_dir, self.data_name, key_name)
 }
