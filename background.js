@@ -44,7 +44,11 @@ chrome.webRequest.onBeforeRequest.addListener(function(info) {
 	return {cancel: false};
 }, { urls: ['<all_urls>'] }, ['blocking']);
 */
-
+/*
+chrome.webRequest.onCompleted.addListener(function(details) {
+	console.info(details);
+}, { urls: ['<all_urls>'] }, ['responseHeaders']);
+*/
 // FIXME: Update this to use send_response instead of sending another message, instead of return false
 chrome.runtime.onMessage.addListener(function(msg, sender, send_response) {
 	switch (msg.action) {

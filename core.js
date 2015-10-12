@@ -10,6 +10,7 @@ TODO:
 . Make hashing work with svg
 . Save the randomly generated user id in localStorage
 
+. If a video has autoplay, turn it off when hidden, then back on when shown
 . Save the element hash inside the element with setAttribute, so we will not have to download images multiples times to hash.
 . on the server, replace path with filepath
 . on the server, when reading/writing from file, stop allocations by using strconv.ParseUint/fmt.Sprintf
@@ -46,6 +47,7 @@ var TAGS1 = {
 	'a' : PURPLE,
 	'img' : BLUE,
 	'video' : BLUE,
+	'svg' : BLUE,
 	'object' : YELLOW,
 	'embed' : YELLOW,
 	'iframe' : RED,
@@ -97,6 +99,22 @@ function blobToDataURI(blob, cb) {
 		cb(e.target.result);
 	}
 	a.readAsDataURL(blob);
+}
+
+function svgToString(element) {
+	var serializer = new XMLSerializer();
+	return serializer.serializeToString(element);
+}
+
+function svgToDataURI(element, cb) {
+	var raw_svg = element;
+	if (typeof element !== 'string') {
+		raw_svg = svgToString(element);
+	}
+	var blob = new Blob([raw_svg], {type: "image/svg+xml;charset=utf-8"});
+	blobToDataURI(blob, function(data_uri) {
+		cb(data_uri);
+	});
 }
 
 function httpGetBlob(request, success_cb, fail_cb) {
@@ -453,6 +471,9 @@ function isElementLoaded(element) {
 		case 'video':
 			var src = getVideoSrc(element);
 			return src && src.length > 0 && element.readyState === 4;
+		case 'svg':
+			var src = element.innerHTML;
+			return src && src.length > 0;
 		case 'embed':
 		case 'object':
 			return element.data && element.data.length > 0;
@@ -483,6 +504,9 @@ function isElementHashable(element) {
 		case 'video':
 			var src = getVideoSrc(element);
 			return src && src.length > 0 && element.readyState === 4;
+		case 'svg':
+			var src = element.innerHTML;
+			return src && src.length > 0;
 		case 'embed':
 		case 'object':
 			return element.data && element.data.length > 0;
@@ -536,6 +560,13 @@ function getElementHash(is_printed, element, cb) {
 					cb(hash);
 				});
 			}, 50000);
+			break;
+		case 'svg':
+			svgToDataURI(element, function(data_uri) {
+				var hash = hexMD5(data_uri);
+				if (is_printed) {printInfo(element, hash);}
+				cb(hash);
+			});
 			break;
 		// FIXME: Update to hash divs that have click events
 		case 'div':
@@ -779,10 +810,19 @@ function handleIframeClick(e) {
 		}
 	}
 
+	// Get all the SVGs
+	var svg_strings = [];
+	var svgs = document.getElementsByTagName('svg');
+	for (var i=0; i< svgs.length; ++i) {
+		var data = svgToString(svgs[i]);
+		svg_strings.push(data);
+	}
+
 	// Send the image sources to the top window, so it can make a menu
 	var request = {
 		message: 'show_iframe_menu',
-		srcs: srcs
+		srcs: srcs,
+		svgs: svg_strings
 	};
 	window.top.postMessage(request, '*');
 }
@@ -819,7 +859,7 @@ function removeImages(srcs) {
 }
 
 // FIXME: Make it so the menu has a scroll bar instead of the iframe
-function showMenu(source_window, srcs) {
+function showMenu(source_window, srcs, svgs) {
 	// Transparent container
 	var container = document.createElement('iframe');
 	container.className = 'nostyle';
@@ -893,6 +933,7 @@ function showMenu(source_window, srcs) {
 
 				var new_img = document.createElement('img');
 				new_img.src = data_uri;
+				new_img.style.border = '1px solid black';
 				box.appendChild(new_img);
 				box.appendChild(document.createElement('br'));
 
@@ -907,6 +948,33 @@ function showMenu(source_window, srcs) {
 				box.appendChild(document.createElement('hr'));
 			});
 		});
+	}
+
+	// Load SVGs
+	if (svgs) {
+		for (var i=0; i<svgs.length; ++i) {
+			svgToDataURI(svgs[i], function(data_uri) {
+				var box = document.createElement('div');
+				box.type = 'checkbox';
+				images.appendChild(box);
+
+				var new_img = document.createElement('img');
+				new_img.src = data_uri;
+				new_img.style.border = '1px solid black';
+				box.appendChild(new_img);
+				box.appendChild(document.createElement('br'));
+
+				var check = document.createElement('input');
+				check.type = 'checkbox';
+//				check.original_src = data_uri;
+				box.appendChild(check);
+
+				var span = document.createElement('span');
+				span.innerHTML = data_uri;
+				box.appendChild(span);
+				box.appendChild(document.createElement('hr'));
+			});
+		}
 	}
 
 	// Button
@@ -1170,6 +1238,7 @@ function checkElementsThatMayBeAds() {
 					case 'object':
 					case 'embed':
 					case 'video':
+					case 'svg':
 						var color = TAGS1[name];
 						g_known_elements[uid] = true;
 						removeElementIfAd(element, color);

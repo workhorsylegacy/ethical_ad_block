@@ -38,7 +38,8 @@ function setupEvents() {
 				break;
 			case 'show_iframe_menu':
 				var srcs = event.data.srcs;
-				showMenu(event.source, srcs);
+				var svgs = event.data.svgs;
+				showMenu(event.source, srcs, svgs);
 				break;
 			case 'remove_images_in_iframe':
 				var srcs = event.data.srcs;
