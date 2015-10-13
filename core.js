@@ -97,7 +97,7 @@ function blobToDataURI(blob, cb) {
 	var a = new FileReader();
 	a.onload = function(e) {
 		cb(e.target.result);
-	}
+	};
 	a.readAsDataURL(blob);
 }
 
