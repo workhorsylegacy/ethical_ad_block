@@ -152,9 +152,9 @@ function httpGetBlob(request, success_cb, fail_cb) {
 	xhr.onerror = function() {
 		if (fail_cb) fail_cb(0);
 	};
+	xhr.open('GET', request, true);
 	xhr.timeout = 3000;
 	xhr.responseType = 'blob';
-	xhr.open('GET', request, true);
 	xhr.send(null);
 }
 
