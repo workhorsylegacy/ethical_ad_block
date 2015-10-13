@@ -102,8 +102,25 @@ function blobToDataURI(blob, cb) {
 }
 
 function svgToString(element) {
+	// Make a copy of the element
+	var copy = element.cloneNode(true);
+
+	// Remove all the non SVG attributes
+	copy.removeAttribute('style');
+	copy.removeAttribute('id');
+	copy.removeAttribute('uid');
+	var attrs = toArray(copy.attributes);
+	for (var i=0; i<attrs.length; ++i) {
+		var attr = attrs[i];
+		if (attr.nodeName.startsWith('_real_')) {
+			copy.removeAttribute(attr.nodeName);
+		}
+	}
+
+	// Convert the element to XML
 	var serializer = new XMLSerializer();
-	return serializer.serializeToString(element);
+	var data = serializer.serializeToString(copy);
+	return data;
 }
 
 function svgToDataURI(element, cb) {
