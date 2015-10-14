@@ -5,11 +5,13 @@
 /*
 TODO:
 
+. Give SVGs in the menu a max width and height
 . Make popup selector remove iframe
 . Move popup menu to center of top frame
 . Make hashing work with svg
 . Save the randomly generated user id in localStorage
 
+. Use a MutationObserver to watch for element changes after the page load event
 . If a video has autoplay, turn it off when hidden, then back on when shown
 . Save the element hash inside the element with setAttribute, so we will not have to download images multiples times to hash.
 . on the server, replace path with filepath
