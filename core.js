@@ -844,7 +844,7 @@ function handleIframeClick(e) {
 	window.top.postMessage(request, '*');
 }
 
-function removeImages(srcs) {
+function removeImages(srcs, svgs) {
 	// Remove any images that use those sources
 	var imgs = document.getElementsByTagName('img');
 	for (var i=0; i<imgs.length; ++i) {
@@ -872,6 +872,20 @@ function removeImages(srcs) {
 				}
 			}
 		}
+	}
+
+	// Remove any SVGs that have the same structure
+	var elements = document.getElementsByTagName('svg');
+	for (var i=0; i<elements.length; ++i) {
+		var element = elements[i];
+		svgToDataURI(element, function(data_uri) {
+			for (var j=0; j<svgs.length; ++j) {
+				if (data_uri === svgs[j]) {
+					element.parentElement.removeChild(element);
+					break;
+				}
+			}
+		});
 	}
 }
 
@@ -983,7 +997,7 @@ function showMenu(source_window, srcs, svgs) {
 
 				var check = document.createElement('input');
 				check.type = 'checkbox';
-//				check.original_src = data_uri;
+				check.svg_data_uri = data_uri;
 				box.appendChild(check);
 
 				var span = document.createElement('span');
@@ -1000,31 +1014,38 @@ function showMenu(source_window, srcs, svgs) {
 	button.addEventListener('click', function() {
 		// Tell the server that all the selected images are ads
 		var srcs_to_remove = [];
+		var svgs_to_remove = [];
 		var inputs = menu.getElementsByTagName('input');
 		for (var i=0; i<inputs.length; ++i) {
 			var input = inputs[i];
-			if (input.type === 'checkbox' && input.checked && input.original_src) {
-				srcs_to_remove.push(input.original_src);
-				httpGetBlob(input.original_src, function(original_src, data, total_size) {
-					blobToDataURI(data, function(data_uri) {
-						var hash = hexMD5(data_uri);
-
-						console.log(original_src);
-						console.info(data_uri);
-						console.info(hash);
-
-						if (hash) {
-							voteForAd(hash, 'fraudulent'); // FIXME: Let the user select the ad type
-						}
+			if (input.type === 'checkbox' && input.checked) {
+				// Image
+				if (input.original_src) {
+					srcs_to_remove.push(input.original_src);
+					httpGetBlob(input.original_src, function(original_src, data, total_size) {
+						blobToDataURI(data, function(data_uri) {
+							var hash = hexMD5(data_uri);
+							if (hash) {
+								voteForAd(hash, 'fraudulent'); // FIXME: Let the user select the ad type
+							}
+						});
 					});
-				});
+				// SVG
+				} else if (input.svg_data_uri) {
+					svgs_to_remove.push(input.svg_data_uri);
+					var hash = hexMD5(input.svg_data_uri);
+					if (hash) {
+						voteForAd(hash, 'fraudulent'); // FIXME: Let the user select the ad type
+					}
+				}
 			}
 		}
 
 		// Remove all the images that are ads
 		var request = {
 			message: 'remove_images_in_iframe',
-			srcs: srcs_to_remove
+			srcs: srcs_to_remove,
+			svgs: svgs_to_remove
 		};
 		source_window.postMessage(request, '*');
 

@@ -43,7 +43,8 @@ function setupEvents() {
 				break;
 			case 'remove_images_in_iframe':
 				var srcs = event.data.srcs;
-				removeImages(srcs);
+				var svgs = event.data.svgs;
+				removeImages(srcs, svgs);
 				break;
 		}
 	}, false);
