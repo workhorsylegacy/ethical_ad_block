@@ -308,6 +308,18 @@ function isValidCSSImagePath(value) {
 	value = value.toLowerCase();
 	return value && value.length > 0 && value.startsWith('url(') && value.endsWith(')');
 }
+
+function isElementInsideSVG(element) {
+	var parent = element.parentElement;
+	while (parent) {
+		if (parent.tagName.toLowerCase() === 'svg') {
+			return true;
+		}
+		parent = parent.parentElement;
+	}
+	return false;
+}
+
 /*
 function isElementInsideLink(element) {
 	var parent = element.parentElement;
@@ -833,8 +845,17 @@ function handleIframeClick(e) {
 	var svg_strings = [];
 	var svgs = document.getElementsByTagName('svg');
 	for (var i=0; i< svgs.length; ++i) {
+		if (isElementInsideSVG(svgs[i])) {
+			continue;
+		}
 		var data = svgToString(svgs[i]);
-		svg_strings.push(data);
+		var rect = getElementRect(svgs[i]);
+		var message = {
+			data: data,
+			width: rect.width,
+			height: rect.height
+		};
+		svg_strings.push(message);
 	}
 
 	// Send the image sources to the top window, so it can make a menu
@@ -986,13 +1007,20 @@ function showMenu(source_window, srcs, svgs) {
 	// Load SVGs
 	if (svgs) {
 		for (var i=0; i<svgs.length; ++i) {
-			svgToDataURI(svgs[i], function(data_uri) {
+			var svg = svgs[i];
+			svgToDataURI(svg.data, function(data_uri) {
 				var box = document.createElement('div');
 				box.type = 'checkbox';
 				images.appendChild(box);
 
 				var new_img = document.createElement('img');
 				new_img.src = data_uri;
+/*
+				if (svg.width > 0 && svg.height > 0) {
+					new_img.width = svg.width;
+					new_img.width = svg.height;
+				}
+*/
 				new_img.style.border = '1px solid black';
 				box.appendChild(new_img);
 				box.appendChild(document.createElement('br'));
