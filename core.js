@@ -91,7 +91,7 @@ function getResponseHeaderContentLength(xhr) {
 }
 
 function isDataURI(src) {
-	return src && src.indexOf('data:') === 0;
+	return src && src.startsWith('data:');
 }
 
 function blobToDataURI(blob, cb) {
@@ -197,9 +197,9 @@ function httpGetBlobChunk(request, success_cb, fail_cb, max_len) {
 		success_cb = null;
 		fail_cb = null;
 	};
+	xhr.open('GET', request, true);
 	xhr.timeout = 3000;
 	xhr.responseType = 'blob';
-	xhr.open('GET', request, true);
 	xhr.send(null);
 }
 
@@ -220,9 +220,23 @@ function httpGetText(request, success_cb, fail_cb) {
 	xhr.onerror = function() {
 		if (fail_cb) fail_cb(0);
 	};
-	xhr.timeout = 3000;
 	xhr.open('GET', request, true);
+	xhr.timeout = 3000;
 	xhr.send(null);
+}
+
+function httpGetBlobAsDataURI(src, cb) {
+	// If the source is already a Data URI, just fire the callback
+	if (isDataURI(src)) {
+		cb(src, src);
+	// Otherwise download the source, convert it to a Data URI, and fire the callback
+	} else {
+		httpGetBlob(src, function(original_src, data, total_size) {
+			blobToDataURI(data, function(data_uri) {
+				cb(original_src, data_uri);
+			});
+		});
+	}
 }
 
 function getImageDataURI(element, src, cb) {
@@ -564,12 +578,10 @@ function getElementHash(is_printed, element, cb) {
 				cb(hash);
 			// Else download the blob and hash that
 			} else {
-				httpGetBlob(src, function(src, data, total_size) {
-					blobToDataURI(data, function(data_uri) {
-						var hash = hexMD5(data_uri);
-						if (is_printed) {printInfo(element, hash);}
-						cb(hash);
-					});
+				httpGetBlobAsDataURI(src, function(original_src, data_uri) {
+					var hash = hexMD5(data_uri);
+					if (is_printed) {printInfo(element, hash);}
+					cb(hash);
 				});
 			}
 			break;
@@ -604,12 +616,11 @@ function getElementHash(is_printed, element, cb) {
 			var bg = window.getComputedStyle(element)['background-image'];
 			if (isValidCSSImagePath(bg)) {
 				var src = bg.substring(4, bg.length-1);
-				httpGetBlob(src, function(src, data, total_size) {
-					blobToDataURI(data, function(data_uri) {
-						var hash = hexMD5(data_uri);
-						if (is_printed) {printInfo(element, hash);}
-						cb(hash);
-					});
+
+				httpGetBlobAsDataURI(src, function(original_src, data_uri) {
+					var hash = hexMD5(data_uri);
+					if (is_printed) {printInfo(element, hash);}
+					cb(hash);
 				});
 			} else {
 				cb(hash);
@@ -620,12 +631,10 @@ function getElementHash(is_printed, element, cb) {
 			var bg = window.getComputedStyle(element)['background-image'];
 			if (isValidCSSImagePath(bg)) {
 				var src = bg.substring(4, bg.length-1);
-				httpGetBlob(src, function(src, data, total_size) {
-					blobToDataURI(data, function(data_uri) {
-						var hash = hexMD5(data_uri);
-						if (is_printed) {printInfo(element, hash);}
-						cb(hash);
-					});
+				httpGetBlobAsDataURI(src, function(original_src, data_uri) {
+					var hash = hexMD5(data_uri);
+					if (is_printed) {printInfo(element, hash);}
+					cb(hash);
 				});
 			} else if (element.href && element.href.length > 0) {
 				hash = hexMD5(element.href);
@@ -971,35 +980,29 @@ function showMenu(source_window, srcs, svgs) {
 
 	// Load each src into an image
 	for (var i=0; i<srcs.length; ++i) {
-		httpGetBlob(srcs[i], function(original_src, response_blob, total_size) {
-
+		httpGetBlobAsDataURI(srcs[i], function(original_src, data_uri) {
 //			console.info(original_src);
-//			console.info(response_blob);
-//			console.info(total_size);
-			blobToDataURI(response_blob, function(data_uri) {
-//				console.info(original_src);
-//				console.info(data_uri);
+//			console.info(data_uri);
 
-				var box = document.createElement('div');
-				box.type = 'checkbox';
-				images.appendChild(box);
+			var box = document.createElement('div');
+			box.type = 'checkbox';
+			images.appendChild(box);
 
-				var new_img = document.createElement('img');
-				new_img.src = data_uri;
-				new_img.style.border = '1px solid black';
-				box.appendChild(new_img);
-				box.appendChild(document.createElement('br'));
+			var new_img = document.createElement('img');
+			new_img.src = data_uri;
+			new_img.style.border = '1px solid black';
+			box.appendChild(new_img);
+			box.appendChild(document.createElement('br'));
 
-				var check = document.createElement('input');
-				check.type = 'checkbox';
-				check.original_src = original_src;
-				box.appendChild(check);
+			var check = document.createElement('input');
+			check.type = 'checkbox';
+			check.original_src = original_src;
+			box.appendChild(check);
 
-				var span = document.createElement('span');
-				span.innerHTML = original_src;
-				box.appendChild(span);
-				box.appendChild(document.createElement('hr'));
-			});
+			var span = document.createElement('span');
+			span.innerHTML = original_src;
+			box.appendChild(span);
+			box.appendChild(document.createElement('hr'));
 		});
 	}
 
@@ -1051,13 +1054,11 @@ function showMenu(source_window, srcs, svgs) {
 				// Image
 				if (input.original_src) {
 					srcs_to_remove.push(input.original_src);
-					httpGetBlob(input.original_src, function(original_src, data, total_size) {
-						blobToDataURI(data, function(data_uri) {
-							var hash = hexMD5(data_uri);
-							if (hash) {
-								voteForAd(hash, 'fraudulent'); // FIXME: Let the user select the ad type
-							}
-						});
+					httpGetBlobAsDataURI(input.original_src, function(original_src, data_uri) {
+						var hash = hexMD5(data_uri);
+						if (hash) {
+							voteForAd(hash, 'fraudulent'); // FIXME: Let the user select the ad type
+						}
 					});
 				// SVG
 				} else if (input.svg_data_uri) {
