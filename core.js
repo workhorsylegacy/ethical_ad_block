@@ -8,7 +8,6 @@ TODO:
 . Give SVGs in the menu a max width and height
 . Make popup selector remove iframe
 . Move popup menu to center of top frame
-. Make hashing work with svg
 . Save the randomly generated user id in localStorage
 
 . Use a MutationObserver to watch for element changes after the page load event
@@ -974,9 +973,9 @@ function showMenu(source_window, srcs, svgs) {
 	for (var i=0; i<srcs.length; ++i) {
 		httpGetBlob(srcs[i], function(original_src, response_blob, total_size) {
 
-			console.info(original_src);
-			console.info(response_blob);
-			console.info(total_size);
+//			console.info(original_src);
+//			console.info(response_blob);
+//			console.info(total_size);
 			blobToDataURI(response_blob, function(data_uri) {
 //				console.info(original_src);
 //				console.info(data_uri);
