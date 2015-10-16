@@ -22,7 +22,7 @@
 			"run_at": "document_start",
 			"all_frames": true,
 			"css": ["core.css", "debug.css"],
-			"js": ["helpers.js", "core.js", "md5.js", "all_frames.js"]
+			"js": ["polyfills.js", "helpers.js", "core.js", "md5.js", "all_frames.js"]
 		},
 		{
 			"matches": ["<all_urls>"],

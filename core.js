@@ -836,7 +836,10 @@ function handleIframeClick(e) {
 	var srcs = [];
 	var imgs = document.getElementsByTagName('img');
 	for (var i=0; i<imgs.length; ++i) {
-		srcs.push(getImageSrc(imgs[i]));
+		var src = getImageSrc(imgs[i]);
+		if (! srcs.includes(src)) {
+			srcs.push(src);
+		}
 	}
 
 	// Get all the background-image sources
@@ -845,7 +848,9 @@ function handleIframeClick(e) {
 		var bg = window.getComputedStyle(elements[i])['background-image'];
 		if (isValidCSSImagePath(bg)) {
 			var src = bg.substring(4, bg.length-1);
-			srcs.push(src);
+			if (! srcs.includes(src)) {
+				srcs.push(src);
+			}
 		}
 	}
 
@@ -863,7 +868,9 @@ function handleIframeClick(e) {
 			width: rect.width,
 			height: rect.height
 		};
-		svg_strings.push(message);
+		if (! svg_strings.includes(message)) {
+			svg_strings.push(message);
+		}
 	}
 
 	// Send the image sources to the top window, so it can make a menu
