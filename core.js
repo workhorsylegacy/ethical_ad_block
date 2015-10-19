@@ -571,19 +571,11 @@ function getElementHash(is_printed, element, cb) {
 	switch (element.tagName.toLowerCase()) {
 		case 'img':
 			var src = getImageSrc(element);
-			// If the image src is already a data URI, hash that
-			if (isDataURI(src)) {
-				var hash = hexMD5(src);
+			httpGetBlobAsDataURI(src, function(original_src, data_uri) {
+				var hash = hexMD5(data_uri);
 				if (is_printed) {printInfo(element, hash);}
 				cb(hash);
-			// Else download the blob and hash that
-			} else {
-				httpGetBlobAsDataURI(src, function(original_src, data_uri) {
-					var hash = hexMD5(data_uri);
-					if (is_printed) {printInfo(element, hash);}
-					cb(hash);
-				});
-			}
+			});
 			break;
 		case 'embed':
 		case 'object':
