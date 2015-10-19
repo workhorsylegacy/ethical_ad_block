@@ -919,11 +919,12 @@ function removeImages(srcs, svgs) {
 	}
 }
 
-// FIXME: Make it so the menu has a scroll bar instead of the iframe
 function showMenu(source_window, srcs, svgs) {
 	// Transparent container
 	var container = document.createElement('iframe');
 	container.className = 'nostyle';
+	container.style.overflow = 'hidden';
+	container.style.boxSizing = 'border-box';
 	container.style.position = 'fixed';
 	container.style.textAlign = 'center';
 	container.style.width = '100%';
@@ -935,22 +936,30 @@ function showMenu(source_window, srcs, svgs) {
 	container.style.margin = '0px';
 	container.style.padding = '0px';
 	container.style.zIndex = 100000;
-	container.style.overflow = 'visible';
 	document.body.appendChild(container);
 	var frame = container.contentDocument;
 	frame.open();
-	frame.writeln("<!doctype html><html><head _is_popup_menu></head><body></body></html>");
+	frame.writeln("<!DOCTYPE html><html><head _is_popup_menu></head><body></body></html>");
 	frame.close();
 	frame.body.style.backgroundColor = 'rgba(128, 128, 128, 0.8)';
 	frame.body.style.textAlign = 'center';
+	frame.body.style.position = 'fixed';
+	frame.body.style.overflow = 'hidden';
+	frame.body.style.boxSizing = 'border-box';
+	frame.body.style.margin = '0px';
+	frame.body.style.padding = '0px';
+	frame.body.style.width = '100%';
+	frame.body.style.height = '100%';
 
 	// Menu
 	var menu = document.createElement('div');
-	menu.style.overflow = 'visible';
+	menu.style.overflow = 'scroll';
+	menu.style.boxSizing = 'border-box';
 	menu.style.margin = 'auto';
-	menu.style.padding = '10px';
+	menu.style.padding = '0px';
 	menu.style.textAlign = 'center';
-	menu.style.width = '60%';
+	menu.style.width = '80%';
+	menu.style.height = '80%';
 	menu.style.backgroundColor = '#f0f0f0';
 	menu.style.outline = '1px solid black';
 	menu.style.boxShadow = '10px 10px 5px grey';
