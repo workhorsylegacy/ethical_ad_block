@@ -10,7 +10,6 @@ TODO:
 . Move popup menu to center of top frame
 . Save the randomly generated user id in localStorage
 
-. Use a MutationObserver to watch for element changes after the page load event
 . If a video has autoplay, turn it off when hidden, then back on when shown
 . Save the element hash inside the element with setAttribute, so we will not have to download images multiples times to hash.
 . on the server, replace path with filepath
@@ -1327,13 +1326,119 @@ function checkElementsThatMayBeAds() {
 	}
 }
 
+function checkElementForAds(element) {
+	// If the element does not have an uid, generate a random one
+	if (! element.hasAttribute('uid')) {
+		// Make the element hidden before we can examine it for the first time
+		hideElement(element);
+
+		element.setAttribute('uid', generateRandomId());
+	}
+
+	// Skip the element if it has not finished loading
+	if (! isElementLoaded(element)) {
+		return;
+	}
+
+	// Show the element if it is not hashable
+	if (! isElementHashable(element)) {
+		showElement(element);
+		return;
+	}
+
+	// Check if the element is an ad
+	var name = element.tagName.toLowerCase();
+	switch (name) {
+		// Show all iframes, and add an outline
+		case 'iframe':
+			showElement(element);
+			setElementOutline(element, RED);
+			break;
+		// Check everything else
+		case 'img':
+		case 'div':
+		case 'a':
+		case 'object':
+		case 'embed':
+		case 'video':
+		case 'svg':
+			var color = TAGS1[name];
+			removeElementIfAd(element, color);
+			break;
+		default:
+			throw "Unexpected element '" + name + "' to check for ads.";
+	}
+}
+
 // Keep looking at page elements, and add buttons to ones that loaded
 function checkElementsLoop() {
-//	console.log('called checkElementsLoop ...');
+	var setup_interval = setInterval(function() {
+		if (document.body) {
+			clearInterval(setup_interval);
+			setup_interval = null;
 
-	checkElementsThatMayBeAds();
+			checkElementsThatMayBeAds();
 
-	setTimeout(checkElementsLoop, 500);
+			// create an observer instance
+			var observer = new MutationObserver(function(mutations) {
+				checkElementsThatMayBeAds();
+
+				mutations.forEach(function(mutation) {
+					switch (mutation.type) {
+						case 'attributes':
+							var name = mutation.target.tagName;
+							if (name && TAGS1.hasOwnProperty(name.toLowerCase())) {
+								checkElementForAds(mutation.target);
+							}
+/*
+							console.info(mutation.target);
+							console.info(mutation.attributeName);
+							console.info(mutation.oldValue);
+*/
+							break;
+						case 'characterData':
+							break;
+						case 'childList':
+							if (mutation.addedNodes && mutation.addedNodes.length > 0) {
+								for (var i=0; i<mutation.addedNodes.length; ++i) {
+									var node = mutation.addedNodes[i];
+									var name = node.tagName;
+									if (name && TAGS1.hasOwnProperty(name.toLowerCase())) {
+										checkElementForAds(node);
+									}
+//									console.info(node);
+								}
+							}
+							if (mutation.removedNodes && mutation.removedNodes.length > 0) {
+								for (var i=0; i<mutation.removedNodes.length; ++i) {
+									var node = mutation.removedNodes[i];
+									var name = node.tagName;
+									if (name && TAGS1.hasOwnProperty(name.toLowerCase())) {
+										checkElementForAds(node);
+									}
+//									console.info(node);
+								}
+							}
+							break;
+					}
+				});
+			});
+
+			// configuration of the observer
+			var config = {
+				attributes: true,
+				childList: true,
+				characterData: true,
+				attributeOldValue: true,
+				characterDataOldValue: true,
+				subtree: true
+			};
+
+			// pass in the target node, as well as the observer options
+			var target = document.body;
+			observer.observe(target, config);
+		}
+	}, 100);
 }
 
 // Monkey patch the addEventListener and removeEventListener methods to
