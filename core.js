@@ -1268,7 +1268,7 @@ function handleNormalClick(e) {
 	});
 }
 
-function checkElementsThatMayBeAds() {
+function checkAllElementsForAds() {
 	for (var tag in TAGS1) {
 		var elements = document.getElementsByTagName(tag);
 		for (var i=0; i<elements.length; ++i) {
@@ -1372,17 +1372,40 @@ function checkElementForAds(element) {
 
 // Keep looking at page elements, and add buttons to ones that loaded
 function checkElementsLoop() {
+	// Wait for the body to be created
 	var setup_interval = setInterval(function() {
 		if (document.body) {
 			clearInterval(setup_interval);
 			setup_interval = null;
 
-			checkElementsThatMayBeAds();
+			checkAllElementsForAds();
 
-			// create an observer instance
+			// Check all images after they load
+			// NOTE: We have to do this manually, because an image loading does not count as a mutation
+			var imgs = document.getElementsByTagName('img');
+			for (var i=0; i<imgs.length; ++i) {
+				var img = imgs[i];
+				if (! isElementLoaded(img)) {
+					img.addEventListener('load', function(e) {
+						checkElementForAds(this);
+					});
+				}
+			}
+
+			// Check all videos after they load
+			// NOTE: We have to do this manually, because a video loading does not count as a mutation
+			var videos = document.getElementsByTagName('video');
+			for (var i=0; i<videos.length; ++i) {
+				var video = videos[i];
+				if (! isElementLoaded(video)) {
+					video.addEventListener('loadeddata', function(e) {
+						checkElementForAds(this);
+					});
+				}
+			}
+
+			// Create an observer to look at all element changes
 			var observer = new MutationObserver(function(mutations) {
-				checkElementsThatMayBeAds();
-
 				mutations.forEach(function(mutation) {
 					switch (mutation.type) {
 						case 'attributes':
@@ -1390,13 +1413,6 @@ function checkElementsLoop() {
 							if (name && TAGS1.hasOwnProperty(name.toLowerCase())) {
 								checkElementForAds(mutation.target);
 							}
-/*
-							console.info(mutation.target);
-							console.info(mutation.attributeName);
-							console.info(mutation.oldValue);
-*/
-							break;
-						case 'characterData':
 							break;
 						case 'childList':
 							if (mutation.addedNodes && mutation.addedNodes.length > 0) {
@@ -1406,17 +1422,6 @@ function checkElementsLoop() {
 									if (name && TAGS1.hasOwnProperty(name.toLowerCase())) {
 										checkElementForAds(node);
 									}
-//									console.info(node);
-								}
-							}
-							if (mutation.removedNodes && mutation.removedNodes.length > 0) {
-								for (var i=0; i<mutation.removedNodes.length; ++i) {
-									var node = mutation.removedNodes[i];
-									var name = node.tagName;
-									if (name && TAGS1.hasOwnProperty(name.toLowerCase())) {
-										checkElementForAds(node);
-									}
-//									console.info(node);
 								}
 							}
 							break;
@@ -1424,19 +1429,16 @@ function checkElementsLoop() {
 				});
 			});
 
-			// configuration of the observer
+			// Look for all changes to attributes, and new elements
 			var config = {
 				attributes: true,
 				childList: true,
-				characterData: true,
 				attributeOldValue: true,
-				characterDataOldValue: true,
 				subtree: true
 			};
 
-			// pass in the target node, as well as the observer options
-			var target = document.body;
-			observer.observe(target, config);
+			// Start observing any changes to the body
+			observer.observe(document.body, config);
 		}
 	}, 100);
 }
@@ -1540,7 +1542,7 @@ function addScriptTrackEventListeners() {
 
 function addStyleRemovePluginStyles() {
 	var style = document.createElement('style');
-	style.textContent = "a, img, video, iframe, object, embed, div { opacity: 1; pointer-events: all; }";
+	style.textContent = "a, img, video, iframe, object, embed, div, svg { opacity: 1; pointer-events: all; }";
 	document.head.appendChild(style);
 }
 
