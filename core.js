@@ -1292,8 +1292,7 @@ function checkAllElementsForAds(known_elements, parent) {
 				// Skip the element if it has not finished loading
 				if (! isElementLoaded(element)) {
 					// Check all images after they load
-					if (tag === 'img' && ! element.hasAttribute('ass')) {
-						element.setAttribute('ass', '');
+					if (tag === 'img') {
 						element.addEventListener('load', function(e) {
 							checkElementForAds(this);
 						});
@@ -1388,6 +1387,7 @@ function checkElementForAds(element) {
 
 // Keep looking at page elements, and add buttons to ones that loaded
 function checkElementsLoop() {
+	
 	// Wait for the body to be created
 	var setup_interval = setInterval(function() {
 		if (document.body) {
