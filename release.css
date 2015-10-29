@@ -1,5 +1,5 @@
 
-a, img, video, iframe, object, embed, div {
+a, img, video, iframe, object, embed, div, svg {
 	opacity: 0.0;
 	pointer-events: none;
 	position: fixed;

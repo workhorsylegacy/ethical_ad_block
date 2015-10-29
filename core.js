@@ -10,7 +10,6 @@ TODO:
 . Move popup menu to center of top frame
 . Save the randomly generated user id in localStorage
 
-. Use a MutationObserver to watch for element changes after the page load event
 . If a video has autoplay, turn it off when hidden, then back on when shown
 . Save the element hash inside the element with setAttribute, so we will not have to download images multiples times to hash.
 . on the server, replace path with filepath
@@ -31,7 +30,6 @@ var DEBUG = true;
 var BUTTON_SIZE = 15;
 var OPACITY = DEBUG ? 0.2 : 0.0;
 var OUTLINE_SIZE = DEBUG ? 6 : 2;
-var g_known_elements = {};
 var g_patched_elements = {};
 var g_cursor_x = 0;
 var g_cursor_y = 0;
@@ -1269,9 +1267,14 @@ function handleNormalClick(e) {
 	});
 }
 
-function checkElementsThatMayBeAds() {
+function checkAllElementsForAds(known_elements, parent) {
+	// Skip if the parent has no children, no tag name, or is an iframe
+	if (! parent || ! parent.getElementsByTagName || (parent.tagName && parent.tagName.toLowerCase() === 'iframe')) {
+		return;
+	}
+
 	for (var tag in TAGS1) {
-		var elements = document.getElementsByTagName(tag);
+		var elements = parent.getElementsByTagName(tag);
 		for (var i=0; i<elements.length; ++i) {
 			var element = elements[i];
 
@@ -1282,18 +1285,29 @@ function checkElementsThatMayBeAds() {
 			var uid = element.getAttribute('uid');
 
 			// Only look at elements that have not already been examined
-			if (! g_known_elements.hasOwnProperty(uid)) {
+			if (! known_elements.hasOwnProperty(uid)) {
 				// Make the element hidden before we can examine it
 				hideElement(element);
 
 				// Skip the element if it has not finished loading
 				if (! isElementLoaded(element)) {
+					// Check all images after they load
+					if (tag === 'img') {
+						element.addEventListener('load', function(e) {
+							checkElementForAds(this);
+						});
+					// Check all videos after they load
+					} else if (tag === 'video') {
+						element.addEventListener('loadeddata', function(e) {
+							checkElementForAds(this);
+						});
+					}
 					continue;
 				}
 
 				// Show the element if it is not hashable
 				if (! isElementHashable(element)) {
-					g_known_elements[uid] = true;
+					known_elements[uid] = true;
 					showElement(element);
 					continue;
 				}
@@ -1303,7 +1317,7 @@ function checkElementsThatMayBeAds() {
 				switch (name) {
 					// Show all iframes, and add an outline
 					case 'iframe':
-						g_known_elements[uid] = true;
+						known_elements[uid] = true;
 						showElement(element);
 						setElementOutline(element, RED);
 						break;
@@ -1316,7 +1330,7 @@ function checkElementsThatMayBeAds() {
 					case 'video':
 					case 'svg':
 						var color = TAGS1[name];
-						g_known_elements[uid] = true;
+						known_elements[uid] = true;
 						removeElementIfAd(element, color);
 						break;
 					default:
@@ -1327,13 +1341,131 @@ function checkElementsThatMayBeAds() {
 	}
 }
 
+function checkElementForAds(element) {
+	// If the element does not have an uid, generate a random one
+	if (! element.hasAttribute('uid')) {
+		// Make the element hidden before we can examine it for the first time
+		hideElement(element);
+
+		element.setAttribute('uid', generateRandomId());
+	}
+
+	// Skip the element if it has not finished loading
+	if (! isElementLoaded(element)) {
+		return;
+	}
+
+	// Show the element if it is not hashable
+	if (! isElementHashable(element)) {
+		showElement(element);
+		return;
+	}
+
+	// Check if the element is an ad
+	var name = element.tagName.toLowerCase();
+	switch (name) {
+		// Show all iframes, and add an outline
+		case 'iframe':
+			showElement(element);
+			setElementOutline(element, RED);
+			break;
+		// Check everything else
+		case 'img':
+		case 'div':
+		case 'a':
+		case 'object':
+		case 'embed':
+		case 'video':
+		case 'svg':
+			var color = TAGS1[name];
+			removeElementIfAd(element, color);
+			break;
+		default:
+			throw "Unexpected element '" + name + "' to check for ads.";
+	}
+}
+
 // Keep looking at page elements, and add buttons to ones that loaded
 function checkElementsLoop() {
-//	console.log('called checkElementsLoop ...');
+	
+	// Wait for the body to be created
+	var setup_interval = setInterval(function() {
+		if (document.body) {
+			clearInterval(setup_interval);
+			setup_interval = null;
 
-	checkElementsThatMayBeAds();
+			var known_elements = [];
+			checkAllElementsForAds(known_elements, document);
 
-	setTimeout(checkElementsLoop, 500);
+			// Create an observer to look at all element changes
+			var observer = new MutationObserver(function(mutations) {
+				mutations.forEach(function(mutation) {
+					switch (mutation.type) {
+						case 'attributes':
+							var name = mutation.target.tagName ? mutation.target.tagName.toLowerCase() : null;
+							// FIXME: Have this only trigger on attributes that change the hashed value
+							if (name && TAGS1.hasOwnProperty(name)) {
+								switch (name) {
+									case 'img':
+										if (mutation.attributeName === 'src' ||
+											mutation.attributeName === 'srcset' ||
+											mutation.attributeName === 'imgsrc') {
+//											console.info('attributes img "' + mutation.attributeName + '"...');
+											checkElementForAds(mutation.target);
+										}
+										break;
+									case 'embed':
+									case 'object':
+										if (mutation.attributeName === 'data') {
+//											console.info('attributes object "' + mutation.attributeName + '"...');
+											checkElementForAds(mutation.target);
+										}
+										break;
+									case 'video':
+										if (mutation.attributeName === 'src') {
+//											console.info('attributes video "' + mutation.attributeName + '"...');
+											checkElementForAds(mutation.target);
+										}
+										break;
+									case 'a':
+										if (mutation.attributeName === 'href') {
+//											console.info('attributes a "' + mutation.attributeName + '"...');
+											checkElementForAds(mutation.target);
+										}
+										break;
+								}
+							}
+							break;
+						case 'childList':
+							if (mutation.addedNodes) {
+								var known_elements = [];
+								for (var i=0; i<mutation.addedNodes.length; ++i) {
+									var node = mutation.addedNodes[i];
+									var name = node.tagName ? node.tagName.toLowerCase() : null;
+									if (name && TAGS1.hasOwnProperty(name)) {
+//										console.info('childList ...');
+										checkElementForAds(node);
+									}
+									checkAllElementsForAds(known_elements, node);
+								}
+							}
+							break;
+					}
+				});
+			});
+
+			// Look for all changes to attributes, and new elements
+			var config = {
+				attributes: true,
+//				attributeOldValue: true,
+				childList: true,
+				subtree: true
+			};
+
+			// Start observing any changes to the body
+			observer.observe(document.body, config);
+		}
+	}, 10);
 }
 
 // Monkey patch the addEventListener and removeEventListener methods to
@@ -1435,7 +1567,7 @@ function addScriptTrackEventListeners() {
 
 function addStyleRemovePluginStyles() {
 	var style = document.createElement('style');
-	style.textContent = "a, img, video, iframe, object, embed, div { opacity: 1; pointer-events: all; }";
+	style.textContent = "a, img, video, iframe, object, embed, div, svg { opacity: 1; pointer-events: all; }";
 	document.head.appendChild(style);
 }
 
