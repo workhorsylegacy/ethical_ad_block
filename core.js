@@ -30,7 +30,6 @@ var DEBUG = true;
 var BUTTON_SIZE = 15;
 var OPACITY = DEBUG ? 0.2 : 0.0;
 var OUTLINE_SIZE = DEBUG ? 6 : 2;
-var g_known_elements = {};
 var g_patched_elements = {};
 var g_cursor_x = 0;
 var g_cursor_y = 0;
@@ -1268,9 +1267,14 @@ function handleNormalClick(e) {
 	});
 }
 
-function checkAllElementsForAds() {
+function checkAllElementsForAds(known_elements, parent) {
+	// Skip if the parent has no children, no tag name, or is an iframe
+	if (! parent || ! parent.getElementsByTagName || (parent.tagName && parent.tagName.toLowerCase() === 'iframe')) {
+		return;
+	}
+
 	for (var tag in TAGS1) {
-		var elements = document.getElementsByTagName(tag);
+		var elements = parent.getElementsByTagName(tag);
 		for (var i=0; i<elements.length; ++i) {
 			var element = elements[i];
 
@@ -1281,18 +1285,30 @@ function checkAllElementsForAds() {
 			var uid = element.getAttribute('uid');
 
 			// Only look at elements that have not already been examined
-			if (! g_known_elements.hasOwnProperty(uid)) {
+			if (! known_elements.hasOwnProperty(uid)) {
 				// Make the element hidden before we can examine it
 				hideElement(element);
 
 				// Skip the element if it has not finished loading
 				if (! isElementLoaded(element)) {
+					// Check all images after they load
+					if (tag === 'img' && ! element.hasAttribute('ass')) {
+						element.setAttribute('ass', '');
+						element.addEventListener('load', function(e) {
+							checkElementForAds(this);
+						});
+					// Check all videos after they load
+					} else if (tag === 'video') {
+						element.addEventListener('loadeddata', function(e) {
+							checkElementForAds(this);
+						});
+					}
 					continue;
 				}
 
 				// Show the element if it is not hashable
 				if (! isElementHashable(element)) {
-					g_known_elements[uid] = true;
+					known_elements[uid] = true;
 					showElement(element);
 					continue;
 				}
@@ -1302,7 +1318,7 @@ function checkAllElementsForAds() {
 				switch (name) {
 					// Show all iframes, and add an outline
 					case 'iframe':
-						g_known_elements[uid] = true;
+						known_elements[uid] = true;
 						showElement(element);
 						setElementOutline(element, RED);
 						break;
@@ -1315,7 +1331,7 @@ function checkAllElementsForAds() {
 					case 'video':
 					case 'svg':
 						var color = TAGS1[name];
-						g_known_elements[uid] = true;
+						known_elements[uid] = true;
 						removeElementIfAd(element, color);
 						break;
 					default:
@@ -1378,50 +1394,59 @@ function checkElementsLoop() {
 			clearInterval(setup_interval);
 			setup_interval = null;
 
-			checkAllElementsForAds();
-
-			// Check all images after they load
-			// NOTE: We have to do this manually, because an image loading does not count as a mutation
-			var imgs = document.getElementsByTagName('img');
-			for (var i=0; i<imgs.length; ++i) {
-				var img = imgs[i];
-				if (! isElementLoaded(img)) {
-					img.addEventListener('load', function(e) {
-						checkElementForAds(this);
-					});
-				}
-			}
-
-			// Check all videos after they load
-			// NOTE: We have to do this manually, because a video loading does not count as a mutation
-			var videos = document.getElementsByTagName('video');
-			for (var i=0; i<videos.length; ++i) {
-				var video = videos[i];
-				if (! isElementLoaded(video)) {
-					video.addEventListener('loadeddata', function(e) {
-						checkElementForAds(this);
-					});
-				}
-			}
+			var known_elements = [];
+			checkAllElementsForAds(known_elements, document);
 
 			// Create an observer to look at all element changes
 			var observer = new MutationObserver(function(mutations) {
 				mutations.forEach(function(mutation) {
 					switch (mutation.type) {
 						case 'attributes':
-							var name = mutation.target.tagName;
-							if (name && TAGS1.hasOwnProperty(name.toLowerCase())) {
-								checkElementForAds(mutation.target);
+							var name = mutation.target.tagName ? mutation.target.tagName.toLowerCase() : null;
+							// FIXME: Have this only trigger on attributes that change the hashed value
+							if (name && TAGS1.hasOwnProperty(name)) {
+								switch (name) {
+									case 'img':
+										if (mutation.attributeName === 'src' ||
+											mutation.attributeName === 'srcset' ||
+											mutation.attributeName === 'imgsrc') {
+//											console.info('attributes img "' + mutation.attributeName + '"...');
+											checkElementForAds(mutation.target);
+										}
+										break;
+									case 'embed':
+									case 'object':
+										if (mutation.attributeName === 'data') {
+//											console.info('attributes object "' + mutation.attributeName + '"...');
+											checkElementForAds(mutation.target);
+										}
+										break;
+									case 'video':
+										if (mutation.attributeName === 'src') {
+//											console.info('attributes video "' + mutation.attributeName + '"...');
+											checkElementForAds(mutation.target);
+										}
+										break;
+									case 'a':
+										if (mutation.attributeName === 'href') {
+//											console.info('attributes a "' + mutation.attributeName + '"...');
+											checkElementForAds(mutation.target);
+										}
+										break;
+								}
 							}
 							break;
 						case 'childList':
-							if (mutation.addedNodes && mutation.addedNodes.length > 0) {
+							if (mutation.addedNodes) {
+								var known_elements = [];
 								for (var i=0; i<mutation.addedNodes.length; ++i) {
 									var node = mutation.addedNodes[i];
-									var name = node.tagName;
-									if (name && TAGS1.hasOwnProperty(name.toLowerCase())) {
+									var name = node.tagName ? node.tagName.toLowerCase() : null;
+									if (name && TAGS1.hasOwnProperty(name)) {
+//										console.info('childList ...');
 										checkElementForAds(node);
 									}
+									checkAllElementsForAds(known_elements, node);
 								}
 							}
 							break;
@@ -1432,8 +1457,8 @@ function checkElementsLoop() {
 			// Look for all changes to attributes, and new elements
 			var config = {
 				attributes: true,
+//				attributeOldValue: true,
 				childList: true,
-				attributeOldValue: true,
 				subtree: true
 			};
 
