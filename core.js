@@ -1465,7 +1465,7 @@ function checkElementsLoop() {
 			// Start observing any changes to the body
 			observer.observe(document.body, config);
 		}
-	}, 100);
+	}, 10);
 }
 
 // Monkey patch the addEventListener and removeEventListener methods to
