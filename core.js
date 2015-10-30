@@ -883,7 +883,7 @@ function handleIframeClick(e) {
 
 	// Send the image sources to the top window, so it can make a menu
 	var request = {
-		message: 'show_iframe_menu',
+		action: 'show_iframe_menu',
 		srcs: srcs,
 		svgs: svg_strings
 	};
@@ -1097,7 +1097,7 @@ function showMenu(source_window, srcs, svgs) {
 
 		// Remove all the images that are ads
 		var request = {
-			message: 'remove_images_in_iframe',
+			action: 'remove_images_in_iframe',
 			srcs: srcs_to_remove,
 			svgs: svgs_to_remove
 		};
@@ -1194,7 +1194,7 @@ function handleNormalClick(e) {
 					var src = getImageSrc(image);
 					getImageDataURI(image, src, function(data_uri) {
 						var request = {
-							message: 'append_screen_shot',
+							action: 'append_screen_shot',
 							data_uri: data_uri
 						};
 						window.top.postMessage(request, '*');
@@ -1405,7 +1405,7 @@ function checkElementForAds(element) {
 
 // Keep looking at page elements, and add buttons to ones that loaded
 function checkElementsLoop() {
-	
+
 	// Wait for the body to be created
 	document.addEventListener('DOMContentLoaded', function() {
 		var known_elements = {};
@@ -1572,10 +1572,74 @@ function monkeyPatchTrackEventListeners() {
 	};
 }
 
+function workerBody() {
+	self.onmessage = function(event) {
+		switch (event.data.action) {
+			case 'get_file_hash':
+				console.info('worker -> web page ...');
+				var hash = 'FIXME: Get hash of file: ' + event.data.src;
+				var message = {
+					action: 'set_file_hash',
+					hash: hash
+				};
+				self.postMessage(message);
+				break;
+		}
+	};
+}
+
+function startWorker() {
+	var blob = new Blob([
+		document.getElementById('xxx_worker').textContent
+	], { type: 'text/javascript' })
+
+	var worker = new Worker(window.URL.createObjectURL(blob));
+	worker.onmessage = function(event) {
+		switch (event.data.action) {
+			case 'set_file_hash':
+				console.info('web page -> content script ...');
+				var message = {
+					action: 'set_file_hash',
+					hash: event.data.hash
+				};
+				window.postMessage(message, '*');
+				break;
+		}
+	}
+
+	window.addEventListener('message', function(event) {
+		switch (event.data.action) {
+			case 'get_file_hash':
+				console.info('web page -> worker ...');
+				worker.postMessage(event.data);
+				break;
+		}
+	}, false);
+}
+
 function addScriptTrackEventListeners() {
 	var script = document.createElement('script');
 	script.textContent = '(' + monkeyPatchTrackEventListeners + ')();';
 	(document.head || document.documentElement).appendChild(script);
+
+	script = document.createElement('script');
+	script.setAttribute('id', 'xxx_worker');
+	script.setAttribute('type', 'javascript/worker');
+	script.textContent = '(' + workerBody + ')();';
+	(document.head || document.documentElement).appendChild(script);
+
+	script = document.createElement('script');
+	script.textContent = '(' + startWorker + ')();';
+	(document.head || document.documentElement).appendChild(script);
+
+	setTimeout(function() {
+		console.info('content script -> web page ...');
+		var message = {
+			action: 'get_file_hash',
+			src: 'http://workhorsy.org/matt_jones.jpg'
+		};
+		window.postMessage(message, '*');
+	}, 3000);
 }
 
 function addStyleRemovePluginStyles() {

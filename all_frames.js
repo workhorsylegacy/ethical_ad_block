@@ -27,7 +27,11 @@ function setupEvents() {
 			return;
 		}
 
-		switch (event.data.message) {
+		switch (event.data.action) {
+			case 'set_file_hash':
+				console.info('content script ...');
+				console.info('Git hash: ' + event.data.hash);
+				break;
 			case 'append_screen_shot':
 				var img = new Image();
 				img.onload = function(e) {
