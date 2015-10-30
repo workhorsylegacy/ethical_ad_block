@@ -30,6 +30,8 @@ var DEBUG = true;
 var BUTTON_SIZE = 15;
 var OPACITY = DEBUG ? 0.2 : 0.0;
 var OUTLINE_SIZE = DEBUG ? 6 : 2;
+var g_checked_hashes = {};
+var g_hashes = {};
 var g_patched_elements = {};
 var g_cursor_x = 0;
 var g_cursor_y = 0;
@@ -565,6 +567,12 @@ function getElementHash(is_printed, element, cb) {
 		console.info('hash ' + element.tagName.toLowerCase() + ': ' + data);
 	}
 
+	var uid = element.getAttribute('uid');
+	if (g_hashes.hasOwnProperty(uid)) {
+		cb(g_hashes[uid]);
+		return;
+	}
+
 	// Hash the element based on its type
 	switch (element.tagName.toLowerCase()) {
 		case 'img':
@@ -572,6 +580,7 @@ function getElementHash(is_printed, element, cb) {
 			httpGetBlobAsDataURI(src, function(original_src, data_uri) {
 				var hash = hexMD5(data_uri);
 				if (is_printed) {printInfo(element, hash);}
+				g_hashes[uid] = hash;
 				cb(hash);
 			});
 			break;
@@ -579,6 +588,7 @@ function getElementHash(is_printed, element, cb) {
 		case 'object':
 			var hash = hexMD5(element.data);
 			if (is_printed) {printInfo(element, hash);}
+			g_hashes[uid] = hash;
 			cb(hash);
 			break;
 		case 'video':
@@ -589,6 +599,7 @@ function getElementHash(is_printed, element, cb) {
 				blobToDataURI(data, function(data_uri) {
 					var hash = data_uri && total_size ? hexMD5(total_size + ':' + data_uri) : null;
 					if (is_printed) {printInfo(element, hash);}
+					g_hashes[uid] = hash;
 					cb(hash);
 				});
 			}, 50000);
@@ -597,6 +608,7 @@ function getElementHash(is_printed, element, cb) {
 			svgToDataURI(element, function(data_uri) {
 				var hash = hexMD5(data_uri);
 				if (is_printed) {printInfo(element, hash);}
+				g_hashes[uid] = hash;
 				cb(hash);
 			});
 			break;
@@ -610,9 +622,11 @@ function getElementHash(is_printed, element, cb) {
 				httpGetBlobAsDataURI(src, function(original_src, data_uri) {
 					var hash = hexMD5(data_uri);
 					if (is_printed) {printInfo(element, hash);}
+					g_hashes[uid] = hash;
 					cb(hash);
 				});
 			} else {
+				g_hashes[uid] = hash;
 				cb(hash);
 			}
 			break;
@@ -624,13 +638,16 @@ function getElementHash(is_printed, element, cb) {
 				httpGetBlobAsDataURI(src, function(original_src, data_uri) {
 					var hash = hexMD5(data_uri);
 					if (is_printed) {printInfo(element, hash);}
+					g_hashes[uid] = hash;
 					cb(hash);
 				});
 			} else if (element.href && element.href.length > 0) {
 				hash = hexMD5(element.href);
 				if (is_printed) {printInfo(element, hash);}
+				g_hashes[uid] = hash;
 				cb(hash);
 			} else {
+				g_hashes[uid] = hash;
 				cb(hash);
 			}
 			break;
@@ -655,10 +672,11 @@ function isElementAd(hash, cb) {
 	*/
 
 	// If the hash is null, just use false
-	if (hash === null || hash === undefined) {
+	if (hash === null || hash === undefined || g_checked_hashes.hasOwnProperty(hash)) {
 		cb(false);
 		return;
 	}
+	g_checked_hashes[hash] = true;
 
 	// Check the background script if it has the cached ad type
 	var message = {
@@ -1394,7 +1412,7 @@ function checkElementsLoop() {
 			clearInterval(setup_interval);
 			setup_interval = null;
 
-			var known_elements = [];
+			var known_elements = {};
 			checkAllElementsForAds(known_elements, document);
 
 			// Create an observer to look at all element changes
@@ -1438,7 +1456,7 @@ function checkElementsLoop() {
 							break;
 						case 'childList':
 							if (mutation.addedNodes) {
-								var known_elements = [];
+								var known_elements = {};
 								for (var i=0; i<mutation.addedNodes.length; ++i) {
 									var node = mutation.addedNodes[i];
 									var name = node.tagName ? node.tagName.toLowerCase() : null;
