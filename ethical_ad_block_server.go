@@ -126,6 +126,7 @@ func httpCB(w http.ResponseWriter, r *http.Request) {
 	}
 
 	// Set the server headers
+/*
 	epoch := "Thu, 01 Jan 1970 00:00:00 UTC"
 	header := w.Header()
 	header.Set("Server", "Ethical Ad Block Server 0.1")
@@ -134,7 +135,7 @@ func httpCB(w http.ResponseWriter, r *http.Request) {
 	header.Set("Expires", "0")
 	header.Set("Last-Modified", epoch)
 	header.Set("If-Modified-Since", epoch)
-
+*/
 	//  Check which type the ad is
 	if hasParameters(r, "voted_ad_type") {
 		if parameters, ok := validateRequest("GET", w, r, "voted_ad_type"); ok {
