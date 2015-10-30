@@ -22,7 +22,7 @@
 			"run_at": "document_start",
 			"all_frames": true,
 			"css": ["core.css", "debug.css"],
-			"js": ["polyfills.js", "helpers.js", "core.js", "md5.js", "all_frames.js"]
+			"js": ["polyfills.js", "md5.js", "helpers.js", "core.js", "all_frames.js"]
 		},
 		{
 			"matches": ["<all_urls>"],
@@ -33,7 +33,7 @@
 	],
 
 	"background": {
-		"scripts": ["helpers.js", "background.js"],
+		"scripts": ["md5.js", "helpers.js", "background.js"],
 		"persistent": true
 	},
 

@@ -65,6 +65,19 @@ chrome.runtime.onMessage.addListener(function(msg, sender, send_response) {
 			};
 			send_response(message);
 			break;
+		case 'get_file_hash':
+			var src = msg.src;
+			httpGetBlobAsDataURI(src, function(original_src, data_uri) {
+				var hash = hexMD5(data_uri);
+				var message = {
+					action: 'set_file_hash',
+					hash: hash,
+					src: src
+				};
+				chrome.tabs.sendMessage(sender.tab.id, message, null);
+			});
+			return false;
+			break;
 		// FIXME: Update this to limit the size of the cache
 		// FIXME: Update this to expire items in the cache after 5 minutes or so
 		case 'set_voted_ad_type':

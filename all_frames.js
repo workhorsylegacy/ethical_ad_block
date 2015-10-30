@@ -28,10 +28,6 @@ function setupEvents() {
 		}
 
 		switch (event.data.action) {
-			case 'set_file_hash':
-				console.info('content script ...');
-				console.info('Git hash: ' + event.data.hash);
-				break;
 			case 'append_screen_shot':
 				var img = new Image();
 				img.onload = function(e) {
@@ -56,8 +52,19 @@ function setupEvents() {
 
 // The background page tells us the user id
 chrome.runtime.onMessage.addListener(function(msg, sender, send_response) {
-	if (msg.action === 'get_g_user_id') {
-		g_user_id = msg.data;
+	switch (msg.action) {
+		case 'get_g_user_id':
+			g_user_id = msg.data;
+			break;
+		case 'set_file_hash':
+			var hash = msg.hash;
+			var src = msg.src;
+			if (g_set_file_hash_cb.hasOwnProperty(src)) {
+				var cb = g_set_file_hash_cb[src];
+				delete g_set_file_hash_cb[src];
+				cb(hash);
+			}
+			break;
 	}
 });
 
