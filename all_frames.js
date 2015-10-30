@@ -19,7 +19,7 @@ function setupEvents() {
 	var message = {
 		action: 'get_g_user_id'
 	};
-	chrome.runtime.sendMessage(message, function(response) {});
+	chrome.runtime.sendMessage(message, null);
 
 	window.addEventListener('message', function(event) {
 		// Just return if there is no data in the event

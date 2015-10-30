@@ -164,7 +164,7 @@ function getScreenShot(rect, cb) {
 		}
 	};
 	chrome.runtime.onMessage.addListener(screen_shot);
-	chrome.runtime.sendMessage(message, function(response) {});
+	chrome.runtime.sendMessage(message, null);
 }
 
 // Return true if value is a valid CSS image path, such as "url(blah.png)"
@@ -552,7 +552,7 @@ function isElementAd(hash, cb) {
 					ad_id: hash,
 					voted_ad_type: voted_ad_type
 				};
-				chrome.runtime.sendMessage(message, function(response) {});
+				chrome.runtime.sendMessage(message, null);
 			};
 			var fail_cb = function(status) {
 				cb(false);
@@ -1255,80 +1255,87 @@ function checkElementForAds(element) {
 
 // Keep looking at page elements, and add buttons to ones that loaded
 function checkElementsLoop() {
+	// NOTE: We poll for the body, because there is no reliable event for when it is ready
+	var setup_interval = setInterval(function() {
+		if (document.body) {
+			clearInterval(setup_interval);
+			setup_interval = null;
+			actualCheckElementsLoop();
+		}
+	}, 10);
+}
 
-	// Wait for the body to be created
-	document.addEventListener('DOMContentLoaded', function() {
-		var known_elements = {};
-		checkAllElementsForAds(known_elements, document);
+function actualCheckElementsLoop() {
+	var known_elements = {};
+	checkAllElementsForAds(known_elements, document);
 
-		// Create an observer to look at all element changes
-		var observer = new MutationObserver(function(mutations) {
-			mutations.forEach(function(mutation) {
-				switch (mutation.type) {
-					case 'attributes':
-						var name = mutation.target.tagName ? mutation.target.tagName.toLowerCase() : null;
-						// FIXME: Have this only trigger on attributes that change the hashed value
-						if (name && TAGS1.hasOwnProperty(name)) {
-							switch (name) {
-								case 'img':
-									if (mutation.attributeName === 'src' ||
-										mutation.attributeName === 'srcset' ||
-										mutation.attributeName === 'imgsrc') {
-//										console.info('attributes img "' + mutation.attributeName + '"...');
-										checkElementForAds(mutation.target);
-									}
-									break;
-								case 'embed':
-								case 'object':
-									if (mutation.attributeName === 'data') {
-//										console.info('attributes object "' + mutation.attributeName + '"...');
-										checkElementForAds(mutation.target);
-									}
-									break;
-								case 'video':
-									if (mutation.attributeName === 'src') {
-//										console.info('attributes video "' + mutation.attributeName + '"...');
-										checkElementForAds(mutation.target);
-									}
-									break;
-								case 'a':
-									if (mutation.attributeName === 'href') {
-//										console.info('attributes a "' + mutation.attributeName + '"...');
-										checkElementForAds(mutation.target);
-									}
-									break;
-							}
-						}
-						break;
-					case 'childList':
-						if (mutation.addedNodes) {
-							var known_elements = {};
-							for (var i=0; i<mutation.addedNodes.length; ++i) {
-								var node = mutation.addedNodes[i];
-								var name = node.tagName ? node.tagName.toLowerCase() : null;
-								if (name && TAGS1.hasOwnProperty(name)) {
-//									console.info('childList ...');
-									checkElementForAds(node);
+	// Create an observer to look at all element changes
+	var observer = new MutationObserver(function(mutations) {
+		mutations.forEach(function(mutation) {
+			switch (mutation.type) {
+				case 'attributes':
+					var name = mutation.target.tagName ? mutation.target.tagName.toLowerCase() : null;
+					// FIXME: Have this only trigger on attributes that change the hashed value
+					if (name && TAGS1.hasOwnProperty(name)) {
+						switch (name) {
+							case 'img':
+								if (mutation.attributeName === 'src' ||
+									mutation.attributeName === 'srcset' ||
+									mutation.attributeName === 'imgsrc') {
+//									console.info('attributes img "' + mutation.attributeName + '"...');
+									checkElementForAds(mutation.target);
 								}
-								checkAllElementsForAds(known_elements, node);
-							}
+								break;
+							case 'embed':
+							case 'object':
+								if (mutation.attributeName === 'data') {
+//									console.info('attributes object "' + mutation.attributeName + '"...');
+									checkElementForAds(mutation.target);
+								}
+								break;
+							case 'video':
+								if (mutation.attributeName === 'src') {
+//									console.info('attributes video "' + mutation.attributeName + '"...');
+									checkElementForAds(mutation.target);
+								}
+								break;
+							case 'a':
+								if (mutation.attributeName === 'href') {
+//									console.info('attributes a "' + mutation.attributeName + '"...');
+									checkElementForAds(mutation.target);
+								}
+								break;
 						}
-						break;
-				}
-			});
+					}
+					break;
+				case 'childList':
+					if (mutation.addedNodes) {
+						var known_elements = {};
+						for (var i=0; i<mutation.addedNodes.length; ++i) {
+							var node = mutation.addedNodes[i];
+							var name = node.tagName ? node.tagName.toLowerCase() : null;
+							if (name && TAGS1.hasOwnProperty(name)) {
+//								console.info('childList ...');
+								checkElementForAds(node);
+							}
+							checkAllElementsForAds(known_elements, node);
+						}
+					}
+					break;
+			}
 		});
-
-		// Look for all changes to attributes, and new elements
-		var config = {
-			attributes: true,
-//			attributeOldValue: true,
-			childList: true,
-			subtree: true
-		};
-
-		// Start observing any changes to the body
-		observer.observe(document.body, config);
 	});
+
+	// Look for all changes to attributes, and new elements
+	var config = {
+		attributes: true,
+//		attributeOldValue: true,
+		childList: true,
+		subtree: true
+	};
+
+	// Start observing any changes to the body
+	observer.observe(document.body, config);
 }
 
 // Monkey patch the addEventListener and removeEventListener methods to

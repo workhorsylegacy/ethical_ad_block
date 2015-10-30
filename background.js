@@ -70,13 +70,12 @@ chrome.runtime.onMessage.addListener(function(msg, sender, send_response) {
 			var src = msg.src;
 			if (g_hash_cache.hasOwnProperty(src)) {
 				msg.hash = g_hash_cache[src];
-				chrome.tabs.sendMessage(sender.tab.id, msg, null);
+				chrome.tabs.sendMessage(sender.tab.id, msg, {frameId: sender.frameId}, null);
 			} else {
 				httpGetBlobAsDataURI(src, function(original_src, data_uri) {
 					msg.hash = hexMD5(data_uri);
 					g_hash_cache[src] = msg.hash;
-//					console.info(msg.hash + ', ' + src);
-					chrome.tabs.sendMessage(sender.tab.id, msg, null);
+					chrome.tabs.sendMessage(sender.tab.id, msg, {frameId: sender.frameId}, null);
 				});
 			}
 			return false;
@@ -85,7 +84,7 @@ chrome.runtime.onMessage.addListener(function(msg, sender, send_response) {
 			var src = msg.src;
 			if (g_hash_cache.hasOwnProperty(src)) {
 				msg.hash = g_hash_cache[src];
-				chrome.tabs.sendMessage(sender.tab.id, msg, null);
+				chrome.tabs.sendMessage(sender.tab.id, msg, {frameId: sender.frameId}, null);
 			} else {
 				// Get only the first 50KB and length of the video
 				httpGetBlobChunk(src, function(src, data, total_size) {
@@ -93,7 +92,7 @@ chrome.runtime.onMessage.addListener(function(msg, sender, send_response) {
 						msg.hash = data_uri && total_size ? hexMD5(total_size + ':' + data_uri) : null;
 						g_hash_cache[src] = msg.hash;
 //						console.info(msg.hash + ', ' + src);
-						chrome.tabs.sendMessage(sender.tab.id, msg, null);
+						chrome.tabs.sendMessage(sender.tab.id, msg, {frameId: sender.frameId}, null);
 					});
 				}, 50000);
 			}
@@ -127,7 +126,7 @@ chrome.runtime.onMessage.addListener(function(msg, sender, send_response) {
 						action: 'screen_shot',
 						data: data_uri
 					};
-					chrome.tabs.sendMessage(sender.tab.id, message, function(response) {});
+					chrome.tabs.sendMessage(sender.tab.id, message, {frameId: sender.frameId}, null);
 				}
 			);
 			return false;
@@ -137,7 +136,7 @@ chrome.runtime.onMessage.addListener(function(msg, sender, send_response) {
 				action: 'get_g_user_id',
 				data: g_user_id
 			};
-			chrome.tabs.sendMessage(sender.tab.id, message, function(response) {});
+			chrome.tabs.sendMessage(sender.tab.id, message, {frameId: sender.frameId}, null);
 			return false;
 			break;
 	}
