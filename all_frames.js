@@ -56,12 +56,25 @@ chrome.runtime.onMessage.addListener(function(msg, sender, send_response) {
 		case 'get_g_user_id':
 			g_user_id = msg.data;
 			break;
-		case 'set_file_hash':
+		case 'set_img_hash':
 			var hash = msg.hash;
 			var src = msg.src;
-			if (g_set_file_hash_cb.hasOwnProperty(src)) {
-				var cb = g_set_file_hash_cb[src];
-				delete g_set_file_hash_cb[src];
+			var uid = msg.uid;
+			if (g_img_hash_cb.hasOwnProperty(src)) {
+				var cb = g_img_hash_cb[src];
+				delete g_img_hash_cb[src];
+				g_hashes[uid] = hash;
+				cb(hash);
+			}
+			break;
+		case 'set_video_hash':
+			var hash = msg.hash;
+			var src = msg.src;
+			var uid = msg.uid;
+			if (g_video_hash_cb.hasOwnProperty(src)) {
+				var cb = g_video_hash_cb[src];
+				delete g_video_hash_cb[src];
+				g_hashes[uid] = hash;
 				cb(hash);
 			}
 			break;

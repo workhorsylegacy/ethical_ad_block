@@ -33,7 +33,8 @@ var OUTLINE_SIZE = DEBUG ? 6 : 2;
 var g_checked_hashes = {};
 var g_hashes = {};
 var g_patched_elements = {};
-var g_set_file_hash_cb = {};
+var g_img_hash_cb = {};
+var g_video_hash_cb = {};
 var g_cursor_x = 0;
 var g_cursor_y = 0;
 var g_user_id = null;
@@ -419,7 +420,7 @@ function getElementHash(is_printed, element, cb) {
 
 	var uid = element.getAttribute('uid');
 	if (g_hashes.hasOwnProperty(uid)) {
-		cb(g_hashes[uid]);
+		cb(false);
 		return;
 	}
 
@@ -427,10 +428,11 @@ function getElementHash(is_printed, element, cb) {
 	switch (element.tagName.toLowerCase()) {
 		case 'img':
 			var src = getImageSrc(element);
-			g_set_file_hash_cb[src] = cb;
+			g_img_hash_cb[src] = cb;
 			var message = {
-				action: 'get_file_hash',
-				src: src
+				action: 'get_img_hash',
+				src: src,
+				uid: uid
 			};
 			chrome.runtime.sendMessage(message, null);
 			break;
@@ -443,16 +445,13 @@ function getElementHash(is_printed, element, cb) {
 			break;
 		case 'video':
 			var src = getVideoSrc(element);
-			// Get only the first 50KB and length of the video
-			httpGetBlobChunk(src, function(src, data, total_size) {
-//				console.info(data.length);
-				blobToDataURI(data, function(data_uri) {
-					var hash = data_uri && total_size ? hexMD5(total_size + ':' + data_uri) : null;
-					if (is_printed) {printInfo(element, hash);}
-					g_hashes[uid] = hash;
-					cb(hash);
-				});
-			}, 50000);
+			g_video_hash_cb[src] = cb;
+			var message = {
+				action: 'get_video_hash',
+				src: src,
+				uid: uid
+			};
+			chrome.runtime.sendMessage(message, null);
 			break;
 		case 'svg':
 			svgToDataURI(element, function(data_uri) {
@@ -468,13 +467,13 @@ function getElementHash(is_printed, element, cb) {
 			var bg = window.getComputedStyle(element)['background-image'];
 			if (isValidCSSImagePath(bg)) {
 				var src = bg.substring(4, bg.length-1);
-
-				httpGetBlobAsDataURI(src, function(original_src, data_uri) {
-					var hash = hexMD5(data_uri);
-					if (is_printed) {printInfo(element, hash);}
-					g_hashes[uid] = hash;
-					cb(hash);
-				});
+				g_img_hash_cb[src] = cb;
+				var message = {
+					action: 'get_img_hash',
+					src: src,
+					uid: uid
+				};
+				chrome.runtime.sendMessage(message, null);
 			} else {
 				g_hashes[uid] = hash;
 				cb(hash);
@@ -485,12 +484,13 @@ function getElementHash(is_printed, element, cb) {
 			var bg = window.getComputedStyle(element)['background-image'];
 			if (isValidCSSImagePath(bg)) {
 				var src = bg.substring(4, bg.length-1);
-				httpGetBlobAsDataURI(src, function(original_src, data_uri) {
-					var hash = hexMD5(data_uri);
-					if (is_printed) {printInfo(element, hash);}
-					g_hashes[uid] = hash;
-					cb(hash);
-				});
+				g_img_hash_cb[src] = cb;
+				var message = {
+					action: 'get_img_hash',
+					src: src,
+					uid: uid
+				};
+				chrome.runtime.sendMessage(message, null);
 			} else if (element.href && element.href.length > 0) {
 				hash = hexMD5(element.href);
 				if (is_printed) {printInfo(element, hash);}

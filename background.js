@@ -65,17 +65,39 @@ chrome.runtime.onMessage.addListener(function(msg, sender, send_response) {
 			};
 			send_response(message);
 			break;
-		case 'get_file_hash':
+		case 'get_img_hash':
 			var src = msg.src;
+			var uid = msg.uid;
 			httpGetBlobAsDataURI(src, function(original_src, data_uri) {
 				var hash = hexMD5(data_uri);
+//				console.info(hash);
 				var message = {
-					action: 'set_file_hash',
+					action: 'set_img_hash',
 					hash: hash,
-					src: src
+					src: src,
+					uid: uid
 				};
 				chrome.tabs.sendMessage(sender.tab.id, message, null);
 			});
+			return false;
+			break;
+		case 'get_video_hash':
+			var src = msg.src;
+			var uid = msg.uid;
+			// Get only the first 50KB and length of the video
+			httpGetBlobChunk(src, function(src, data, total_size) {
+				blobToDataURI(data, function(data_uri) {
+					var hash = data_uri && total_size ? hexMD5(total_size + ':' + data_uri) : null;
+//					console.info(hash);
+					var message = {
+						action: 'set_video_hash',
+						hash: hash,
+						src: src,
+						uid: uid
+					};
+					chrome.tabs.sendMessage(sender.tab.id, message, null);
+				});
+			}, 50000);
 			return false;
 			break;
 		// FIXME: Update this to limit the size of the cache
