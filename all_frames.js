@@ -56,7 +56,7 @@ chrome.runtime.onMessage.addListener(function(msg, sender, send_response) {
 		case 'get_g_user_id':
 			g_user_id = msg.data;
 			break;
-		case 'set_img_hash':
+		case 'get_img_hash':
 			var hash = msg.hash;
 			var src = msg.src;
 			var uid = msg.uid;
@@ -67,7 +67,7 @@ chrome.runtime.onMessage.addListener(function(msg, sender, send_response) {
 				cb(hash);
 			}
 			break;
-		case 'set_video_hash':
+		case 'get_video_hash':
 			var hash = msg.hash;
 			var src = msg.src;
 			var uid = msg.uid;

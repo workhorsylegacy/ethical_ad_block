@@ -21,7 +21,8 @@ BLACKLIST = [];
 
 //var active_url = null;
 var g_user_id = generateRandomId();
-var g_response_cache = [];
+var g_response_cache = {};
+var g_hash_cache = {};
 
 
 /*
@@ -67,37 +68,35 @@ chrome.runtime.onMessage.addListener(function(msg, sender, send_response) {
 			break;
 		case 'get_img_hash':
 			var src = msg.src;
-			var uid = msg.uid;
-			httpGetBlobAsDataURI(src, function(original_src, data_uri) {
-				var hash = hexMD5(data_uri);
-//				console.info(hash);
-				var message = {
-					action: 'set_img_hash',
-					hash: hash,
-					src: src,
-					uid: uid
-				};
-				chrome.tabs.sendMessage(sender.tab.id, message, null);
-			});
+			if (g_hash_cache.hasOwnProperty(src)) {
+				msg.hash = g_hash_cache[src];
+				chrome.tabs.sendMessage(sender.tab.id, msg, null);
+			} else {
+				httpGetBlobAsDataURI(src, function(original_src, data_uri) {
+					msg.hash = hexMD5(data_uri);
+					g_hash_cache[src] = msg.hash;
+//					console.info(msg.hash + ', ' + src);
+					chrome.tabs.sendMessage(sender.tab.id, msg, null);
+				});
+			}
 			return false;
 			break;
 		case 'get_video_hash':
 			var src = msg.src;
-			var uid = msg.uid;
-			// Get only the first 50KB and length of the video
-			httpGetBlobChunk(src, function(src, data, total_size) {
-				blobToDataURI(data, function(data_uri) {
-					var hash = data_uri && total_size ? hexMD5(total_size + ':' + data_uri) : null;
-//					console.info(hash);
-					var message = {
-						action: 'set_video_hash',
-						hash: hash,
-						src: src,
-						uid: uid
-					};
-					chrome.tabs.sendMessage(sender.tab.id, message, null);
-				});
-			}, 50000);
+			if (g_hash_cache.hasOwnProperty(src)) {
+				msg.hash = g_hash_cache[src];
+				chrome.tabs.sendMessage(sender.tab.id, msg, null);
+			} else {
+				// Get only the first 50KB and length of the video
+				httpGetBlobChunk(src, function(src, data, total_size) {
+					blobToDataURI(data, function(data_uri) {
+						msg.hash = data_uri && total_size ? hexMD5(total_size + ':' + data_uri) : null;
+						g_hash_cache[src] = msg.hash;
+//						console.info(msg.hash + ', ' + src);
+						chrome.tabs.sendMessage(sender.tab.id, msg, null);
+					});
+				}, 50000);
+			}
 			return false;
 			break;
 		// FIXME: Update this to limit the size of the cache
